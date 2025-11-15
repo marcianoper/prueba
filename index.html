@@ -246,7 +246,7 @@
       <button class="btn btn-ghost" id="btnWA">WhatsApp Cuenta</button>
       <button class="btn btn-ghost" id="btnImprimir">Imprimir A4</button>
       <button class="btn btn-ghost" id="btnImprimir80">Imprimir 80mm</button>
-      <button class="btn btn-ghost" id="btnImprimir80Rawbt">Imprimir 80mm (RawBT)</button>
+      <!-- Botón RawBT eliminado -->
       <button class="btn btn-ghost" id="btnCSV">Exportar CSV</button>
       <button class="btn btn-ghost danger right" id="btnCerrar">Cerrar Nota</button>
     </div>
@@ -272,7 +272,6 @@ function todayISO(){ const d=new Date(); const z=d.getTimezoneOffset()*60000; re
 function addDays(dateISO, days){ const d=new Date(dateISO); d.setDate(d.getDate()+Number(days||0)); const z=d.getTimezoneOffset()*60000; return new Date(d - z).toISOString().slice(0,10); }
 function genFolio(){ const d=new Date(); const pad=n=>String(n).padStart(2,'0'); return `CVC-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`; }
 function csvEscape(s){ return '"'+String(s).replaceAll('"','""')+'"'; }
-const isAndroid = () => /Android/i.test(navigator.userAgent);
 
 /* ========================= STATE ========================= */
 let CLIENTES=[], PRODUCTOS=[], PRECIOS={};
@@ -355,7 +354,7 @@ $('#btnAgregar').addEventListener('click', addPartida);
 $('#btnWA').addEventListener('click', ()=> activeNota() && waNota(activeNota().id));
 $('#btnImprimir').addEventListener('click', ()=> activeNota() && imprimirNotaA4(activeNota().id));
 $('#btnImprimir80').addEventListener('click', ()=> activeNota() && imprimirNota80mm(activeNota().id));
-$('#btnImprimir80Rawbt').addEventListener('click', ()=> activeNota() && imprimirNota80mmRawBT(activeNota().id));
+// Botón RawBT eliminado
 $('#btnCSV').addEventListener('click', ()=> activeNota() && exportNotaCSV(activeNota().id));
 $('#btnCerrar').addEventListener('click', cerrarNota);
 $('#btnNuevoCliente').addEventListener('click', addCliente);
@@ -502,7 +501,9 @@ async function continuarNota(){
       folio, 
       fecha, 
       vence:(notaVence.value||addDays(fecha, notaDias.value)), 
-      cliente_id,  
+      cliente_id, 
+      total:0, 
+      saldo:0, 
       observaciones: (notaObs.value||null) 
     };
     const { error } = await supabase.from('notas_credito').insert(payload);
@@ -789,18 +790,17 @@ async function cargarEnSlot(slot, nota_id, cliente_id){
 function plantillaWA(nota, det, clienteNombre){
   const items = (det||[]).map(d=>{
     const piezasTxt = d.piezas ? ` (${d.piezas} pzas)` : '';
-    return `• ${d.producto} ${to2(d.cantidad)}kg${piezasTxt} × $${to2(d.precio)} = $${to2(d.importe)}`;
+    return `• ${d.producto} ${to2(d.cantidad)}kg${piezasTxt}`;
   }).join('\n');
   return [
     `Hola *${clienteNombre}*,`,
     `te compartimos el detalle de tu cuenta del día:\n`,
     `*Folio:* ${nota.folio}`,
-    `*Fecha:* ${nota.fecha} `,
+    `*Fecha:* ${nota.fecha}`,
     '',
     items,
     '',
-    ,
-    nota.observaciones ? `\n*Notas:* ${nota.observaciones}` : '',
+    nota.observaciones ? `*Notas:* ${nota.observaciones}` : '',
     '',
     `¡Gracias por tu preferencia! — ${STORE_NAME}`
   ].join('\n');
@@ -861,8 +861,8 @@ async function imprimirNotaA4(nota_id){
   el.classList.remove('ticket80');
   el.innerHTML = `
     <h3>Nota — ${nota.clientes?.nombre||''}</h3>
-    <div><b>Folio:</b> ${nota.folio} &nbsp; <b>Fecha:</b> ${nota.fecha} |'}</div>
-    <div><b>Total:</b> $${to2(nota.total)} &nbsp; <b>Saldo:</b> $</div>
+    <div><b>Folio:</b> ${nota.folio} &nbsp; <b>Fecha:</b> ${nota.fecha} &nbsp; <b>Vence:</b> ${nota.vence||''}</div>
+    <div><b>Total:</b> $${to2(nota.total)} &nbsp; <b>Saldo:</b> $${to2(nota.saldo)}</div>
     ${nota.observaciones ? `<div style="margin-top:6mm"><b>Notas del cliente:</b><br>${(nota.observaciones||'').replace(/\n/g,'<br>')}</div>` : ''}
     <br/>
     <table>
@@ -872,6 +872,8 @@ async function imprimirNotaA4(nota_id){
         <td>${d.producto}</td>
         <td>${to2(d.cantidad)}</td>
         <td>${d.piezas != null ? d.piezas : ''}</td>
+        <td>$${to2(d.precio)}</td>
+        <td>$${to2(d.importe)}</td>
       </tr>`).join('')}</tbody>
     </table>`;
   window.print(); 
@@ -902,8 +904,7 @@ async function imprimirNota80mm(nota_id){
     return `
     <tr>
       <td>${d.producto}</td>
-      <td style="text-align:right">${cantidadTexto}</td>
-      <td style="text-align:right">${to2(d.importe)}</td>
+      <td class="right">${cantidadTexto}</td>
     </tr>
   `;
   }).join('');
@@ -977,7 +978,7 @@ async function imprimirNota80mm(nota_id){
         Nota a crédito<br/>
         Cliente: ${cliente}<br/>
         Folio: ${nota.folio}<br/>
-        Fecha: ${nota.fecha} <br/>
+        Fecha: ${nota.fecha}<br/>
         Obs: ${obs}
       </div>
       <table>
@@ -987,10 +988,12 @@ async function imprimirNota80mm(nota_id){
             <th class="right">Kg/Pzas</th>
           </tr>
         </thead>
-        <tfoot>
+        <tbody>
+          ${filas}
+        </tbody>
       </table>
       <div style="margin-top:6px;text-align:center;font-size:11px">
-        ¡Gracias por su preferencia! ¡Carnes y Visceras del Centro, tu mejor aliado!
+        ¡Gracias por su preferencia! ¡Carnes y Visceras del Centro tu mejor aliado!
       </div>
     </div>
   </body>
@@ -1003,68 +1006,6 @@ async function imprimirNota80mm(nota_id){
   win.document.close();
   win.focus();
   setTimeout(()=>{ win.print(); }, 300);
-}
-
-/* ====== Ticket 80mm por RAWBT (Android, sin diálogo) ====== */
-function left(s, n){ return (s||'').toString().slice(0,n).padEnd(n,' '); }
-function right(num, n){ const s=(num||'').toString(); return s.length>=n? s.slice(-n) : ' '.repeat(n-s.length)+s; }
-function monoLine(){ return '--------------------------------\n'; } // 32 col aprox 80mm
-
-function buildRawbtText(nota, det, clienteNombre){
-  // 32 columnas aprox (fuente por defecto RawBT)
-  let out='';
-  out += `${STORE_NAME}\n`;
-  out += `Nota a Crédito\n`;
-  out += monoLine();
-  out += `Cliente: ${clienteNombre}\n`;
-  out += `Folio: ${nota.folio}\n`;
-  out += `Fecha: ${nota.fecha}  Vence: ${nota.vence||''}\n`;
-  out += monoLine();
-  (det||[]).forEach(d=>{
-    out += `${left(d.producto,32)}\n`;
-    const piezasTxt = d.piezas ? ` (${d.piezas}pz)` : '';
-    const izq = `${to2(d.cantidad)}kg${piezasTxt} x $${to2(d.precio)}`;
-    const der = `$${to2(d.importe)}`;
-    out += `${left(izq,20)}${right(der,12)}\n`;
-  });
-  out += monoLine();
-  out += `Total: $${to2(nota.total)}\n`;
-
-  if(nota.observaciones){ out += monoLine(); out += `Notas:\n${nota.observaciones}\n`; }
-  out += '\n¡Gracias por su preferencia! !Carnes y Visceras del Centro tu mejor aliado!\n\n\n';
-  return out;
-}
-
-async function imprimirNota80mmRawBT(nota_id){
-  await saveNotaObs();
-  const { data: nota } = await supabase
-    .from('notas_credito')
-    .select('*, clientes(nombre)')
-    .eq('id', nota_id)
-    .single();
-  const { data: det }  = await supabase
-    .from('notas_detalle')
-    .select('*')
-    .eq('nota_id', nota_id)
-    .order('created_at');
-  const clienteNombre = nota.clientes?.nombre || '';
-
-  const text = buildRawbtText(nota, det||[], clienteNombre);
-
-  if(!isAndroid()){
-    alert('RawBT es solo para Android. Usa "Imprimir 80mm".');
-    return;
-  }
-
-  try{
-    const uri = 'rawbt:' + encodeURIComponent(text);
-    window.location.href = uri;
-    setTimeout(()=>{ window.open(uri, '_blank'); }, 400);
-  }catch(e){
-    console.error(e);
-    alert('No se pudo abrir RawBT. Verifica que la app esté instalada.');
-    window.open('https://play.google.com/store/apps/details?id=ru.a402d.rawbtprinter','_blank');
-  }
 }
 
 /* ========================= REPORTE DIARIO GENERAL ========================= */
@@ -1179,4 +1120,3 @@ async function cerrarNota(){
 </script>
 </body>
 </html>
-
