@@ -502,9 +502,7 @@ async function continuarNota(){
       folio, 
       fecha, 
       vence:(notaVence.value||addDays(fecha, notaDias.value)), 
-      cliente_id, 
-      total:0, 
-      saldo:0, 
+      cliente_id,  
       observaciones: (notaObs.value||null) 
     };
     const { error } = await supabase.from('notas_credito').insert(payload);
@@ -797,7 +795,7 @@ function plantillaWA(nota, det, clienteNombre){
     `Hola *${clienteNombre}*,`,
     `te compartimos el detalle de tu cuenta del día:\n`,
     `*Folio:* ${nota.folio}`,
-    `*Fecha:* ${nota.fecha}  |  *Vence:* ${nota.vence || 's/d'}`,
+    `*Fecha:* ${nota.fecha} `,
     '',
     items,
     '',
@@ -863,8 +861,8 @@ async function imprimirNotaA4(nota_id){
   el.classList.remove('ticket80');
   el.innerHTML = `
     <h3>Nota — ${nota.clientes?.nombre||''}</h3>
-    <div><b>Folio:</b> ${nota.folio} &nbsp; <b>Fecha:</b> ${nota.fecha} &nbsp; <b>Vence:</b> ${nota.vence||''}</div>
-    <div><b>Total:</b> $${to2(nota.total)} &nbsp; <b>Saldo:</b> $${to2(nota.saldo)}</div>
+    <div><b>Folio:</b> ${nota.folio} &nbsp; <b>Fecha:</b> ${nota.fecha} |'}</div>
+    <div><b>Total:</b> $${to2(nota.total)} &nbsp; <b>Saldo:</b> $</div>
     ${nota.observaciones ? `<div style="margin-top:6mm"><b>Notas del cliente:</b><br>${(nota.observaciones||'').replace(/\n/g,'<br>')}</div>` : ''}
     <br/>
     <table>
@@ -982,7 +980,7 @@ async function imprimirNota80mm(nota_id){
         Nota a crédito<br/>
         Cliente: ${cliente}<br/>
         Folio: ${nota.folio}<br/>
-        Fecha: ${nota.fecha} · Vence: ${nota.vence || '—'}<br/>
+        Fecha: ${nota.fecha} <br/>
         Obs: ${obs}
       </div>
       <table>
@@ -1009,7 +1007,7 @@ async function imprimirNota80mm(nota_id){
         </tfoot>
       </table>
       <div style="margin-top:6px;text-align:center;font-size:11px">
-        ¡Gracias por su preferencia!
+        ¡Gracias por su preferencia! ¡Carnes y Visceras del Centro, tu mejor aliado!
       </div>
     </div>
   </body>
