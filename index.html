@@ -47,7 +47,7 @@
       #printArea:not(.ticket80) table{width:100%; border-collapse:collapse}
       #printArea:not(.ticket80) th, #printArea:not(.ticket80) td{border:1px solid #aaa; padding:4px; font-size:12px}
 
-      /* Ticket 80mm cuando se use printArea (lo dejamos por si lo ocupas) */
+      /* Ticket 80mm cuando se use printArea (no lo usamos ahora para nota 80, pero lo dejamos) */
       #printArea.ticket80{width:80mm; padding:2mm}
       #printArea.ticket80 .tk-header{ text-align:center; font-size:12px; line-height:1.2; margin-bottom:6px }
       #printArea.ticket80 .tk-header .store{ font-weight:700; font-size:14px }
@@ -143,10 +143,10 @@
       <div class="row-3">
         <div>
           <label>Producto</label>
-          <input id="pProducto" list="catProductos" placeholder="Ej. Cabeza 160 kg 10 pzas" />
+          <input id="pProducto" list="catProductos" placeholder="Ej. Panza de Res" />
         </div>
         <div>
-          <label>Cantidad (kg / pzas)</label>
+          <label>Kilos</label>
           <div class="flex" style="gap:6px; align-items:center">
             <input id="pKg" type="number" min="0" step="0.01" value="1" />
             <div class="flex">
@@ -157,9 +157,13 @@
           </div>
         </div>
         <div>
-          <label>Precio (interno)</label>
-          <input id="pPrecio" type="number" min="0" step="0.01" value="0" />
+          <label>Piezas (opcional)</label>
+          <input id="pPzas" type="number" min="0" step="1" />
         </div>
+      </div>
+      <div style="margin-top:8px">
+        <label>Precio/kg</label>
+        <input id="pPrecio" type="number" min="0" step="0.01" value="0" />
       </div>
       <div class="flex" style="margin-top:10px">
         <button class="btn btn-primary" id="btnAgregar">Agregar a nota (Enter)</button>
@@ -182,13 +186,15 @@
           <tr>
             <th>Fecha/Hora</th>
             <th>Producto</th>
-            <th>Cant</th>
+            <th>Kg</th>
+            <th>Pzas</th>
+            <th>P.Unit</th>
             <th>Importe</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="vistaBody"></tbody>
-        <tfoot><tr><td colspan="4" style="text-align:right">Total</td><td id="vistaTotal">$0.00</td></tr></tfoot>
+        <tfoot><tr><td colspan="6" style="text-align:right">Total</td><td id="vistaTotal">$0.00</td></tr></tfoot>
       </table>
     </section>
   </div>
@@ -294,6 +300,7 @@ const notaVence=$('#notaVence');
 const notaInfo=$('#notaInfo');
 const pProducto=$('#pProducto');
 const pKg=$('#pKg');
+const pPzas=$('#pPzas');
 const pPrecio=$('#pPrecio');
 const subtotalBox=$('#subtotalBox');
 const vFolio=$('#vFolio');
@@ -328,6 +335,7 @@ notaFecha.addEventListener('change', ()=> { notaVence.value=addDays(notaFecha.va
 
 ['keyup','change'].forEach(ev=> pProducto.addEventListener(ev, ()=>{ prefPrecio(); markDirty(); }));
 ['keyup','change'].forEach(ev=> pKg.addEventListener(ev, markDirty));
+['keyup','change'].forEach(ev=> pPzas.addEventListener(ev, markDirty));
 ['keyup','change'].forEach(ev=> pPrecio.addEventListener(ev, markDirty));
 ['keyup','change'].forEach(ev=> notaObs.addEventListener(ev, markDirty));
 notaObs.addEventListener('blur', saveNotaObs);
@@ -335,7 +343,7 @@ notaObs.addEventListener('blur', saveNotaObs);
 $$('.btnInc').forEach(b=> b.addEventListener('click', ()=>{ pKg.value=(Number(pKg.value||0)+Number(b.dataset.d||0)).toFixed(2); markDirty(); }));
 
 document.addEventListener('keydown', (e)=>{ 
-  if(e.key==='Enter' && document.activeElement && ['pProducto','pKg','pPrecio'].includes(document.activeElement.id)){ 
+  if(e.key==='Enter' && document.activeElement && ['pProducto','pKg','pPzas','pPrecio'].includes(document.activeElement.id)){ 
     e.preventDefault(); 
     addPartida(); 
   }
@@ -532,13 +540,23 @@ async function addPartida(){
   if(!nota) return alert('Primero crea/continúa una nota en el slot activo');
   const prod=(pProducto.value||'').trim(), 
         cant=Number(pKg.value||0), 
+        piezas = (pPzas.value !== '' && pPzas.value != null) ? Number(pPzas.value||0) : null,
         precio=Number(pPrecio.value||0);
-  if(!prod || cant<=0) return alert('Producto y cantidad son obligatorios');
+  if(!prod || cant<=0) return alert('Producto y kilos son obligatorios');
   const { error } = await supabase.from('notas_detalle')
-    .insert({ id: crypto.randomUUID(), nota_id: nota.id, producto: prod, cantidad: cant, precio, importe: cant*precio });
+    .insert({ 
+      id: crypto.randomUUID(), 
+      nota_id: nota.id, 
+      producto: prod, 
+      cantidad: cant, 
+      piezas: piezas, 
+      precio, 
+      importe: cant*precio 
+    });
   if(error){ console.error(error); return alert('No se pudo agregar la partida'); }
   pProducto.value=''; 
   pKg.value='1'; 
+  pPzas.value='';
   prefPrecio();
   clearDirty();
   await recalcNota(nota.id);
@@ -601,7 +619,9 @@ async function renderVista(){
       <td>${new Date(d.created_at).toLocaleString()}</td>
       <td>${d.producto}</td>
       <td class="editable" data-field="cantidad">${to2(d.cantidad)}</td>
-      <td class="editable" data-field="precio">$${to2(d.importe)}</td>
+      <td class="editable" data-field="piezas">${d.piezas != null ? d.piezas : ''}</td>
+      <td class="editable" data-field="precio">$${to2(d.precio)}</td>
+      <td>$${to2(d.importe)}</td>
       <td><button class="btn btn-ghost btn-sm" data-del="${d.id}" title="Borrar">🗑️</button></td>
     </tr>
   `).join('');
@@ -623,14 +643,14 @@ function makeCellEditable(td, nota_id){
   const row   = td.closest('tr');
   const detId = row.dataset.id;
   const raw   = td.textContent.replace('$','').trim();
-  const oldV  = Number(raw.replace(',', '.')) || 0;
+  let oldV    = raw ? Number(raw.replace(',', '.')) : null;
 
   td.classList.add('cell-editing');
   const input = document.createElement('input');
   input.type = 'number'; 
-  input.step = '0.01'; 
+  input.step = (field==='piezas') ? '1' : '0.01'; 
   input.min  = '0';
-  input.value = oldV.toFixed(2);
+  input.value = (oldV != null ? oldV : 0);
   td.innerHTML = ''; 
   td.appendChild(input);
   input.focus(); 
@@ -638,10 +658,37 @@ function makeCellEditable(td, nota_id){
   markDirty();
 
   const commit = async(save)=>{
-    const newV = Number(input.value||0);
+    const newV = Number(input.value||'');
+    let displayV;
+
+    if(field==='precio'){
+      const val = save ? newV : (oldV ?? 0);
+      displayV = `$${to2(val)}`;
+    } else if(field==='cantidad'){
+      const val = save ? newV : (oldV ?? 0);
+      displayV = to2(val);
+    } else if(field==='piezas'){
+      const val = save ? newV : (oldV ?? null);
+      displayV = (val == null || isNaN(val) || val === 0) ? '' : String(Math.round(val));
+    } else {
+      displayV = input.value;
+    }
+
     td.classList.remove('cell-editing');
-    td.innerHTML = field==='precio' ? `$${to2(save?newV:oldV)}` : to2(save?newV:oldV);
+    td.innerHTML = displayV;
+
     if(!save){ clearDirty(); return; }
+
+    if(field === 'piezas'){
+      const newVal = (isNaN(newV) || newV <= 0) ? null : Math.round(newV);
+      await supabase
+        .from('notas_detalle')
+        .update({ piezas: newVal })
+        .eq('id', detId);
+      clearDirty();
+      await renderVista();
+      return;
+    }
 
     const { data: cur } = await supabase
       .from('notas_detalle')
@@ -742,8 +789,10 @@ async function cargarEnSlot(slot, nota_id, cliente_id){
 
 /* ========================= WHATSAPP / A4 / CSV / 80mm ========================= */
 function plantillaWA(nota, det, clienteNombre){
-  // Solo mostramos cantidad e importe, sin precio/kg
-  const items = (det||[]).map(d=>`• ${d.producto}  Cant: ${to2(d.cantidad)}  Importe: $${to2(d.importe)}`).join('\n');
+  const items = (det||[]).map(d=>{
+    const piezasTxt = d.piezas ? ` (${d.piezas} pzas)` : '';
+    return `• ${d.producto} ${to2(d.cantidad)}kg${piezasTxt} × $${to2(d.precio)} = $${to2(d.importe)}`;
+  }).join('\n');
   return [
     `Hola *${clienteNombre}*,`,
     `te compartimos el detalle de tu cuenta del día:\n`,
@@ -777,9 +826,22 @@ async function waNota(nota_id){
     const c = getClient(nota.cliente_id); 
     phone = c ? (c.telefono||'') : '';
   }
+
+  const phoneRaw = (phone || '').trim();
+  if(!phoneRaw){
+    alert('El cliente no tiene teléfono guardado. Captura el número en el campo "Teléfono (WhatsApp)" y vuelve a intentar.');
+    return;
+  }
+
+  const digits = phoneRaw.replace(/[^\d]/g,'');
+  if(!digits){
+    alert('El teléfono del cliente no es válido.');
+    return;
+  }
+
   const msg = plantillaWA(nota, det||[], nombre);
-  const u=`https://wa.me/?text=${encodeURIComponent(msg)}`;
-  const u2=`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+  const u=`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+  const u2=`https://api.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(msg)}`;
   const w=window.open(u,"_blank"); 
   setTimeout(()=>{ if(!w||w.closed) window.open(u2,"_blank"); }, 600);
 }
@@ -806,29 +868,21 @@ async function imprimirNotaA4(nota_id){
     ${nota.observaciones ? `<div style="margin-top:6mm"><b>Notas del cliente:</b><br>${(nota.observaciones||'').replace(/\n/g,'<br>')}</div>` : ''}
     <br/>
     <table>
-      <thead>
-        <tr>
-          <th>Fecha/Hora</th>
-          <th>Producto</th>
-          <th>Cantidad</th>
-          <th>Importe</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${(det||[]).map(d=>`
-          <tr>
-            <td>${new Date(d.created_at).toLocaleString()}</td>
-            <td>${d.producto}</td>
-            <td>${to2(d.cantidad)}</td>
-            <td>$${to2(d.importe)}</td>
-          </tr>`).join('')}
-      </tbody>
+      <thead><tr><th>Fecha/Hora</th><th>Producto</th><th>Kg</th><th>Pzas</th><th>P.Unit</th><th>Importe</th></tr></thead>
+      <tbody>${(det||[]).map(d=>`<tr>
+        <td>${new Date(d.created_at).toLocaleString()}</td>
+        <td>${d.producto}</td>
+        <td>${to2(d.cantidad)}</td>
+        <td>${d.piezas != null ? d.piezas : ''}</td>
+        <td>$${to2(d.precio)}</td>
+        <td>$${to2(d.importe)}</td>
+      </tr>`).join('')}</tbody>
     </table>`;
   window.print(); 
   setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 500);
 }
 
-/* ====== Ticket 80mm por DIÁLOGO DEL SISTEMA (en ventana nueva) ====== */
+/* ====== Ticket 80mm por DIÁLOGO DEL SISTEMA (ventana nueva) ====== */
 async function imprimirNota80mm(nota_id){
   await saveNotaObs();
 
@@ -847,13 +901,17 @@ async function imprimirNota80mm(nota_id){
   const cliente = nota.clientes?.nombre || '(sin nombre)';
   const obs = nota.observaciones || '—';
 
-  const filas = (det || []).map(d=>`
+  const filas = (det || []).map(d=>{
+    const cantidadTexto = d.piezas ? `${to2(d.cantidad)} (${d.piezas}pz)` : to2(d.cantidad);
+    return `
     <tr>
       <td>${d.producto}</td>
-      <td style="text-align:right">${to2(d.cantidad)}</td>
+      <td style="text-align:right">${cantidadTexto}</td>
+      <td>${to2(d.precio)}</td>
       <td style="text-align:right">${to2(d.importe)}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const html = `
   <!DOCTYPE html>
@@ -931,7 +989,8 @@ async function imprimirNota80mm(nota_id){
         <thead>
           <tr>
             <th>Prod</th>
-            <th class="right">Cant</th>
+            <th class="right">Kg/Pzas</th>
+            <th>P.U.</th>
             <th class="right">Imp.</th>
           </tr>
         </thead>
@@ -940,11 +999,11 @@ async function imprimirNota80mm(nota_id){
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="2">Total</td>
+            <td colspan="3">Total</td>
             <td class="right">${to2(nota.total)}</td>
           </tr>
           <tr>
-            <td colspan="2">Saldo</td>
+            <td colspan="3">Saldo</td>
             <td class="right">${to2(nota.saldo)}</td>
           </tr>
         </tfoot>
@@ -982,7 +1041,8 @@ function buildRawbtText(nota, det, clienteNombre){
   out += monoLine();
   (det||[]).forEach(d=>{
     out += `${left(d.producto,32)}\n`;
-    const izq = `Cant: ${to2(d.cantidad)}`;
+    const piezasTxt = d.piezas ? ` (${d.piezas}pz)` : '';
+    const izq = `${to2(d.cantidad)}kg${piezasTxt} x $${to2(d.precio)}`;
     const der = `$${to2(d.importe)}`;
     out += `${left(izq,20)}${right(der,12)}\n`;
   });
@@ -1040,7 +1100,7 @@ async function imprimirDiaA4(){
 
   const { data: det } = await supabase
     .from('notas_detalle')
-    .select('nota_id, producto, cantidad, precio, importe, created_at')
+    .select('nota_id, producto, cantidad, piezas, precio, importe, created_at')
     .in('nota_id', ids)
     .order('created_at');
 
@@ -1064,13 +1124,14 @@ async function imprimirDiaA4(){
     const totalCliente=(pack.items||[]).reduce((a,b)=>a+Number(b.importe||0),0);
     html += `<div class="group"><h4>${cliente} — Total: $${to2(totalCliente)}</h4>
       <table>
-        <thead><tr><th>Folio</th><th>Hora</th><th>Producto</th><th>Cant</th><th>P.Unit</th><th>Importe</th></tr></thead>
+        <thead><tr><th>Folio</th><th>Hora</th><th>Producto</th><th>Kg</th><th>Pzas</th><th>P.Unit</th><th>Importe</th></tr></thead>
         <tbody>
           ${(pack.items||[]).map(d=>`<tr>
             <td>${d.folio||''}</td>
             <td>${new Date(d.created_at).toLocaleTimeString()}</td>
             <td>${d.producto}</td>
             <td>${to2(d.cantidad)}</td>
+            <td>${d.piezas != null ? d.piezas : ''}</td>
             <td>$${to2(d.precio)}</td>
             <td>$${to2(d.importe)}</td>
           </tr>`).join('')}
@@ -1097,10 +1158,10 @@ async function exportDiaCSV(){
 
   const { data: det } = await supabase
     .from('notas_detalle')
-    .select('nota_id, producto, cantidad, precio, importe, created_at')
+    .select('nota_id, producto, cantidad, piezas, precio, importe, created_at')
     .in('nota_id', ids);
 
-  const head=['Cliente','Folio','Fecha','Hora','Producto','Cant','Precio','Importe'];
+  const head=['Cliente','Folio','Fecha','Hora','Producto','Kg','Piezas','Precio','Importe'];
   const rows=(det||[]).map(d=>{
     const n=(notas||[]).find(x=>x.id===d.nota_id) || {};
     return [
@@ -1110,6 +1171,7 @@ async function exportDiaCSV(){
       new Date(d.created_at).toLocaleTimeString(), 
       d.producto, 
       to2(d.cantidad), 
+      (d.piezas != null ? d.piezas : ''), 
       to2(d.precio), 
       to2(d.importe)
     ];
