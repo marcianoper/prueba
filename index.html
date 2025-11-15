@@ -801,7 +801,7 @@ function plantillaWA(nota, det, clienteNombre){
     '',
     items,
     '',
-    `*Total:* $${to2(nota.total)}   |   *Saldo:* $${to2(nota.saldo)}`,
+    ,
     nota.observaciones ? `\n*Notas:* ${nota.observaciones}` : '',
     '',
     `¡Gracias por tu preferencia! — ${STORE_NAME}`
@@ -1048,9 +1048,9 @@ function buildRawbtText(nota, det, clienteNombre){
   });
   out += monoLine();
   out += `Total: $${to2(nota.total)}\n`;
-  out += `Saldo: $${to2(nota.saldo)}\n`;
+
   if(nota.observaciones){ out += monoLine(); out += `Notas:\n${nota.observaciones}\n`; }
-  out += '\n¡Gracias por su preferencia!\n\n\n';
+  out += '\n¡Gracias por su preferencia! !Carnes y Visceras del Centro tu mejor aliado!\n\n\n';
   return out;
 }
 
