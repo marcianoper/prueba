@@ -36,7 +36,7 @@
     .btn-sm{padding:4px 8px;font-size:12px}
     .cell-editing input{width:100%; padding:6px; font-size:14px}
 
-    /* ====== IMPRESIÓN GENERAL (A4 y reportes) ====== */
+    /* ====== IMPRESIÓN GENERAL ====== */
     @media print{
       body *{visibility:hidden}
       #printArea, #printArea *{visibility:visible}
@@ -47,7 +47,7 @@
       #printArea:not(.ticket80) table{width:100%; border-collapse:collapse}
       #printArea:not(.ticket80) th, #printArea:not(.ticket80) td{border:1px solid #aaa; padding:4px; font-size:12px}
 
-      /* Ticket 80mm cuando se use printArea.ticket80 (lo dejamos por si después lo quieres ocupar) */
+      /* Ticket 80mm cuando se use printArea (no lo usamos ahora para nota 80, pero lo dejamos) */
       #printArea.ticket80{width:80mm; padding:2mm}
       #printArea.ticket80 .tk-header{ text-align:center; font-size:12px; line-height:1.2; margin-bottom:6px }
       #printArea.ticket80 .tk-header .store{ font-weight:700; font-size:14px }
@@ -267,7 +267,6 @@ function todayISO(){ const d=new Date(); const z=d.getTimezoneOffset()*60000; re
 function addDays(dateISO, days){ const d=new Date(dateISO); d.setDate(d.getDate()+Number(days||0)); const z=d.getTimezoneOffset()*60000; return new Date(d - z).toISOString().slice(0,10); }
 function genFolio(){ const d=new Date(); const pad=n=>String(n).padStart(2,'0'); return `CVC-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`; }
 function csvEscape(s){ return '"'+String(s).replaceAll('"','""')+'"'; }
-
 const isAndroid = () => /Android/i.test(navigator.userAgent);
 
 /* ========================= STATE ========================= */
@@ -336,7 +335,12 @@ notaObs.addEventListener('blur', saveNotaObs);
 
 $$('.btnInc').forEach(b=> b.addEventListener('click', ()=>{ pKg.value=(Number(pKg.value||0)+Number(b.dataset.d||0)).toFixed(2); markDirty(); }));
 
-document.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && document.activeElement && ['pProducto','pKg','pPrecio'].includes(document.activeElement.id)){ e.preventDefault(); addPartida(); }});
+document.addEventListener('keydown', (e)=>{ 
+  if(e.key==='Enter' && document.activeElement && ['pProducto','pKg','pPrecio'].includes(document.activeElement.id)){ 
+    e.preventDefault(); 
+    addPartida(); 
+  }
+});
 
 // Botones
 $('#btnContinuar').addEventListener('click', continuarNota);
@@ -412,19 +416,38 @@ function applySlotUI(s){
 
 /* ========================= CATÁLOGOS ========================= */
 async function loadClientes(){
-  const { data, error } = await supabase.from('clientes').select('id, nombre, telefono').order('nombre');
+  const { data, error } = await supabase
+    .from('clientes')
+    .select('id, nombre, telefono')
+    .order('nombre');
   if(error){ console.error(error); alert('No se pudieron cargar CLIENTES'); return; }
   CLIENTES = data || [];
-  cliSelect.innerHTML = (CLIENTES||[]).map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  cliSelect.innerHTML = (CLIENTES||[])
+    .map(c=>`<option value="${c.id}">${c.nombre}</option>`)
+    .join('');
 }
 async function loadProductos(){
-  let { data, error } = await supabase.from('productos').select('id,nombre,precio_kg,activo').eq('activo', true).order('nombre');
-  if(error){ ({ data } = await supabase.from('productos').select('id,nombre,precio_kg').order('nombre')); }
+  let { data, error } = await supabase
+    .from('productos')
+    .select('id,nombre,precio_kg,activo')
+    .eq('activo', true)
+    .order('nombre');
+  if(error){
+    ({ data } = await supabase
+      .from('productos')
+      .select('id,nombre,precio_kg')
+      .order('nombre'));
+  }
   PRODUCTOS = data || [];
   PRECIOS = Object.fromEntries(PRODUCTOS.map(p=>[p.nombre, Number(p.precio_kg||0).toFixed(2)]));
-  $('#catProductos').innerHTML = PRODUCTOS.map(p=>`<option value="${p.nombre}"></option>`).join('');
+  $('#catProductos').innerHTML = PRODUCTOS
+    .map(p=>`<option value="${p.nombre}"></option>`)
+    .join('');
 }
-function prefPrecio(){ const n=(pProducto.value||'').trim(); if(PRECIOS[n]) pPrecio.value=PRECIOS[n]; }
+function prefPrecio(){ 
+  const n=(pProducto.value||'').trim(); 
+  if(PRECIOS[n]) pPrecio.value=PRECIOS[n]; 
+}
 
 /* ========================= GUARDAR TELÉFONO ========================= */
 async function saveClientPhone(){
@@ -433,14 +456,16 @@ async function saveClientPhone(){
   const val = (cliTelefono.value||'').trim() || null;
   try{
     await supabase.from('clientes').update({ telefono: val }).eq('id', cid);
-    const c = getClient(cid); if(c) c.telefono = val;
+    const c = getClient(cid); 
+    if(c) c.telefono = val;
     slotState[slotActive].telefono = val;
   }catch(e){ console.error(e); }
 }
 
 /* ========================= GUARDAR OBSERVACIONES ========================= */
 async function saveNotaObs(){
-  const n = activeNota(); if(!n) return;
+  const n = activeNota(); 
+  if(!n) return;
   const val = (notaObs.value||'').trim() || null;
   try{
     await supabase.from('notas_credito').update({ observaciones: val }).eq('id', n.id);
@@ -456,12 +481,25 @@ async function continuarNota(){
 
   let { data: nota } = await supabase
     .from('notas_credito').select('*')
-    .eq('cliente_id', cliente_id).eq('fecha', fecha).eq('estado','abierta')
-    .order('created_at', {ascending:false}).limit(1).maybeSingle();
+    .eq('cliente_id', cliente_id)
+    .eq('fecha', fecha)
+    .eq('estado','abierta')
+    .order('created_at', {ascending:false})
+    .limit(1)
+    .maybeSingle();
 
   if(!nota){
     const folio = genFolio();
-    const payload = { id: crypto.randomUUID(), folio, fecha, vence:(notaVence.value||addDays(fecha, notaDias.value)), cliente_id, total:0, saldo:0, observaciones: (notaObs.value||null) };
+    const payload = { 
+      id: crypto.randomUUID(), 
+      folio, 
+      fecha, 
+      vence:(notaVence.value||addDays(fecha, notaDias.value)), 
+      cliente_id, 
+      total:0, 
+      saldo:0, 
+      observaciones: (notaObs.value||null) 
+    };
     const { error } = await supabase.from('notas_credito').insert(payload);
     if(error){ console.error(error); return alert('No se pudo crear la nota'); }
     nota = payload;
@@ -473,32 +511,49 @@ async function continuarNota(){
 
 /* ========================= NUEVO CLIENTE ========================= */
 async function addCliente(){
-  const nombre = prompt('Nombre del cliente:'); if(!nombre || !nombre.trim()) return;
+  const nombre = prompt('Nombre del cliente:'); 
+  if(!nombre || !nombre.trim()) return;
   const telefono = prompt('Teléfono (WhatsApp, opcional):') || null;
   const row = { id: crypto.randomUUID(), nombre: nombre.trim(), telefono: telefono||null };
   const { error } = await supabase.from('clientes').insert(row);
   if(error){ console.error(error); return alert('No se pudo crear el cliente (RLS/SQL)'); }
   await loadClientes();
   const c = CLIENTES.find(x=>x.nombre===nombre.trim());
-  if(c){ slotState[slotActive].cliente_id=c.id; slotState[slotActive].telefono=c.telefono||null; applySlotUI(slotActive); }
+  if(c){ 
+    slotState[slotActive].cliente_id=c.id; 
+    slotState[slotActive].telefono=c.telefono||null; 
+    applySlotUI(slotActive); 
+  }
   alert('✅ Cliente creado');
 }
 
 /* ========================= INSERTAR PARTIDA ========================= */
 async function addPartida(){
-  const nota = activeNota(); if(!nota) return alert('Primero crea/continúa una nota en el slot activo');
-  const prod=(pProducto.value||'').trim(), cant=Number(pKg.value||0), precio=Number(pPrecio.value||0);
+  const nota = activeNota(); 
+  if(!nota) return alert('Primero crea/continúa una nota en el slot activo');
+  const prod=(pProducto.value||'').trim(), 
+        cant=Number(pKg.value||0), 
+        precio=Number(pPrecio.value||0);
   if(!prod || cant<=0) return alert('Producto y kilos son obligatorios');
-  const { error } = await supabase.from('notas_detalle').insert({ id: crypto.randomUUID(), nota_id: nota.id, producto: prod, cantidad: cant, precio, importe: cant*precio });
+  const { error } = await supabase.from('notas_detalle')
+    .insert({ id: crypto.randomUUID(), nota_id: nota.id, producto: prod, cantidad: cant, precio, importe: cant*precio });
   if(error){ console.error(error); return alert('No se pudo agregar la partida'); }
-  pProducto.value=''; pKg.value='1'; prefPrecio();
+  pProducto.value=''; 
+  pKg.value='1'; 
+  prefPrecio();
   clearDirty();
   await recalcNota(nota.id);
 }
 async function recalcNota(nota_id){
   let total=0;
-  try{ const { data }=await supabase.rpc('sum_importe_nota',{p_nota_id:nota_id}); total=Number(data?.total||0); }
-  catch{ const { data }=await supabase.from('notas_detalle').select('importe').eq('nota_id', nota_id); total=(data||[]).reduce((a,b)=>a+Number(b.importe||0),0); }
+  try{ 
+    const { data }=await supabase.rpc('sum_importe_nota',{p_nota_id:nota_id}); 
+    total=Number(data?.total||0); 
+  }
+  catch{ 
+    const { data }=await supabase.from('notas_detalle').select('importe').eq('nota_id', nota_id); 
+    total=(data||[]).reduce((a,b)=>a+Number(b.importe||0),0); 
+  }
   await supabase.from('notas_credito').update({ total, saldo: total }).eq('id', nota_id);
   await renderVista();
   await loadBandeja();
@@ -508,14 +563,28 @@ async function recalcNota(nota_id){
 async function renderVista(){
   const n = activeNota();
   if(!n){
-    vFolio.textContent='—'; vEstado.textContent='—'; vSaldo.textContent='0.00';
-    vistaBody.innerHTML=''; vistaTotal.textContent='$0.00'; subtotalBox.textContent='Subtotal: $0.00';
+    vFolio.textContent='—'; 
+    vEstado.textContent='—'; 
+    vSaldo.textContent='0.00';
+    vistaBody.innerHTML=''; 
+    vistaTotal.textContent='$0.00'; 
+    subtotalBox.textContent='Subtotal: $0.00';
     notaObs.value='';
-    refreshNotaInfo(); return;
+    refreshNotaInfo(); 
+    return;
   }
 
-  const { data: nota } = await supabase.from('notas_credito').select('*').eq('id', n.id).single();
-  const { data: det }  = await supabase.from('notas_detalle').select('*').eq('nota_id', n.id).order('created_at');
+  const { data: nota } = await supabase
+    .from('notas_credito')
+    .select('*')
+    .eq('id', n.id)
+    .single();
+
+  const { data: det }  = await supabase
+    .from('notas_detalle')
+    .select('*')
+    .eq('nota_id', n.id)
+    .order('created_at');
 
   if(slotActive==='A') notaA=nota; else notaB=nota;
   slotState[slotActive].cliente_id = nota.cliente_id;
@@ -523,7 +592,9 @@ async function renderVista(){
   slotState[slotActive].telefono = c ? (c.telefono || null) : slotState[slotActive].telefono;
 
   applySlotUI(slotActive);
-  vFolio.textContent = nota.folio; vEstado.textContent = nota.estado||'abierta'; vSaldo.textContent = to2(nota.saldo||0);
+  vFolio.textContent = nota.folio; 
+  vEstado.textContent = nota.estado||'abierta'; 
+  vSaldo.textContent = to2(nota.saldo||0);
   notaObs.value = nota.observaciones || '';
 
   vistaBody.innerHTML = (det||[]).map(d=>`
@@ -558,10 +629,14 @@ function makeCellEditable(td, nota_id){
 
   td.classList.add('cell-editing');
   const input = document.createElement('input');
-  input.type = 'number'; input.step = '0.01'; input.min  = '0';
+  input.type = 'number'; 
+  input.step = '0.01'; 
+  input.min  = '0';
   input.value = oldV.toFixed(2);
-  td.innerHTML = ''; td.appendChild(input);
-  input.focus(); input.select();
+  td.innerHTML = ''; 
+  td.appendChild(input);
+  input.focus(); 
+  input.select();
   markDirty();
 
   const commit = async(save)=>{
@@ -570,24 +645,36 @@ function makeCellEditable(td, nota_id){
     td.innerHTML = field==='precio' ? `$${to2(save?newV:oldV)}` : to2(save?newV:oldV);
     if(!save){ clearDirty(); return; }
 
-    const { data: cur } = await supabase.from('notas_detalle').select('cantidad, precio').eq('id', detId).single();
+    const { data: cur } = await supabase
+      .from('notas_detalle')
+      .select('cantidad, precio')
+      .eq('id', detId)
+      .single();
+
     const cantidad = field==='cantidad' ? newV : Number(cur?.cantidad||0);
     const precio   = field==='precio'   ? newV : Number(cur?.precio||0);
     const importe  = cantidad * precio;
 
-    await supabase.from('notas_detalle').update({ cantidad, precio, importe }).eq('id', detId);
+    await supabase
+      .from('notas_detalle')
+      .update({ cantidad, precio, importe })
+      .eq('id', detId);
     clearDirty();
     await recalcNota(nota_id);
   };
 
-  input.addEventListener('keydown', e=>{ if(e.key==='Enter') commit(true); if(e.key==='Escape') commit(false); });
+  input.addEventListener('keydown', e=>{ 
+    if(e.key==='Enter') commit(true); 
+    if(e.key==='Escape') commit(false); 
+  });
   input.addEventListener('blur', ()=> commit(true));
 }
 
 /* ===== Borrar partida ===== */
 async function deleteDetalle(detId){
   if(!confirm('¿Borrar esta partida?')) return;
-  const n = activeNota(); if(!n) return;
+  const n = activeNota(); 
+  if(!n) return;
   await supabase.from('notas_detalle').delete().eq('id', detId);
   await recalcNota(n.id);
 }
@@ -598,10 +685,16 @@ function subRealtime(slot){
   if(!nota) return;
   if(slot==='A' && chA){ supabase.removeChannel(chA); chA=null; }
   if(slot==='B' && chB){ supabase.removeChannel(chB); chB=null; }
+
   const ch = supabase.channel(`rt-${slot}-${nota.id}`)
-    .on('postgres_changes', {event:'*',schema:'public',table:'notas_detalle',filter:`nota_id=eq.${nota.id}`}, ()=>{ if(slot===slotActive) renderVista(); })
-    .on('postgres_changes', {event:'update',schema:'public',table:'notas_credito',filter:`id=eq.${nota.id}`}, ()=>{ if(slot===slotActive) renderVista(); })
+    .on('postgres_changes', {event:'*',schema:'public',table:'notas_detalle',filter:`nota_id=eq.${nota.id}`}, ()=>{
+      if(slot===slotActive) renderVista();
+    })
+    .on('postgres_changes', {event:'update',schema:'public',table:'notas_credito',filter:`id=eq.${nota.id}`}, ()=>{
+      if(slot===slotActive) renderVista();
+    })
     .subscribe();
+
   if(slot==='A') chA=ch; else chB=ch;
 }
 
@@ -611,7 +704,9 @@ async function loadBandeja(){
   const { data } = await supabase
     .from('notas_credito')
     .select('id,folio,saldo,estado,clientes(nombre),cliente_id')
-    .eq('fecha', f).eq('estado','abierta').order('created_at');
+    .eq('fecha', f)
+    .eq('estado','abierta')
+    .order('created_at');
   const rows=data||[];
   bandejaBody.innerHTML = rows.map(r=>`
     <tr>
@@ -623,18 +718,22 @@ async function loadBandeja(){
         <button class="btn btn-ghost" data-usea="${r.id}" data-cid="${r.cliente_id}">Usar en A</button>
         <button class="btn btn-ghost" data-useb="${r.id}" data-cid="${r.cliente_id}">Usar en B</button>
         <button class="btn btn-ghost" data-a4="${r.id}">A4</button>
-        <button class="btn btn-ghost" data-80="${r.id}">80mm</button>
+        <button class="btn btn-ghost" data-id80="${r.id}">80mm</button>
         <button class="btn btn-ghost" data-wa="${r.id}">WA</button>
       </td>
     </tr>`).join('');
   bandejaBody.querySelectorAll('[data-usea]').forEach(b=> b.onclick = ()=> cargarEnSlot('A', b.dataset.usea, b.dataset.cid));
   bandejaBody.querySelectorAll('[data-useb]').forEach(b=> b.onclick = ()=> cargarEnSlot('B', b.dataset.useb, b.dataset.cid));
   bandejaBody.querySelectorAll('[data-a4]').forEach(b=> b.onclick = ()=> imprimirNotaA4(b.dataset.a4));
-  bandejaBody.querySelectorAll('[data-80]').forEach(b=> b.onclick = ()=> imprimirNota80mm(b.dataset['80']));
+  bandejaBody.querySelectorAll('[data-id80]').forEach(b=> b.onclick = ()=> imprimirNota80mm(b.dataset.id80));
   bandejaBody.querySelectorAll('[data-wa]').forEach(b=> b.onclick = ()=> waNota(b.dataset.wa));
 }
 async function cargarEnSlot(slot, nota_id, cliente_id){
-  const { data: nota } = await supabase.from('notas_credito').select('*').eq('id', nota_id).single();
+  const { data: nota } = await supabase
+    .from('notas_credito')
+    .select('*')
+    .eq('id', nota_id)
+    .single();
   if(!nota) return;
   setSlotNota(slot, nota);
   slotState[slot].cliente_id = cliente_id || nota.cliente_id;
@@ -661,22 +760,46 @@ function plantillaWA(nota, det, clienteNombre){
   ].join('\n');
 }
 async function waNota(nota_id){
-  const { data: nota } = await supabase.from('notas_credito').select('*').eq('id', nota_id).single();
-  const { data: det }  = await supabase.from('notas_detalle').select('*').eq('nota_id', nota_id).order('created_at');
+  const { data: nota } = await supabase
+    .from('notas_credito')
+    .select('*')
+    .eq('id', nota_id)
+    .single();
+
+  const { data: det }  = await supabase
+    .from('notas_detalle')
+    .select('*')
+    .eq('nota_id', nota_id)
+    .order('created_at');
+
   const nombre = getClientName(nota.cliente_id);
   let phone = slotState[slotActive].telefono;
   if(!phone || (activeNota()?.cliente_id!==nota.cliente_id)){
-    const c = getClient(nota.cliente_id); phone = c ? (c.telefono||'') : '';
+    const c = getClient(nota.cliente_id); 
+    phone = c ? (c.telefono||'') : '';
   }
   const msg = plantillaWA(nota, det||[], nombre);
   const u=`https://wa.me/?text=${encodeURIComponent(msg)}`;
   const u2=`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-  const w=window.open(u,"_blank"); setTimeout(()=>{ if(!w||w.closed) window.open(u2,"_blank"); }, 600);
+  const w=window.open(u,"_blank"); 
+  setTimeout(()=>{ if(!w||w.closed) window.open(u2,"_blank"); }, 600);
 }
 async function imprimirNotaA4(nota_id){
-  const { data: nota } = await supabase.from('notas_credito').select('*, clientes(nombre)').eq('id', nota_id).single();
-  const { data: det }  = await supabase.from('notas_detalle').select('*').eq('nota_id', nota_id).order('created_at');
-  const el = $('#printArea'); el.style.display='block'; el.classList.remove('ticket80');
+  const { data: nota } = await supabase
+    .from('notas_credito')
+    .select('*, clientes(nombre)')
+    .eq('id', nota_id)
+    .single();
+
+  const { data: det }  = await supabase
+    .from('notas_detalle')
+    .select('*')
+    .eq('nota_id', nota_id)
+    .order('created_at');
+
+  const el = $('#printArea'); 
+  el.style.display='block'; 
+  el.classList.remove('ticket80');
   el.innerHTML = `
     <h3>Nota — ${nota.clientes?.nombre||''}</h3>
     <div><b>Folio:</b> ${nota.folio} &nbsp; <b>Fecha:</b> ${nota.fecha} &nbsp; <b>Vence:</b> ${nota.vence||''}</div>
@@ -687,12 +810,14 @@ async function imprimirNotaA4(nota_id){
       <thead><tr><th>Fecha/Hora</th><th>Producto</th><th>Kg</th><th>P.Unit</th><th>Importe</th></tr></thead>
       <tbody>${(det||[]).map(d=>`<tr><td>${new Date(d.created_at).toLocaleString()}</td><td>${d.producto}</td><td>${to2(d.cantidad)}</td><td>$${to2(d.precio)}</td><td>$${to2(d.importe)}</td></tr>`).join('')}</tbody>
     </table>`;
-  window.print(); setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 500);
+  window.print(); 
+  setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 500);
 }
 
-/* ====== NUEVO Ticket 80mm tipo CÓDIGO A (ventana aparte) ====== */
+/* ====== Ticket 80mm por DIÁLOGO DEL SISTEMA (tipo código A, en ventana nueva) ====== */
 async function imprimirNota80mm(nota_id){
   await saveNotaObs();
+
   const { data: nota } = await supabase
     .from('notas_credito')
     .select('*, clientes(nombre)')
@@ -816,11 +941,6 @@ async function imprimirNota80mm(nota_id){
         ¡Gracias por su preferencia!
       </div>
     </div>
-    <script>
-      window.onload = function(){
-        window.print();
-      };
-    </script>
   </body>
   </html>
   `;
@@ -829,6 +949,8 @@ async function imprimirNota80mm(nota_id){
   win.document.open();
   win.document.write(html);
   win.document.close();
+  win.focus();
+  setTimeout(()=>{ win.print(); }, 300);
 }
 
 /* ====== Ticket 80mm por RAWBT (Android, sin diálogo) ====== */
@@ -862,8 +984,16 @@ function buildRawbtText(nota, det, clienteNombre){
 
 async function imprimirNota80mmRawBT(nota_id){
   await saveNotaObs();
-  const { data: nota } = await supabase.from('notas_credito').select('*, clientes(nombre)').eq('id', nota_id).single();
-  const { data: det }  = await supabase.from('notas_detalle').select('*').eq('nota_id', nota_id).order('created_at');
+  const { data: nota } = await supabase
+    .from('notas_credito')
+    .select('*, clientes(nombre)')
+    .eq('id', nota_id)
+    .single();
+  const { data: det }  = await supabase
+    .from('notas_detalle')
+    .select('*')
+    .eq('nota_id', nota_id)
+    .order('created_at');
   const clienteNombre = nota.clientes?.nombre || '';
 
   const text = buildRawbtText(nota, det||[], clienteNombre);
@@ -914,7 +1044,9 @@ async function imprimirDiaA4(){
     byClient[cliente].items.push({ folio:n?.folio, ...d });
   });
 
-  const el=$('#printArea'); el.style.display='block'; el.classList.remove('ticket80');
+  const el=$('#printArea'); 
+  el.style.display='block'; 
+  el.classList.remove('ticket80');
   let html=`<h3>Reporte diario — ${f}</h3>`;
   Object.entries(byClient).forEach(([cliente, pack])=>{
     const totalCliente=(pack.items||[]).reduce((a,b)=>a+Number(b.importe||0),0);
@@ -935,33 +1067,58 @@ async function imprimirDiaA4(){
     </div>`;
   });
   el.innerHTML=html;
-  window.print(); setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 500);
+  window.print(); 
+  setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 500);
 
   const totalDia=(det||[]).reduce((a,b)=>a+Number(b.importe||0),0);
   diaResumen.textContent=`Clientes: ${Object.keys(byClient).length} · Total día: $${to2(totalDia)}`;
 }
 async function exportDiaCSV(){
   const f = diaFecha.value || todayISO();
-  const { data: notas } = await supabase.from('notas_credito').select('id, folio, fecha, clientes(nombre)').eq('fecha', f);
+  const { data: notas } = await supabase
+    .from('notas_credito')
+    .select('id, folio, fecha, clientes(nombre)')
+    .eq('fecha', f);
+
   const ids=(notas||[]).map(n=>n.id);
   if(!ids.length) return alert('No hay notas ese día');
-  const { data: det } = await supabase.from('notas_detalle').select('nota_id, producto, cantidad, precio, importe, created_at').in('nota_id', ids);
+
+  const { data: det } = await supabase
+    .from('notas_detalle')
+    .select('nota_id, producto, cantidad, precio, importe, created_at')
+    .in('nota_id', ids);
 
   const head=['Cliente','Folio','Fecha','Hora','Producto','Kg','Precio','Importe'];
   const rows=(det||[]).map(d=>{
     const n=(notas||[]).find(x=>x.id===d.nota_id) || {};
-    return [(n.clientes?.nombre||''), n.folio, f, new Date(d.created_at).toLocaleTimeString(), d.producto, to2(d.cantidad), to2(d.precio), to2(d.importe)];
+    return [
+      (n.clientes?.nombre||''), 
+      n.folio, 
+      f, 
+      new Date(d.created_at).toLocaleTimeString(), 
+      d.producto, 
+      to2(d.cantidad), 
+      to2(d.precio), 
+      to2(d.importe)
+    ];
   });
   const csv=[head, ...rows].map(r=> r.map(csvEscape).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`reporte_${f}.csv`; a.click(); URL.revokeObjectURL(url);
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); 
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); 
+  a.href=url; 
+  a.download=`reporte_${f}.csv`; 
+  a.click(); 
+  URL.revokeObjectURL(url);
 }
 
 /* ========================= CERRAR ========================= */
 async function cerrarNota(){
-  const n=activeNota(); if(!n) return alert('Sin nota');
+  const n=activeNota(); 
+  if(!n) return alert('Sin nota');
   await supabase.from('notas_credito').update({estado:'cerrada'}).eq('id', n.id);
-  await renderVista(); await loadBandeja();
+  await renderVista(); 
+  await loadBandeja();
   alert('✅ Nota cerrada');
 }
 </script>
