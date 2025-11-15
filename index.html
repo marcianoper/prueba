@@ -47,7 +47,7 @@
       #printArea:not(.ticket80) table{width:100%; border-collapse:collapse}
       #printArea:not(.ticket80) th, #printArea:not(.ticket80) td{border:1px solid #aaa; padding:4px; font-size:12px}
 
-      /* Ticket 80mm cuando se use printArea (no lo usamos ahora para nota 80, pero lo dejamos) */
+      /* Ticket 80mm cuando se use printArea (lo dejamos por si lo ocupas) */
       #printArea.ticket80{width:80mm; padding:2mm}
       #printArea.ticket80 .tk-header{ text-align:center; font-size:12px; line-height:1.2; margin-bottom:6px }
       #printArea.ticket80 .tk-header .store{ font-weight:700; font-size:14px }
@@ -143,10 +143,10 @@
       <div class="row-3">
         <div>
           <label>Producto</label>
-          <input id="pProducto" list="catProductos" placeholder="Ej. Panza de Res" />
+          <input id="pProducto" list="catProductos" placeholder="Ej. Cabeza 160 kg 10 pzas" />
         </div>
         <div>
-          <label>Kilos</label>
+          <label>Cantidad (kg / pzas)</label>
           <div class="flex" style="gap:6px; align-items:center">
             <input id="pKg" type="number" min="0" step="0.01" value="1" />
             <div class="flex">
@@ -157,7 +157,7 @@
           </div>
         </div>
         <div>
-          <label>Precio/kg</label>
+          <label>Precio (interno)</label>
           <input id="pPrecio" type="number" min="0" step="0.01" value="0" />
         </div>
       </div>
@@ -182,14 +182,13 @@
           <tr>
             <th>Fecha/Hora</th>
             <th>Producto</th>
-            <th>Kg</th>
-            <th>P.Unit</th>
+            <th>Cant</th>
             <th>Importe</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="vistaBody"></tbody>
-        <tfoot><tr><td colspan="5" style="text-align:right">Total</td><td id="vistaTotal">$0.00</td></tr></tfoot>
+        <tfoot><tr><td colspan="4" style="text-align:right">Total</td><td id="vistaTotal">$0.00</td></tr></tfoot>
       </table>
     </section>
   </div>
@@ -534,7 +533,7 @@ async function addPartida(){
   const prod=(pProducto.value||'').trim(), 
         cant=Number(pKg.value||0), 
         precio=Number(pPrecio.value||0);
-  if(!prod || cant<=0) return alert('Producto y kilos son obligatorios');
+  if(!prod || cant<=0) return alert('Producto y cantidad son obligatorios');
   const { error } = await supabase.from('notas_detalle')
     .insert({ id: crypto.randomUUID(), nota_id: nota.id, producto: prod, cantidad: cant, precio, importe: cant*precio });
   if(error){ console.error(error); return alert('No se pudo agregar la partida'); }
@@ -602,8 +601,7 @@ async function renderVista(){
       <td>${new Date(d.created_at).toLocaleString()}</td>
       <td>${d.producto}</td>
       <td class="editable" data-field="cantidad">${to2(d.cantidad)}</td>
-      <td class="editable" data-field="precio">$${to2(d.precio)}</td>
-      <td>$${to2(d.importe)}</td>
+      <td class="editable" data-field="precio">$${to2(d.importe)}</td>
       <td><button class="btn btn-ghost btn-sm" data-del="${d.id}" title="Borrar">🗑️</button></td>
     </tr>
   `).join('');
@@ -744,7 +742,8 @@ async function cargarEnSlot(slot, nota_id, cliente_id){
 
 /* ========================= WHATSAPP / A4 / CSV / 80mm ========================= */
 function plantillaWA(nota, det, clienteNombre){
-  const items = (det||[]).map(d=>`• ${d.producto} ${to2(d.cantidad)}kg × $${to2(d.precio)} = $${to2(d.importe)}`).join('\n');
+  // Solo mostramos cantidad e importe, sin precio/kg
+  const items = (det||[]).map(d=>`• ${d.producto}  Cant: ${to2(d.cantidad)}  Importe: $${to2(d.importe)}`).join('\n');
   return [
     `Hola *${clienteNombre}*,`,
     `te compartimos el detalle de tu cuenta del día:\n`,
@@ -807,14 +806,29 @@ async function imprimirNotaA4(nota_id){
     ${nota.observaciones ? `<div style="margin-top:6mm"><b>Notas del cliente:</b><br>${(nota.observaciones||'').replace(/\n/g,'<br>')}</div>` : ''}
     <br/>
     <table>
-      <thead><tr><th>Fecha/Hora</th><th>Producto</th><th>Kg</th><th>P.Unit</th><th>Importe</th></tr></thead>
-      <tbody>${(det||[]).map(d=>`<tr><td>${new Date(d.created_at).toLocaleString()}</td><td>${d.producto}</td><td>${to2(d.cantidad)}</td><td>$${to2(d.precio)}</td><td>$${to2(d.importe)}</td></tr>`).join('')}</tbody>
+      <thead>
+        <tr>
+          <th>Fecha/Hora</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Importe</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${(det||[]).map(d=>`
+          <tr>
+            <td>${new Date(d.created_at).toLocaleString()}</td>
+            <td>${d.producto}</td>
+            <td>${to2(d.cantidad)}</td>
+            <td>$${to2(d.importe)}</td>
+          </tr>`).join('')}
+      </tbody>
     </table>`;
   window.print(); 
   setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 500);
 }
 
-/* ====== Ticket 80mm por DIÁLOGO DEL SISTEMA (tipo código A, en ventana nueva) ====== */
+/* ====== Ticket 80mm por DIÁLOGO DEL SISTEMA (en ventana nueva) ====== */
 async function imprimirNota80mm(nota_id){
   await saveNotaObs();
 
@@ -837,7 +851,6 @@ async function imprimirNota80mm(nota_id){
     <tr>
       <td>${d.producto}</td>
       <td style="text-align:right">${to2(d.cantidad)}</td>
-      <td>${to2(d.precio)}</td>
       <td style="text-align:right">${to2(d.importe)}</td>
     </tr>
   `).join('');
@@ -918,8 +931,7 @@ async function imprimirNota80mm(nota_id){
         <thead>
           <tr>
             <th>Prod</th>
-            <th class="right">Kg</th>
-            <th>P.U.</th>
+            <th class="right">Cant</th>
             <th class="right">Imp.</th>
           </tr>
         </thead>
@@ -928,11 +940,11 @@ async function imprimirNota80mm(nota_id){
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="3">Total</td>
+            <td colspan="2">Total</td>
             <td class="right">${to2(nota.total)}</td>
           </tr>
           <tr>
-            <td colspan="3">Saldo</td>
+            <td colspan="2">Saldo</td>
             <td class="right">${to2(nota.saldo)}</td>
           </tr>
         </tfoot>
@@ -970,7 +982,7 @@ function buildRawbtText(nota, det, clienteNombre){
   out += monoLine();
   (det||[]).forEach(d=>{
     out += `${left(d.producto,32)}\n`;
-    const izq = `${to2(d.cantidad)}kg x $${to2(d.precio)}`;
+    const izq = `Cant: ${to2(d.cantidad)}`;
     const der = `$${to2(d.importe)}`;
     out += `${left(izq,20)}${right(der,12)}\n`;
   });
@@ -1052,7 +1064,7 @@ async function imprimirDiaA4(){
     const totalCliente=(pack.items||[]).reduce((a,b)=>a+Number(b.importe||0),0);
     html += `<div class="group"><h4>${cliente} — Total: $${to2(totalCliente)}</h4>
       <table>
-        <thead><tr><th>Folio</th><th>Hora</th><th>Producto</th><th>Kg</th><th>P.Unit</th><th>Importe</th></tr></thead>
+        <thead><tr><th>Folio</th><th>Hora</th><th>Producto</th><th>Cant</th><th>P.Unit</th><th>Importe</th></tr></thead>
         <tbody>
           ${(pack.items||[]).map(d=>`<tr>
             <td>${d.folio||''}</td>
@@ -1088,7 +1100,7 @@ async function exportDiaCSV(){
     .select('nota_id, producto, cantidad, precio, importe, created_at')
     .in('nota_id', ids);
 
-  const head=['Cliente','Folio','Fecha','Hora','Producto','Kg','Precio','Importe'];
+  const head=['Cliente','Folio','Fecha','Hora','Producto','Cant','Precio','Importe'];
   const rows=(det||[]).map(d=>{
     const n=(notas||[]).find(x=>x.id===d.nota_id) || {};
     return [
@@ -1124,3 +1136,4 @@ async function cerrarNota(){
 </script>
 </body>
 </html>
+
