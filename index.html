@@ -903,7 +903,6 @@ async function imprimirNota80mm(nota_id){
     <tr>
       <td>${d.producto}</td>
       <td style="text-align:right">${cantidadTexto}</td>
-      <td>${to2(d.precio)}</td>
       <td style="text-align:right">${to2(d.importe)}</td>
     </tr>
   `;
@@ -986,8 +985,6 @@ async function imprimirNota80mm(nota_id){
           <tr>
             <th>Prod</th>
             <th class="right">Kg/Pzas</th>
-            <th>P.U.</th>
-            <th class="right">Imp.</th>
           </tr>
         </thead>
         <tbody>
