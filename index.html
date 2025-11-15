@@ -872,8 +872,6 @@ async function imprimirNotaA4(nota_id){
         <td>${d.producto}</td>
         <td>${to2(d.cantidad)}</td>
         <td>${d.piezas != null ? d.piezas : ''}</td>
-        <td>$${to2(d.precio)}</td>
-        <td>$${to2(d.importe)}</td>
       </tr>`).join('')}</tbody>
     </table>`;
   window.print(); 
