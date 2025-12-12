@@ -3,16 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <title>Hoja de Viaje VDC 360°</title>
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    const supabaseUrl = 'https://rcegikeiaxptolrduguc.supabase.co'
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8'
-    const supabase = createClient(supabaseUrl, supabaseKey)
+  <!-- Supabase UMD (no módulo) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      padding: 30px;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 {
+      color: #000;
+      font-size: 28px;
+    }
+    label {
+      display: block;
+      margin-top: 20px;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 5px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px 18px;
+      background-color: #198754;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #146c43;
+    }
+    #resultado-totales {
+      margin-top: 40px;
+      white-space: pre-line;
+      font-size: 18px;
+    }
+    .row-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .row-inline label {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hoja de Viaje VDC 360°</h1>
+
+    <label for="fecha">Fecha del viaje:</label>
+    <input type="date" id="fecha" />
+
+    <div style="margin-top: 20px;">
+      <button onclick="guardarViaje()">Guardar Viaje</button>
+      <button onclick="generarDocumento()">Generar Documento de Totales</button>
+    </div>
+
+    <!-- === PAPEL DE SEBO === -->
+    <div class="row-inline">
+      <label for="seboKg">Kilos de sebo (DIO SEBO):</label>
+      <input type="number" id="seboKg" step="0.01" min="0" placeholder="Ej. 15.00" />
+      <button onclick="imprimirSebo80mm()">Imprimir papel de sebo 80mm</button>
+    </div>
+
+    <div id="resultado-totales"></div>
+  </div>
+
+  <script>
+    // ===== 1. Conectar Supabase (modo no-módulo) =====
+    const supabaseUrl = 'https://rcegikeiaxptolrduguc.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    // ===== 2. Guardar viaje (inserta json en hoja_viaje) =====
     async function guardarViaje() {
-      const fecha = document.getElementById('fecha').value
+      const fecha = document.getElementById('fecha').value;
 
+      if (!fecha) {
+        alert("Selecciona la fecha del viaje");
+        return;
+      }
+
+      // Datos de ejemplo – aquí después meteremos lo real
       const datos = {
         "Teleco": [
           { kg: 15.8, pzas: 14 },
@@ -21,81 +109,90 @@
         "Cuajo": [
           { kg: 40.2, pzas: 40 }
         ]
-      }
+      };
 
       const { data, error } = await supabase
         .from('hoja_viaje')
-        .insert([{ fecha: fecha, resultados: datos }])
+        .insert([{ fecha: fecha, resultados: datos }]);
 
       if (error) {
-        alert("❌ Error al guardar viaje: " + error.message)
+        console.error(error);
+        alert("❌ Error al guardar viaje: " + error.message);
       } else {
-        alert("✅ Viaje guardado correctamente.")
+        alert("✅ Viaje guardado correctamente.");
       }
     }
 
+    // ===== 3. Generar documento de totales =====
     async function generarDocumento() {
-      const fecha = document.getElementById('fecha').value
-      const resultadoDiv = document.getElementById('resultado-totales')
-      resultadoDiv.innerHTML = "⏳ Cargando totales..."
+      const fecha = document.getElementById('fecha').value;
+      const resultadoDiv = document.getElementById('resultado-totales');
+      resultadoDiv.innerHTML = "⏳ Cargando totales...";
 
       if (!fecha) {
-        alert("Selecciona la fecha del viaje")
-        return
+        alert("Selecciona la fecha del viaje");
+        resultadoDiv.innerHTML = "";
+        return;
       }
 
       const { data, error } = await supabase
         .from('hoja_viaje')
         .select('resultados')
-        .eq('fecha', fecha)
+        .eq('fecha', fecha);
 
-      if (error || !data || data.length === 0) {
-        resultadoDiv.innerHTML = "❌ No se encontraron registros para esa fecha."
-        return
+      if (error) {
+        console.error(error);
+        resultadoDiv.innerHTML = "❌ Error al leer datos: " + error.message;
+        return;
       }
 
-      let totales = {}
+      if (!data || data.length === 0) {
+        resultadoDiv.innerHTML = "❌ No se encontraron registros para esa fecha.";
+        return;
+      }
+
+      let totales = {};
 
       data.forEach(entry => {
-        const res = entry.resultados
+        const res = entry.resultados || {};
         Object.keys(res).forEach(prod => {
           res[prod].forEach(p => {
-            if (!totales[prod]) totales[prod] = { kg: 0, pzas: 0 }
-            totales[prod].kg += p.kg
-            totales[prod].pzas += p.pzas
-          })
-        })
-      })
+            if (!totales[prod]) totales[prod] = { kg: 0, pzas: 0 };
+            totales[prod].kg += Number(p.kg) || 0;
+            totales[prod].pzas += Number(p.pzas) || 0;
+          });
+        });
+      });
 
-      let docText = `📄 TOTALES DEL DÍA ${fecha}\n\n`
+      let docText = `📄 TOTALES DEL DÍA ${fecha}\n\n`;
       Object.entries(totales).forEach(([prod, datos]) => {
-        docText += `🟢 ${prod} → ${datos.kg.toFixed(2)} kg | ${datos.pzas} piezas\n`
-      })
+        docText += `🟢 ${prod} → ${datos.kg.toFixed(2)} kg | ${datos.pzas} piezas\n`;
+      });
 
-      resultadoDiv.innerHTML = docText
+      resultadoDiv.innerHTML = docText;
     }
 
-    // ========= PAPEL DE SEBO (80mm) =========
+    // ===== 4. Ticket de sebo 80mm (solo impresión) =====
     function imprimirSebo80mm() {
-      const seboInput = document.getElementById('seboKg')
-      const fechaInput = document.getElementById('fecha')
+      const seboInput = document.getElementById('seboKg');
+      const fechaInput = document.getElementById('fecha');
 
-      const kg = Number(seboInput.value || 0)
+      const kg = Number(seboInput.value || 0);
       if (!kg || kg <= 0) {
-        alert("Ingresa los kilos de sebo.")
-        return
+        alert("Ingresa los kilos de sebo.");
+        return;
       }
 
-      // Fecha: usa la de la hoja si existe, si no la fecha de hoy en formato MX
-      let fecha = ''
+      // Fecha: la del viaje o la de hoy
+      let fecha = '';
       if (fechaInput && fechaInput.value) {
-        const d = new Date(fechaInput.value + 'T00:00:00')
-        fecha = d.toLocaleDateString('es-MX')
+        const d = new Date(fechaInput.value + 'T00:00:00');
+        fecha = d.toLocaleDateString('es-MX');
       } else {
-        fecha = new Date().toLocaleDateString('es-MX')
+        fecha = new Date().toLocaleDateString('es-MX');
       }
 
-      const STORE_NAME = "Carnes y Vísceras del Centro"
+      const STORE_NAME = "Carnes y Vísceras del Centro";
 
       const html = `
       <!DOCTYPE html>
@@ -186,98 +283,21 @@
         </div>
       </body>
       </html>
-      `
+      `;
 
-      const win = window.open('', '_blank', 'width=400,height=600')
-      if (!win) return
-      win.document.open()
-      win.document.write(html)
-      win.document.close()
-      win.focus()
-      setTimeout(() => { win.print() }, 300)
+      const win = window.open('', '_blank', 'width=400,height=600');
+      if (!win) return;
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => { win.print(); }, 300);
     }
 
-    // Exponer funciones al window
-    window.guardarViaje = guardarViaje
-    window.generarDocumento = generarDocumento
-    window.imprimirSebo80mm = imprimirSebo80mm
+    // (En script normal, las funciones ya son globales y las ve el HTML)
+    window.guardarViaje = guardarViaje;
+    window.generarDocumento = generarDocumento;
+    window.imprimirSebo80mm = imprimirSebo80mm;
   </script>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f2f2f2;
-      padding: 30px;
-    }
-    .container {
-      background: white;
-      padding: 40px;
-      border-radius: 10px;
-      max-width: 800px;
-      margin: auto;
-    }
-    h1 {
-      color: #000;
-      font-size: 28px;
-    }
-    label {
-      display: block;
-      margin-top: 20px;
-    }
-    input {
-      padding: 10px;
-      font-size: 16px;
-      margin-top: 5px;
-    }
-    button {
-      margin-top: 20px;
-      padding: 12px 18px;
-      background-color: #198754;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #146c43;
-    }
-    #resultado-totales {
-      margin-top: 40px;
-      white-space: pre-line;
-      font-size: 18px;
-    }
-    .row-inline {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-top: 20px;
-    }
-    .row-inline label {
-      margin-top: 0;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Hoja de Viaje VDC 360°</h1>
-
-    <label for="fecha">Fecha del viaje:</label>
-    <input type="date" id="fecha" />
-
-    <div style="margin-top: 20px;">
-      <button onclick="guardarViaje()">Guardar Viaje</button>
-      <button onclick="generarDocumento()">Generar Documento de Totales</button>
-    </div>
-
-    <!-- === PAPEL DE SEBO === -->
-    <div class="row-inline">
-      <label for="seboKg">Kilos de sebo (DIO SEBO):</label>
-      <input type="number" id="seboKg" step="0.01" min="0" placeholder="Ej. 15.00" />
-      <button onclick="imprimirSebo80mm()">Imprimir papel de sebo 80mm</button>
-    </div>
-
-    <div id="resultado-totales"></div>
-  </div>
 </body>
 </html>
