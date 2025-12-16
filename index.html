@@ -24,6 +24,10 @@
     button:hover { background:#146c43; }
     .btn-gray{ background:#374151; }
     .btn-gray:hover{ background:#111827; }
+    .btn-teal{ background:#0f766e; }
+    .btn-teal:hover{ background:#115e59; }
+    .btn-red{ background:#dc2626; }
+    .btn-red:hover{ background:#b91c1c; }
 
     #resultado-totales{
       margin-top:22px; white-space:pre-line; font-size:16px;
@@ -31,6 +35,15 @@
     }
     .hr{ margin:26px 0; border-top:1px solid #e5e7eb; }
     .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
+
+    table{ width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td{ border:1px solid #e5e7eb; padding:8px; text-align:left; }
+    th{ background:#f9fafb; }
+    .mini{ font-size:12px; color:#6b7280; }
+    .msgbox{
+      margin-top:12px; white-space:pre-line; background:#0b1220; color:#e5e7eb;
+      padding:14px; border-radius:12px; border:1px solid #111827; font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
   </style>
 </head>
 
@@ -87,6 +100,73 @@
         <button class="btn-gray" onclick="limpiarEtiqueta()">Limpiar</button>
       </div>
     </div>
+
+    <div class="hr"></div>
+
+    <!-- === MENSAJE LIBRE PARA WHATSAPP (NUEVO) === -->
+    <h2 style="margin:0;">Mensaje de pesajes para WhatsApp</h2>
+    <div class="hint">Aquí registras lo recibido (sucio/limpio, etc.) y generas el mensaje listo para enviar.</div>
+
+    <div class="row">
+      <div>
+        <label for="origen">Origen / De quién se recibe:</label>
+        <input id="origen" placeholder="Ej. Rastro municipal / Mireles / Botello / Viaje / Limpieza" />
+      </div>
+      <div>
+        <label for="whatsNumero">WhatsApp destino (opcional):</label>
+        <input id="whatsNumero" placeholder="Ej. 524621872594 (sin + ni espacios)" />
+        <div class="mini">Si lo dejas vacío, igual genera el texto y tú lo pegas donde quieras.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="prodNombre">Producto:</label>
+        <input id="prodNombre" placeholder="Ej. Panza sucia / Libro limpio / Menudo sucio / Cabeza de res" />
+      </div>
+      <div>
+        <label for="prodKg">Kg:</label>
+        <input type="number" id="prodKg" step="0.01" min="0" placeholder="Ej. 130" />
+      </div>
+      <div>
+        <label for="prodPzas">Pzas (opcional):</label>
+        <input type="number" id="prodPzas" step="1" min="0" placeholder="Ej. 20" />
+      </div>
+      <div style="flex:0 0 auto;">
+        <button onclick="agregarLinea()">Agregar</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Kg</th>
+          <th>Pzas</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tablaLineas">
+        <!-- filas dinámicas -->
+      </tbody>
+    </table>
+
+    <div class="row">
+      <div style="flex:0 0 auto;">
+        <button class="btn-teal" onclick="generarMensaje()">Generar mensaje</button>
+      </div>
+      <div style="flex:0 0 auto;">
+        <button onclick="copiarMensaje()">Copiar</button>
+      </div>
+      <div style="flex:0 0 auto;">
+        <button class="btn-gray" onclick="abrirWhatsApp()">Abrir WhatsApp</button>
+      </div>
+      <div style="flex:0 0 auto;">
+        <button class="btn-red" onclick="limpiarPesajes()">Limpiar todo</button>
+      </div>
+    </div>
+
+    <div id="vistaMensaje" class="msgbox" style="display:none;"></div>
 
     <div id="resultado-totales"></div>
   </div>
@@ -236,12 +316,134 @@
       document.getElementById('etqCopias').value = 1;
     }
 
+    // ========= NUEVO: MENSAJES DE PESAJES =========
+    let pesajes = []; // {producto, kg, pzas}
+
+    function agregarLinea(){
+      const producto = (document.getElementById('prodNombre').value || '').trim();
+      const kg = Number(document.getElementById('prodKg').value || 0);
+      const pzasRaw = document.getElementById('prodPzas').value;
+      const pzas = pzasRaw === '' ? null : Number(pzasRaw);
+
+      if (!producto) return alert("Pon el nombre del producto.");
+      if (!kg || kg <= 0) return alert("Ingresa los kg del producto.");
+
+      pesajes.push({ producto, kg, pzas: (pzas && pzas > 0) ? parseInt(pzas,10) : null });
+
+      document.getElementById('prodNombre').value = '';
+      document.getElementById('prodKg').value = '';
+      document.getElementById('prodPzas').value = '';
+
+      renderTabla();
+    }
+
+    function eliminarLinea(idx){
+      pesajes.splice(idx, 1);
+      renderTabla();
+    }
+
+    function renderTabla(){
+      const tbody = document.getElementById('tablaLineas');
+      tbody.innerHTML = '';
+      pesajes.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(p.producto)}</td>
+          <td>${Number(p.kg).toFixed(2)}</td>
+          <td>${p.pzas ? p.pzas : ''}</td>
+          <td><button class="btn-red" style="padding:8px 12px;border-radius:8px;" onclick="eliminarLinea(${idx})">Quitar</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function generarMensaje(){
+      const origen = (document.getElementById('origen').value || '').trim();
+      const fecha = fechaMX();
+
+      if (pesajes.length === 0) return alert("Agrega al menos un producto.");
+      if (!origen) return alert("Pon el origen / de quién se recibe.");
+
+      let msg = `📦 *PESAJE RECIBIDO*\n`;
+      msg += `📅 Fecha: ${fecha}\n`;
+      msg += `👤 Origen: ${origen}\n\n`;
+      msg += `*Detalle:*\n`;
+
+      pesajes.forEach(p => {
+        const linea = p.pzas
+          ? `• ${p.producto} — ${Number(p.kg).toFixed(2)} kg | ${p.pzas} pzas`
+          : `• ${p.producto} — ${Number(p.kg).toFixed(2)} kg`;
+        msg += linea + `\n`;
+      });
+
+      const box = document.getElementById('vistaMensaje');
+      box.style.display = 'block';
+      box.textContent = msg;
+
+      return msg;
+    }
+
+    async function copiarMensaje(){
+      const msg = generarMensaje();
+      if (!msg) return;
+      try{
+        await navigator.clipboard.writeText(msg);
+        alert("✅ Mensaje copiado.");
+      }catch(e){
+        alert("No se pudo copiar. Selecciona el texto y copia manual.");
+      }
+    }
+
+    function abrirWhatsApp(){
+      const msg = generarMensaje();
+      if (!msg) return;
+
+      const num = (document.getElementById('whatsNumero').value || '').trim();
+      const encoded = encodeURIComponent(msg);
+
+      // Si hay número: wa.me/52...
+      // Si no: wa.me/?text=
+      const url = num
+        ? `https://wa.me/${num}?text=${encoded}`
+        : `https://wa.me/?text=${encoded}`;
+
+      window.open(url, '_blank');
+    }
+
+    function limpiarPesajes(){
+      pesajes = [];
+      document.getElementById('origen').value = '';
+      document.getElementById('whatsNumero').value = '';
+      document.getElementById('prodNombre').value = '';
+      document.getElementById('prodKg').value = '';
+      document.getElementById('prodPzas').value = '';
+      document.getElementById('vistaMensaje').style.display = 'none';
+      document.getElementById('vistaMensaje').textContent = '';
+      renderTabla();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    // Exponer globales
     window.guardarViaje = guardarViaje;
     window.generarDocumento = generarDocumento;
     window.imprimirSebo80mm = imprimirSebo80mm;
     window.imprimirEtiqueta80mm = imprimirEtiqueta80mm;
     window.limpiarEtiqueta = limpiarEtiqueta;
+
+    window.agregarLinea = agregarLinea;
+    window.eliminarLinea = eliminarLinea;
+    window.generarMensaje = generarMensaje;
+    window.copiarMensaje = copiarMensaje;
+    window.abrirWhatsApp = abrirWhatsApp;
+    window.limpiarPesajes = limpiarPesajes;
   </script>
 </body>
 </html>
-
