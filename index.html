@@ -9,19 +9,23 @@
     body { font-family: sans-serif; background:#f2f2f2; padding:30px; }
     .container { background:#fff; padding:40px; border-radius:12px; max-width:900px; margin:auto; }
     h1 { margin:0 0 12px; font-size:32px; }
+    h2 { margin-top:0; }
     label { display:block; margin-top:18px; font-weight:700; }
     input, textarea {
       width:100%; padding:10px; font-size:16px; margin-top:6px;
       border:1px solid #d1d5db; border-radius:10px;
     }
     textarea { min-height:120px; resize:vertical; }
+
     .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-top:14px; }
     .row > div { flex:1 1 220px; }
+
     button {
       padding:12px 18px; border:none; border-radius:10px;
       background:#198754; color:#fff; font-size:16px; cursor:pointer;
     }
     button:hover { background:#146c43; }
+
     .btn-gray{ background:#374151; }
     .btn-gray:hover{ background:#111827; }
     .btn-teal{ background:#0f766e; }
@@ -29,421 +33,189 @@
     .btn-red{ background:#dc2626; }
     .btn-red:hover{ background:#b91c1c; }
 
-    #resultado-totales{
-      margin-top:22px; white-space:pre-line; font-size:16px;
-      background:#f9fafb; border:1px solid #e5e7eb; padding:14px; border-radius:12px;
-    }
     .hr{ margin:26px 0; border-top:1px solid #e5e7eb; }
     .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
 
     table{ width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td{ border:1px solid #e5e7eb; padding:8px; text-align:left; }
+    th, td{ border:1px solid #e5e7eb; padding:8px; }
     th{ background:#f9fafb; }
-    .mini{ font-size:12px; color:#6b7280; }
+
     .msgbox{
-      margin-top:12px; white-space:pre-line; background:#0b1220; color:#e5e7eb;
-      padding:14px; border-radius:12px; border:1px solid #111827; font-family: ui-monospace, Menlo, Consolas, monospace;
+      margin-top:12px;
+      white-space:pre-line;
+      background:#0b1220;
+      color:#e5e7eb;
+      padding:14px;
+      border-radius:12px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>Hoja de pesos y sebo</h1>
+<div class="container">
 
-    <label for="fecha">Fecha del viaje:</label>
-    <input type="date" id="fecha" />
+<h1>Hoja de pesos y sebo</h1>
 
-    <div class="row">
-      <div style="flex:0 0 auto;">
-        <button onclick="guardarViaje()">Guardar Viaje</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button class="btn-gray" onclick="generarDocumento()">Generar Documento de Totales</button>
-      </div>
-    </div>
+<label for="fecha">Fecha:</label>
+<input type="date" id="fecha">
 
-    <div class="hr"></div>
+<div class="hr"></div>
 
-    <!-- SEBO -->
-    <h2 style="margin:0;">Papel de sebo 80mm</h2>
-    <div class="row">
-      <div>
-        <label for="seboKg">Kilos de sebo (DIO SEBO):</label>
-        <input type="number" id="seboKg" step="0.01" min="0" placeholder="Ej. 15.00" />
-      </div>
-      <div style="flex:0 0 auto;">
-        <button onclick="imprimirSebo80mm()">Imprimir papel de sebo 80mm</button>
-      </div>
-    </div>
+<h2>Mensaje de pesajes (WhatsApp)</h2>
 
-    <div class="hr"></div>
-
-    <!-- ETIQUETA LIBRE -->
-    <h2 style="margin:0;">Etiqueta libre 80mm</h2>
-    <div class="hint">Escribe el texto como quieras (con saltos de línea). Ej: “CAJA WASHINGTON↵890 kg↵40 cajas”.</div>
-
-    <label for="etiquetaTexto">Texto de etiqueta:</label>
-    <textarea id="etiquetaTexto" placeholder="CAJA WASHINGTON
-890 kg
-40 cajas"></textarea>
-
-    <div class="row">
-      <div>
-        <label for="etqCopias">Copias:</label>
-        <input type="number" id="etqCopias" min="1" step="1" value="1" />
-      </div>
-      <div style="flex:0 0 auto;">
-        <button onclick="imprimirEtiqueta80mm()">Imprimir etiqueta 80mm</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button class="btn-gray" onclick="limpiarEtiqueta()">Limpiar</button>
-      </div>
-    </div>
-
-    <div class="hr"></div>
-
-    <!-- === MENSAJE LIBRE PARA WHATSAPP (NUEVO) === -->
-    <h2 style="margin:0;">Mensaje de pesajes para WhatsApp</h2>
-    <div class="hint">Aquí registras lo recibido (sucio/limpio, etc.) y generas el mensaje listo para enviar.</div>
-
-    <div class="row">
-      <div>
-        <label for="origen">Origen / De quién se recibe:</label>
-        <input id="origen" placeholder="Ej. Rastro municipal / Mireles / Botello / Viaje / Limpieza" />
-      </div>
-      <div>
-        <label for="whatsNumero">WhatsApp destino (opcional):</label>
-        <input id="whatsNumero" placeholder="Ej. 524621872594 (sin + ni espacios)" />
-        <div class="mini">Si lo dejas vacío, igual genera el texto y tú lo pegas donde quieras.</div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div>
-        <label for="prodNombre">Producto:</label>
-        <input id="prodNombre" placeholder="Ej. Panza sucia / Libro limpio / Menudo sucio / Cabeza de res" />
-      </div>
-      <div>
-        <label for="prodKg">Kg:</label>
-        <input type="number" id="prodKg" step="0.01" min="0" placeholder="Ej. 130" />
-      </div>
-      <div>
-        <label for="prodPzas">Pzas (opcional):</label>
-        <input type="number" id="prodPzas" step="1" min="0" placeholder="Ej. 20" />
-      </div>
-      <div style="flex:0 0 auto;">
-        <button onclick="agregarLinea()">Agregar</button>
-      </div>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Kg</th>
-          <th>Pzas</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody id="tablaLineas">
-        <!-- filas dinámicas -->
-      </tbody>
-    </table>
-
-    <div class="row">
-      <div style="flex:0 0 auto;">
-        <button class="btn-teal" onclick="generarMensaje()">Generar mensaje</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button onclick="copiarMensaje()">Copiar</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button class="btn-gray" onclick="abrirWhatsApp()">Abrir WhatsApp</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button class="btn-red" onclick="limpiarPesajes()">Limpiar todo</button>
-      </div>
-    </div>
-
-    <div id="vistaMensaje" class="msgbox" style="display:none;"></div>
-
-    <div id="resultado-totales"></div>
+<div class="row">
+  <div>
+    <label>Origen / De quién se recibe</label>
+    <input id="origen" placeholder="Ej. Rastro municipal / Mireles / Viaje">
   </div>
+  <div>
+    <label>Número WhatsApp (opcional)</label>
+    <input id="whatsNumero" placeholder="Ej. 524621872594">
+  </div>
+</div>
 
-  <script>
-    // Supabase
-    const supabaseUrl = 'https://rcegikeiaxptolrduguc.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+<div class="row">
+  <div>
+    <label>Producto</label>
+    <input id="prodNombre" placeholder="Ej. Panza sucia / Cabeza de res">
+  </div>
+  <div>
+    <label>Kilos (opcional)</label>
+    <input type="number" id="prodKg" step="0.01">
+  </div>
+  <div>
+    <label>Piezas (opcional)</label>
+    <input type="number" id="prodPzas">
+  </div>
+  <div style="flex:0 0 auto;">
+    <button onclick="agregarLinea()">Agregar</button>
+  </div>
+</div>
 
-    function fechaMX() {
-      const v = document.getElementById('fecha').value;
-      if (v) return new Date(v + 'T00:00:00').toLocaleDateString('es-MX');
-      return new Date().toLocaleDateString('es-MX');
-    }
+<table>
+<thead>
+<tr>
+  <th>Producto</th>
+  <th>Kg</th>
+  <th>Pzas</th>
+  <th></th>
+</tr>
+</thead>
+<tbody id="tablaLineas"></tbody>
+</table>
 
-    async function guardarViaje() {
-      const fecha = document.getElementById('fecha').value;
-      if (!fecha) return alert("Selecciona la fecha del viaje");
+<div class="row">
+  <button class="btn-teal" onclick="generarMensaje()">Generar mensaje</button>
+  <button onclick="copiarMensaje()">Copiar</button>
+  <button class="btn-gray" onclick="abrirWhatsApp()">Abrir WhatsApp</button>
+  <button class="btn-red" onclick="limpiarPesajes()">Limpiar</button>
+</div>
 
-      // ejemplo
-      const datos = {
-        "Teleco": [{ kg: 15.8, pzas: 14 }, { kg: 108.5, pzas: 100 }],
-        "Cuajo": [{ kg: 40.2, pzas: 40 }]
-      };
+<div id="vistaMensaje" class="msgbox" style="display:none;"></div>
 
-      const { error } = await supabase.from('hoja_viaje').insert([{ fecha, resultados: datos }]);
-      if (error) return alert("❌ Error al guardar viaje: " + error.message);
-      alert("✅ Viaje guardado correctamente.");
-    }
+</div>
 
-    async function generarDocumento() {
-      const fecha = document.getElementById('fecha').value;
-      const out = document.getElementById('resultado-totales');
-      if (!fecha) return alert("Selecciona la fecha del viaje");
-      out.textContent = "⏳ Cargando totales...";
+<script>
+let pesajes = [];
 
-      const { data, error } = await supabase.from('hoja_viaje').select('resultados').eq('fecha', fecha);
-      if (error) { out.textContent = "❌ Error: " + error.message; return; }
-      if (!data || data.length === 0) { out.textContent = "❌ No se encontraron registros para esa fecha."; return; }
+function fechaMX(){
+  const v = document.getElementById('fecha').value;
+  return v ? new Date(v+'T00:00:00').toLocaleDateString('es-MX') : new Date().toLocaleDateString('es-MX');
+}
 
-      const totales = {};
-      data.forEach(r => {
-        const res = r.resultados || {};
-        Object.keys(res).forEach(prod => {
-          (res[prod] || []).forEach(p => {
-            if (!totales[prod]) totales[prod] = { kg: 0, pzas: 0 };
-            totales[prod].kg += Number(p.kg) || 0;
-            totales[prod].pzas += Number(p.pzas) || 0;
-          });
-        });
-      });
+/* === AGREGAR LINEA (KG Y PZAS OPCIONALES) === */
+function agregarLinea(){
+  const producto = document.getElementById('prodNombre').value.trim();
+  const kgRaw = document.getElementById('prodKg').value;
+  const pzasRaw = document.getElementById('prodPzas').value;
 
-      let doc = `📄 TOTALES DEL DÍA ${fecha}\n\n`;
-      Object.entries(totales).forEach(([prod, d]) => {
-        doc += `🟢 ${prod} → ${d.kg.toFixed(2)} kg | ${d.pzas} piezas\n`;
-      });
-      out.textContent = doc;
-    }
+  const kg = kgRaw === '' ? null : Number(kgRaw);
+  const pzas = pzasRaw === '' ? null : Number(pzasRaw);
 
-    function imprimirSebo80mm() {
-      const kg = Number(document.getElementById('seboKg').value || 0);
-      if (!kg || kg <= 0) return alert("Ingresa los kilos de sebo.");
+  if(!producto) return alert("Falta el producto");
+  if((!kg || kg<=0) && (!pzas || pzas<=0))
+    return alert("Debes ingresar kilos, piezas o ambos");
 
-      const STORE = "Carnes y Vísceras del Centro";
-      const fecha = fechaMX();
+  pesajes.push({
+    producto,
+    kg: (kg && kg>0) ? kg : null,
+    pzas: (pzas && pzas>0) ? parseInt(pzas) : null
+  });
 
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-      <style>
-        body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
-        #t{width:80mm;padding:2mm}
-        h3{margin:0;text-align:center;font-size:14px}
-        .c{text-align:center;font-size:11px;margin-top:4px}
-        .line{border-top:1px dashed #000;margin:6px 0}
-        .big{text-align:center;font-weight:800;font-size:16px}
-        .amt{text-align:center;font-weight:900;font-size:20px;margin-top:4px}
-        @media print{@page{size:80mm auto;margin:0}}
-      </style></head><body>
-        <div id="t">
-          <h3>${STORE}</h3>
-          <div class="c">PAPEL DE SEBO<br>FECHA: ${fecha}</div>
-          <div class="line"></div>
-          <div class="big">DIO SEBO</div>
-          <div class="amt">${kg.toFixed(2)} KG</div>
-          <div class="line"></div>
-          <div class="c">FIRMA: ____________________________</div>
-        </div>
-      </body></html>`;
+  document.getElementById('prodNombre').value='';
+  document.getElementById('prodKg').value='';
+  document.getElementById('prodPzas').value='';
 
-      const win = window.open('', '_blank', 'width=420,height=650');
-      if (!win) return;
-      win.document.write(html);
-      win.document.close();
-      win.focus();
-      setTimeout(() => win.print(), 300);
-    }
+  renderTabla();
+}
 
-    function imprimirEtiqueta80mm() {
-      const texto = (document.getElementById('etiquetaTexto').value || '').trim();
-      const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
-      if (!texto) return alert("Escribe el texto de la etiqueta.");
+function renderTabla(){
+  const tb = document.getElementById('tablaLineas');
+  tb.innerHTML='';
+  pesajes.forEach((p,i)=>{
+    tb.innerHTML += `
+      <tr>
+        <td>${p.producto}</td>
+        <td>${p.kg ? p.kg.toFixed(2) : ''}</td>
+        <td>${p.pzas ? p.pzas : ''}</td>
+        <td><button class="btn-red" onclick="eliminarLinea(${i})">X</button></td>
+      </tr>`;
+  });
+}
 
-      const STORE = "Carnes y Vísceras del Centro";
-      const fecha = fechaMX();
+function eliminarLinea(i){
+  pesajes.splice(i,1);
+  renderTabla();
+}
 
-      const escapeHtml = (s) => s
-        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
-        .replaceAll('"','&quot;').replaceAll("'","&#039;");
+/* === MENSAJE === */
+function generarMensaje(){
+  const origen = document.getElementById('origen').value.trim();
+  if(!origen) return alert("Falta el origen");
+  if(pesajes.length===0) return alert("Agrega productos");
 
-      const safe = escapeHtml(texto).replaceAll('\n','<br>');
+  let msg = `📦 *PESAJE RECIBIDO*\n`;
+  msg += `📅 Fecha: ${fechaMX()}\n`;
+  msg += `👤 Origen: ${origen}\n\n*Detalle:*\n`;
 
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-      <style>
-        body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
-        #t{width:80mm;padding:2mm}
-        .c{text-align:center;font-size:10px}
-        .line{border-top:1px dashed #000;margin:6px 0}
-        .body{text-align:center;font-weight:900;font-size:18px;line-height:1.15;word-break:break-word}
-        @media print{@page{size:80mm auto;margin:0}}
-      </style></head><body>
-        <div id="t">
-          <div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>
-          <div class="line"></div>
-          <div class="body">${safe}</div>
-          <div class="line"></div>
-          <div class="c">Etiqueta / Señalamiento</div>
-        </div>
-      </body></html>`;
+  pesajes.forEach(p=>{
+    let l = `• ${p.producto} — `;
+    if(p.kg && p.pzas) l += `${p.kg.toFixed(2)} kg | ${p.pzas} pzas`;
+    else if(p.kg) l += `${p.kg.toFixed(2)} kg`;
+    else if(p.pzas) l += `${p.pzas} pzas`;
+    msg += l+'\n';
+  });
 
-      const win = window.open('', '_blank', 'width=420,height=650');
-      if (!win) return;
-      win.document.write(html);
-      win.document.close();
-      win.focus();
+  const box = document.getElementById('vistaMensaje');
+  box.style.display='block';
+  box.textContent = msg;
+  return msg;
+}
 
-      let i = 0;
-      const doPrint = () => {
-        win.focus(); win.print();
-        i++;
-        if (i < copias) setTimeout(doPrint, 450);
-      };
-      setTimeout(doPrint, 300);
-    }
+function copiarMensaje(){
+  const msg = generarMensaje();
+  if(msg) navigator.clipboard.writeText(msg);
+}
 
-    function limpiarEtiqueta(){
-      document.getElementById('etiquetaTexto').value = '';
-      document.getElementById('etqCopias').value = 1;
-    }
+function abrirWhatsApp(){
+  const msg = generarMensaje();
+  if(!msg) return;
+  const num = document.getElementById('whatsNumero').value.trim();
+  const url = num
+    ? `https://wa.me/${num}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url,'_blank');
+}
 
-    // ========= NUEVO: MENSAJES DE PESAJES =========
-    let pesajes = []; // {producto, kg, pzas}
+function limpiarPesajes(){
+  pesajes=[];
+  document.getElementById('origen').value='';
+  document.getElementById('whatsNumero').value='';
+  document.getElementById('vistaMensaje').style.display='none';
+  renderTabla();
+}
+</script>
 
-    function agregarLinea(){
-      const producto = (document.getElementById('prodNombre').value || '').trim();
-      const kg = Number(document.getElementById('prodKg').value || 0);
-      const pzasRaw = document.getElementById('prodPzas').value;
-      const pzas = pzasRaw === '' ? null : Number(pzasRaw);
-
-      if (!producto) return alert("Pon el nombre del producto.");
-      if (!kg || kg <= 0) return alert("Ingresa los kg del producto.");
-
-      pesajes.push({ producto, kg, pzas: (pzas && pzas > 0) ? parseInt(pzas,10) : null });
-
-      document.getElementById('prodNombre').value = '';
-      document.getElementById('prodKg').value = '';
-      document.getElementById('prodPzas').value = '';
-
-      renderTabla();
-    }
-
-    function eliminarLinea(idx){
-      pesajes.splice(idx, 1);
-      renderTabla();
-    }
-
-    function renderTabla(){
-      const tbody = document.getElementById('tablaLineas');
-      tbody.innerHTML = '';
-      pesajes.forEach((p, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(p.producto)}</td>
-          <td>${Number(p.kg).toFixed(2)}</td>
-          <td>${p.pzas ? p.pzas : ''}</td>
-          <td><button class="btn-red" style="padding:8px 12px;border-radius:8px;" onclick="eliminarLinea(${idx})">Quitar</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function generarMensaje(){
-      const origen = (document.getElementById('origen').value || '').trim();
-      const fecha = fechaMX();
-
-      if (pesajes.length === 0) return alert("Agrega al menos un producto.");
-      if (!origen) return alert("Pon el origen / de quién se recibe.");
-
-      let msg = `📦 *PESAJE RECIBIDO*\n`;
-      msg += `📅 Fecha: ${fecha}\n`;
-      msg += `👤 Origen: ${origen}\n\n`;
-      msg += `*Detalle:*\n`;
-
-      pesajes.forEach(p => {
-        const linea = p.pzas
-          ? `• ${p.producto} — ${Number(p.kg).toFixed(2)} kg | ${p.pzas} pzas`
-          : `• ${p.producto} — ${Number(p.kg).toFixed(2)} kg`;
-        msg += linea + `\n`;
-      });
-
-      const box = document.getElementById('vistaMensaje');
-      box.style.display = 'block';
-      box.textContent = msg;
-
-      return msg;
-    }
-
-    async function copiarMensaje(){
-      const msg = generarMensaje();
-      if (!msg) return;
-      try{
-        await navigator.clipboard.writeText(msg);
-        alert("✅ Mensaje copiado.");
-      }catch(e){
-        alert("No se pudo copiar. Selecciona el texto y copia manual.");
-      }
-    }
-
-    function abrirWhatsApp(){
-      const msg = generarMensaje();
-      if (!msg) return;
-
-      const num = (document.getElementById('whatsNumero').value || '').trim();
-      const encoded = encodeURIComponent(msg);
-
-      // Si hay número: wa.me/52...
-      // Si no: wa.me/?text=
-      const url = num
-        ? `https://wa.me/${num}?text=${encoded}`
-        : `https://wa.me/?text=${encoded}`;
-
-      window.open(url, '_blank');
-    }
-
-    function limpiarPesajes(){
-      pesajes = [];
-      document.getElementById('origen').value = '';
-      document.getElementById('whatsNumero').value = '';
-      document.getElementById('prodNombre').value = '';
-      document.getElementById('prodKg').value = '';
-      document.getElementById('prodPzas').value = '';
-      document.getElementById('vistaMensaje').style.display = 'none';
-      document.getElementById('vistaMensaje').textContent = '';
-      renderTabla();
-    }
-
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'","&#039;");
-    }
-
-    // Exponer globales
-    window.guardarViaje = guardarViaje;
-    window.generarDocumento = generarDocumento;
-    window.imprimirSebo80mm = imprimirSebo80mm;
-    window.imprimirEtiqueta80mm = imprimirEtiqueta80mm;
-    window.limpiarEtiqueta = limpiarEtiqueta;
-
-    window.agregarLinea = agregarLinea;
-    window.eliminarLinea = eliminarLinea;
-    window.generarMensaje = generarMensaje;
-    window.copiarMensaje = copiarMensaje;
-    window.abrirWhatsApp = abrirWhatsApp;
-    window.limpiarPesajes = limpiarPesajes;
-  </script>
 </body>
 </html>
