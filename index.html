@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Hoja de pesos y sebo 2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
@@ -167,13 +169,47 @@
     <div id="vistaMensaje" class="msgbox" style="display:none;"></div>
 
     <div id="resultado-totales"></div>
+
+    <!-- Panel de errores para tablet -->
+    <div id="debug" class="msgbox" style="display:none;"></div>
   </div>
 
   <script>
-    // Supabase
+    // ========= COMPAT: replaceAll para Safari viejo =========
+    (function(){
+      if (!String.prototype.replaceAll) {
+        String.prototype.replaceAll = function(search, replacement){
+          const target = String(this);
+          if (search instanceof RegExp) return target.replace(search, replacement);
+          const escaped = String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return target.replace(new RegExp(escaped, 'g'), replacement);
+        };
+      }
+    })();
+
+    // ========= DEBUG visible =========
+    function showDebug(msg){
+      const box = document.getElementById('debug');
+      box.style.display = 'block';
+      box.textContent = String(msg);
+    }
+    window.addEventListener('error', (e) => {
+      showDebug("❌ Error JS:\n" + (e && e.message ? e.message : e));
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      showDebug("❌ Promise rechazado:\n" + (e && e.reason ? (e.reason.message || e.reason) : e));
+    });
+
+    // ========= Supabase =========
     const supabaseUrl = 'https://rcegikeiaxptolrduguc.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    let supabase = null;
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    } else {
+      showDebug("❌ No cargó supabase-js. Revisa conexión / CDN.");
+    }
 
     function fechaMX() {
       const v = document.getElementById('fecha').value;
@@ -182,6 +218,8 @@
     }
 
     async function guardarViaje() {
+      if (!supabase) return alert("Supabase no está listo (revisa panel de errores).");
+
       const fecha = document.getElementById('fecha').value;
       if (!fecha) return alert("Selecciona la fecha del viaje");
 
@@ -197,6 +235,8 @@
     }
 
     async function generarDocumento() {
+      if (!supabase) return alert("Supabase no está listo (revisa panel de errores).");
+
       const fecha = document.getElementById('fecha').value;
       const out = document.getElementById('resultado-totales');
       if (!fecha) return alert("Selecciona la fecha del viaje");
@@ -225,6 +265,47 @@
       out.textContent = doc;
     }
 
+    // ========= IMPRESIÓN (más estable en iPad) =========
+    function printHtml(html){
+      // Intento 1: iframe (mejor para Safari)
+      try{
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        setTimeout(() => {
+          try{
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          } finally {
+            setTimeout(() => document.body.removeChild(iframe), 800);
+          }
+        }, 350);
+
+        return;
+      }catch(e){
+        // Intento 2: ventana nueva
+      }
+
+      const win = window.open('', '_blank');
+      if (!win) { alert("Tu tablet bloqueó la impresión (popups). Activa 'permitir ventanas emergentes'."); return; }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 350);
+    }
+
     function imprimirSebo80mm() {
       const kg = Number(document.getElementById('seboKg').value || 0);
       if (!kg || kg <= 0) return alert("Ingresa los kilos de sebo.");
@@ -233,6 +314,7 @@
       const fecha = fechaMX();
 
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
         body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
         #t{width:80mm;padding:2mm}
@@ -254,12 +336,7 @@
         </div>
       </body></html>`;
 
-      const win = window.open('', '_blank', 'width=420,height=650');
-      if (!win) return;
-      win.document.write(html);
-      win.document.close();
-      win.focus();
-      setTimeout(() => win.print(), 300);
+      printHtml(html);
     }
 
     function imprimirEtiqueta80mm() {
@@ -270,13 +347,10 @@
       const STORE = "Carnes y Vísceras del Centro";
       const fecha = fechaMX();
 
-      const escapeHtml = (s) => s
-        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
-        .replaceAll('"','&quot;').replaceAll("'","&#039;");
-
       const safe = escapeHtml(texto).replaceAll('\n','<br>');
 
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      const baseHtml = (body) => `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
         body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
         #t{width:80mm;padding:2mm}
@@ -284,29 +358,25 @@
         .line{border-top:1px dashed #000;margin:6px 0}
         .body{text-align:center;font-weight:900;font-size:18px;line-height:1.15;word-break:break-word}
         @media print{@page{size:80mm auto;margin:0}}
-      </style></head><body>
-        <div id="t">
-          <div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>
-          <div class="line"></div>
-          <div class="body">${safe}</div>
-          <div class="line"></div>
-          <div class="c">Etiqueta / Señalamiento</div>
-        </div>
-      </body></html>`;
+      </style></head><body>${body}</body></html>`;
 
-      const win = window.open('', '_blank', 'width=420,height=650');
-      if (!win) return;
-      win.document.write(html);
-      win.document.close();
-      win.focus();
-
+      // iPad imprime mejor una por una (gesto + print). Aquí hacemos prints secuenciales.
       let i = 0;
-      const doPrint = () => {
-        win.focus(); win.print();
+      const doOne = () => {
+        const html = baseHtml(`
+          <div id="t">
+            <div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>
+            <div class="line"></div>
+            <div class="body">${safe}</div>
+            <div class="line"></div>
+            <div class="c">Etiqueta / Señalamiento (${i+1}/${copias})</div>
+          </div>
+        `);
+        printHtml(html);
         i++;
-        if (i < copias) setTimeout(doPrint, 450);
+        if (i < copias) setTimeout(doOne, 900);
       };
-      setTimeout(doPrint, 300);
+      doOne();
     }
 
     function limpiarEtiqueta(){
@@ -328,7 +398,6 @@
 
       if (!producto) return alert("Pon el nombre del producto.");
 
-      // ✅ al menos uno (kg o pzas)
       const kgOk = (kg !== null && kg > 0);
       const pzasOk = (pzas !== null && pzas > 0);
       if (!kgOk && !pzasOk) return alert("Ingresa kilos, piezas o ambos.");
@@ -342,7 +411,6 @@
       document.getElementById('prodNombre').value = '';
       document.getElementById('prodKg').value = '';
       document.getElementById('prodPzas').value = '';
-
       renderTabla();
     }
 
@@ -396,11 +464,14 @@
     async function copiarMensaje(){
       const msg = generarMensaje();
       if (!msg) return;
+
+      // iOS a veces no da clipboard; fallback manual
       try{
+        if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard no disponible");
         await navigator.clipboard.writeText(msg);
         alert("✅ Mensaje copiado.");
       }catch(e){
-        alert("No se pudo copiar. Selecciona el texto y copia manual.");
+        alert("En esta tablet no se pudo copiar automático. Mantén presionado el texto y copia manual.");
       }
     }
 
