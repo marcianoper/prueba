@@ -44,7 +44,8 @@
     .mini{ font-size:12px; color:#6b7280; }
     .msgbox{
       margin-top:12px; white-space:pre-line; background:#0b1220; color:#e5e7eb;
-      padding:14px; border-radius:12px; border:1px solid #111827; font-family: ui-monospace, Menlo, Consolas, monospace;
+      padding:14px; border-radius:12px; border:1px solid #111827;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
     }
   </style>
 </head>
@@ -200,13 +201,13 @@
       showDebug("❌ Promise rechazado:\n" + (e && e.reason ? (e.reason.message || e.reason) : e));
     });
 
-    // ========= Supabase =========
+    // ========= Supabase (IMPORTANTE: NO usar variable llamada "supabase") =========
     const supabaseUrl = 'https://rcegikeiaxptolrduguc.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8';
 
-    let supabase = null;
+    let sb = null;
     if (window.supabase && typeof window.supabase.createClient === 'function') {
-      supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      sb = window.supabase.createClient(supabaseUrl, supabaseKey);
     } else {
       showDebug("❌ No cargó supabase-js. Revisa conexión / CDN.");
     }
@@ -218,7 +219,7 @@
     }
 
     async function guardarViaje() {
-      if (!supabase) return alert("Supabase no está listo (revisa panel de errores).");
+      if (!sb) return alert("Supabase no está listo (revisa panel de errores).");
 
       const fecha = document.getElementById('fecha').value;
       if (!fecha) return alert("Selecciona la fecha del viaje");
@@ -229,20 +230,20 @@
         "Cuajo": [{ kg: 40.2, pzas: 40 }]
       };
 
-      const { error } = await supabase.from('hoja_viaje').insert([{ fecha, resultados: datos }]);
+      const { error } = await sb.from('hoja_viaje').insert([{ fecha, resultados: datos }]);
       if (error) return alert("❌ Error al guardar viaje: " + error.message);
       alert("✅ Viaje guardado correctamente.");
     }
 
     async function generarDocumento() {
-      if (!supabase) return alert("Supabase no está listo (revisa panel de errores).");
+      if (!sb) return alert("Supabase no está listo (revisa panel de errores).");
 
       const fecha = document.getElementById('fecha').value;
       const out = document.getElementById('resultado-totales');
       if (!fecha) return alert("Selecciona la fecha del viaje");
       out.textContent = "⏳ Cargando totales...";
 
-      const { data, error } = await supabase.from('hoja_viaje').select('resultados').eq('fecha', fecha);
+      const { data, error } = await sb.from('hoja_viaje').select('resultados').eq('fecha', fecha);
       if (error) { out.textContent = "❌ Error: " + error.message; return; }
       if (!data || data.length === 0) { out.textContent = "❌ No se encontraron registros para esa fecha."; return; }
 
@@ -360,7 +361,6 @@
         @media print{@page{size:80mm auto;margin:0}}
       </style></head><body>${body}</body></html>`;
 
-      // iPad imprime mejor una por una (gesto + print). Aquí hacemos prints secuenciales.
       let i = 0;
       const doOne = () => {
         const html = baseHtml(`
@@ -465,7 +465,6 @@
       const msg = generarMensaje();
       if (!msg) return;
 
-      // iOS a veces no da clipboard; fallback manual
       try{
         if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard no disponible");
         await navigator.clipboard.writeText(msg);
