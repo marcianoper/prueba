@@ -946,7 +946,7 @@
             <button class="btn btn-ghost" data-id80="${r.id}" type="button">80mm</button>
             <button class="btn btn-ghost" data-wa="${r.id}" type="button">WA</button>
 
-            <!-- ✅ NUEVO: cerrar desde la bandeja -->
+            <!-- ✅ NUEVO BOTÓN: cerrar nota desde esta misma bandeja -->
             <button class="btn btn-ghost danger" data-close="${r.id}" type="button">Cerrar</button>
           </td>
         </tr>
@@ -958,7 +958,7 @@
       bandejaBody.querySelectorAll('[data-id80]').forEach(b=> b.onclick = ()=> imprimirNota80mm(b.dataset.id80));
       bandejaBody.querySelectorAll('[data-wa]').forEach(b=> b.onclick = ()=> waNota(b.dataset.wa));
 
-      // ✅ NUEVO: handler del botón cerrar en bandeja
+      // ✅ NUEVO handler
       bandejaBody.querySelectorAll('[data-close]').forEach(b=> b.onclick = ()=> cerrarNotaById(b.dataset.close));
     }
 
@@ -1004,6 +1004,7 @@
     function normalizeMxPhoneToWhatsAppDigits(phoneRaw){
       const digits = (phoneRaw || '').replace(/[^\d]/g,'');
       if(!digits) return '';
+      // Si vienen 10 dígitos, asumimos México y anteponemos 52
       if(digits.length === 10) return '52' + digits;
       return digits;
     }
@@ -1186,13 +1187,200 @@
     }
 
     /* ========================= REPORTE DIARIO GENERAL ========================= */
-    async function imprimirDiaA4(){ alert('Este bloque sigue igual (omitido aquí para no alterar nada).'); }
-    async function exportDiaCSV(){ alert('Este bloque sigue igual (omitido aquí para no alterar nada).'); }
-    async function exportNotaCSV(){ alert('Este bloque sigue igual (omitido aquí para no alterar nada).'); }
+    async function imprimirDiaA4(){
+      const f = diaFecha.value || todayISO();
+
+      const { data: notas } = await sb
+        .from('notas_credito')
+        .select('id, folio, fecha, clientes(nombre)')
+        .eq('fecha', f)
+        .order('created_at');
+
+      const ids = (notas || []).map(n => n.id);
+      if(!ids.length){ alert('No hay notas ese día'); return; }
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('nota_id, producto, cantidad, piezas, precio, importe, created_at')
+        .in('nota_id', ids)
+        .order('created_at');
+
+      const byClient = {};
+      (notas || []).forEach(n=>{
+        const c = n.clientes?.nombre || '—';
+        if(!byClient[c]) byClient[c] = { items: [], totalImporte: 0 };
+      });
+
+      (det || []).forEach(d=>{
+        const nota = (notas || []).find(x => x.id === d.nota_id);
+        const cliente = nota?.clientes?.nombre || '—';
+        if(!byClient[cliente]) byClient[cliente] = { items: [], totalImporte: 0 };
+        byClient[cliente].items.push({
+          folio: nota?.folio || '',
+          created_at: d.created_at,
+          producto: d.producto,
+          cantidad: d.cantidad,
+          piezas: d.piezas,
+          importe: d.importe
+        });
+        byClient[cliente].totalImporte += Number(d.importe || 0);
+      });
+
+      const totalDia = (det || []).reduce((a, b) => a + Number(b.importe || 0), 0);
+      diaResumen.textContent = `Clientes: ${Object.keys(byClient).length} · Total día: $${to2(totalDia)}`;
+
+      let html = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <title>Reporte diario</title>
+          <style>
+            @page { size: letter landscape; margin: 8mm; }
+            body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 11px; margin: 0; }
+            h3 { margin: 0 0 4mm 0; font-size: 14px; }
+            h4 { margin: 2mm 0 1mm 0; font-size: 11px; }
+            .subinfo { font-size: 10px; margin-bottom: 3mm; }
+            #columns { column-count: 2; column-gap: 5mm; }
+            .client-group { break-inside: avoid; page-break-inside: avoid; margin-bottom: 3mm; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 2px 3px; font-size: 9.5px; text-align: left; }
+            th { background: #f3f3f3; }
+          </style>
+        </head>
+        <body>
+          <h3>Reporte diario — ${f}</h3>
+          <div class="subinfo">Clientes: ${Object.keys(byClient).length} · Total día: $${to2(totalDia)}</div>
+          <div id="columns">
+      `;
+
+      Object.entries(byClient).forEach(([cliente, pack])=>{
+        html += `
+          <div class="client-group">
+            <h4>${cliente} — Total: $${to2(pack.totalImporte)}</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Hora</th>
+                  <th>Producto</th>
+                  <th>Kg</th>
+                  <th>Pzas</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(pack.items || []).map(d => `
+                  <tr>
+                    <td>${d.folio}</td>
+                    <td>${new Date(d.created_at).toLocaleTimeString()}</td>
+                    <td>${d.producto}</td>
+                    <td>${to2(d.cantidad)}</td>
+                    <td>${d.piezas != null ? d.piezas : ''}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+
+      html += `
+          </div>
+        </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank', 'width=1200,height=800');
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => { win.print(); }, 400);
+    }
+
+    async function exportDiaCSV(){
+      const f = diaFecha.value || todayISO();
+
+      const { data: notas } = await sb
+        .from('notas_credito')
+        .select('id, folio, fecha, clientes(nombre)')
+        .eq('fecha', f);
+
+      const ids = (notas||[]).map(n=>n.id);
+      if(!ids.length) return alert('No hay notas ese día');
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('nota_id, producto, cantidad, piezas, precio, importe, created_at')
+        .in('nota_id', ids);
+
+      const head = ['Cliente','Folio','Fecha','Hora','Producto','Kg','Piezas','Precio','Importe'];
+
+      const rows = (det||[]).map(d=>{
+        const n = (notas||[]).find(x=>x.id===d.nota_id) || {};
+        return [
+          (n.clientes?.nombre||''),
+          n.folio,
+          f,
+          new Date(d.created_at).toLocaleTimeString(),
+          d.producto,
+          to2(d.cantidad),
+          (d.piezas != null ? d.piezas : ''),
+          to2(d.precio),
+          to2(d.importe)
+        ];
+      });
+
+      const csv = [head, ...rows].map(r=> r.map(csvEscape).join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte_${f}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    /* ===== Exportar CSV de una nota ===== */
+    async function exportNotaCSV(nota_id){
+      const { data: nota } = await sb
+        .from('notas_credito')
+        .select('folio, fecha, clientes(nombre), cliente_id')
+        .eq('id', nota_id)
+        .single();
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('*')
+        .eq('nota_id', nota_id)
+        .order('created_at');
+
+      const head = ['Cliente','Folio','Fecha','Hora','Producto','Kg','Piezas','Precio','Importe'];
+      const rows = (det||[]).map(d => ([
+        (nota?.clientes?.nombre || ''),
+        nota?.folio || '',
+        nota?.fecha || '',
+        new Date(d.created_at).toLocaleTimeString(),
+        d.producto,
+        to2(d.cantidad),
+        (d.piezas != null ? d.piezas : ''),
+        to2(d.precio),
+        to2(d.importe)
+      ]));
+
+      const csv = [head, ...rows].map(r=> r.map(csvEscape).join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nota_${nota?.folio || 'sin_folio'}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
 
     /* ========================= CERRAR ========================= */
 
-    // ✅ NUEVO: cerrar cualquier nota desde la bandeja (por id)
+    // ✅ NUEVO: cerrar nota por ID (para usarlo desde la bandeja)
     async function cerrarNotaById(nota_id){
       if(!nota_id) return;
       if(!confirm('¿Cerrar esta nota?')) return;
@@ -1229,4 +1417,3 @@
   </script>
 </body>
 </html>
-
