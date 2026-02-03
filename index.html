@@ -159,6 +159,17 @@
       <section class="card">
         <h2>🧺 Capturar partidas</h2>
 
+        <!-- ✅ Controles Báscula -->
+        <div class="flex" style="margin-top:6px">
+          <button class="btn btn-ghost" id="btnScaleConnect" type="button">⚖️ Conectar báscula</button>
+          <button class="btn btn-ghost" id="btnScaleDisconnect" type="button" disabled>⛔ Desconectar</button>
+          <select id="scaleBaud" style="max-width:200px">
+            <option value="9600" selected>9600 baud</option>
+            <option value="115200">115200 baud</option>
+          </select>
+          <span class="muted" id="scaleStatus">Sin báscula</span>
+        </div>
+
         <!-- ===== MODO NORMAL (todos los clientes) ===== -->
         <div id="capNormal">
           <div class="row-3">
@@ -452,6 +463,12 @@
     const huesoPzas = $('#huesoPzas');
     const subtotalBox2 = $('#subtotalBox2');
 
+    // Báscula
+    const btnScaleConnect = $('#btnScaleConnect');
+    const btnScaleDisconnect = $('#btnScaleDisconnect');
+    const scaleStatus = $('#scaleStatus');
+    const scaleBaud = $('#scaleBaud');
+
     const vFolio = $('#vFolio');
     const vEstado = $('#vEstado');
     const vSaldo = $('#vSaldo');
@@ -522,6 +539,10 @@
     $('#btnBandeja').addEventListener('click', loadBandeja);
     $('#btnDiaA4').addEventListener('click', imprimirDiaA4);
     $('#btnDiaCSV').addEventListener('click', exportDiaCSV);
+
+    // Báscula
+    btnScaleConnect.addEventListener('click', scaleConnect);
+    btnScaleDisconnect.addEventListener('click', scaleDisconnect);
 
     // Cambios de cliente/teléfono ligados al slot activo
     cliSelect.addEventListener('change', ()=>{
@@ -853,7 +874,7 @@
       }
 
       pProducto.value = '';
-      pKg.value = '1';
+      // NO forzamos kg a 1 aquí; dejamos lo que llegue por báscula
       pPzas.value = '';
       prefPrecio();
       clearDirty();
@@ -1593,6 +1614,113 @@
       await renderVista();
       await loadBandeja();
       alert('✅ Nota cerrada');
+    }
+
+    /* ========================= BÁSCULA (WEB SERIAL) ========================= */
+    let scalePort = null;
+    let scaleReader = null;
+    let scaleKeepReading = false;
+
+    function setScaleUI(connected, msg){
+      btnScaleConnect.disabled = connected;
+      btnScaleDisconnect.disabled = !connected;
+      scaleStatus.textContent = msg || (connected ? 'Báscula conectada (leyendo...)' : 'Sin báscula');
+    }
+
+    // Extrae el primer número tipo 12.340 o 12,340 del texto recibido
+    function parseWeight(text){
+      const m = String(text).match(/(-?\d+(?:[.,]\d+)?)/);
+      if(!m) return null;
+      return Number(m[1].replace(',', '.'));
+    }
+
+    function getTargetKgInput(){
+      // Si estás en modo Pieles y Grasas, manda al campo enfocado
+      if (isPielesYGrasasSelected()){
+        const id = document.activeElement?.id || '';
+        if(id === 'huesoKg') return huesoKg;
+        if(id === 'seboKg') return seboKg;
+        return seboKg; // default
+      }
+      return pKg; // modo normal
+    }
+
+    async function scaleConnect(){
+      try{
+        if(!('serial' in navigator)){
+          alert('Tu navegador no soporta Web Serial. Usa Chrome/Edge actualizado.');
+          return;
+        }
+
+        setScaleUI(false, 'Selecciona el puerto STM32 Virtual ComPort...');
+
+        // El usuario elige el puerto
+        scalePort = await navigator.serial.requestPort();
+
+        const baud = Number(scaleBaud.value || 9600);
+
+        await scalePort.open({
+          baudRate: baud,
+          dataBits: 8,
+          stopBits: 1,
+          parity: 'none',
+          flowControl: 'none'
+        });
+
+        scaleKeepReading = true;
+        setScaleUI(true, `Báscula conectada (${baud} baud) — leyendo...`);
+
+        const textDecoder = new TextDecoderStream();
+        const readableStreamClosed = scalePort.readable.pipeTo(textDecoder.writable);
+        const reader = textDecoder.readable.getReader();
+        scaleReader = reader;
+
+        let buffer = '';
+
+        while(scaleKeepReading){
+          const { value, done } = await reader.read();
+          if(done) break;
+          if(!value) continue;
+
+          buffer += value;
+
+          // Procesa por líneas
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || '';
+
+          for(const line of lines){
+            const w = parseWeight(line);
+            if(w == null) continue;
+
+            // ✅ escribe directo al input correcto
+            const target = getTargetKgInput();
+            if(target){
+              target.value = Number(w).toFixed(2);
+              markDirty();
+            }
+          }
+        }
+
+        try{ await reader.releaseLock(); }catch{}
+        try{ await readableStreamClosed; }catch{}
+      }catch(err){
+        console.error(err);
+        alert('No se pudo conectar/leer la báscula. Prueba otro baud (9600/115200) y revisa el cable.');
+        await scaleDisconnect();
+      }
+    }
+
+    async function scaleDisconnect(){
+      scaleKeepReading = false;
+
+      try{ if(scaleReader) await scaleReader.cancel(); }catch{}
+      try{ if(scaleReader) scaleReader.releaseLock(); }catch{}
+      scaleReader = null;
+
+      try{ if(scalePort) await scalePort.close(); }catch{}
+      scalePort = null;
+
+      setScaleUI(false, 'Sin báscula');
     }
   </script>
 </body>
