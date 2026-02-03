@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>VDC360° — Notas a Crédito</title>
+  <title>VDC360° — Prueba Báscula Realtime (Supabase)</title>
 
   <style>
     :root{--ink:#111;--brand:#0a7a3b;--muted:#6b7280;--bg:#f6f7f8;--card:#fff;--danger:#b91c1c}
@@ -11,16 +11,15 @@
     body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto}
     header{background:var(--brand);color:#fff;padding:14px 18px}
     header h1{margin:0;font-size:18px}
-    main{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px}
+    main{max-width:900px;margin:0 auto;padding:16px;display:grid;gap:16px}
     .card{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
-    .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     label{font-weight:800;font-size:13px;color:#111}
-    input,select,textarea{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;font-size:14px}
+    input,select{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:12px;font-size:14px}
     button{border:none;border-radius:12px;padding:12px 14px;font-weight:900;cursor:pointer}
     .btn{background:var(--brand);color:#fff}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
     .btn-outline{background:#fff;border:1px solid #e5e7eb}
-    .mini{padding:10px 12px;border-radius:10px}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
     .muted{color:var(--muted);font-weight:700}
     .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:#f3f4f6;font-weight:800}
@@ -29,95 +28,84 @@
     .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:800}
     .switch{display:flex;align-items:center;gap:10px}
     .switch input{width:20px;height:20px}
-    .small{font-size:12px;font-weight:800;color:#374151}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
   </style>
 </head>
 
 <body>
   <header>
-    <h1>VDC360° — Notas a Crédito</h1>
+    <h1>VDC360° — Prueba Báscula Realtime (Supabase)</h1>
   </header>
 
   <main>
     <section class="card">
       <div class="row">
         <div>
-          <label>Producto</label>
-          <input id="pProducto" placeholder="Ej. Panza, Tripa, Teleco..." />
-        </div>
-
-        <div>
-          <label>Kilos</label>
+          <label>Kilos (se llena solo)</label>
           <input id="pKg" type="number" min="0" step="0.01" value="0" />
-
-          <!-- ✅ REAL-TIME CONTROL -->
-          <div class="actions" style="margin-top:10px">
-            <button type="button" id="btnPeso" class="btn mini">📥 Tomar peso</button>
-
-            <span class="switch chip">
-              <input type="checkbox" id="rtToggle" />
-              <span>Real-time</span>
-            </span>
-
-            <span class="chip">
-              <span class="small">Cada</span>
-              <select id="rtMs" class="mini" style="padding:8px 10px;border-radius:10px">
-                <option value="250">0.25s</option>
-                <option value="500" selected>0.50s</option>
-                <option value="800">0.80s</option>
-                <option value="1000">1.0s</option>
-                <option value="1500">1.5s</option>
-              </select>
-            </span>
-
-            <span id="pesoStatus" class="badge muted">Báscula: esperando…</span>
-          </div>
-
-          <div class="muted" style="margin-top:10px; font-size:12px">
-            Recomendado: Real-time ON a 0.50s. Para evitar “brincos”, se aplica filtro de estabilidad.
+          <div class="muted" style="margin-top:8px;font-size:12px">
+            Este input se llena con el peso “live” guardado en Supabase.
           </div>
         </div>
 
         <div>
-          <label>Piezas (opcional)</label>
-          <input id="pPzas" type="number" min="0" step="1" value="0" />
+          <label>ID Báscula</label>
+          <input id="basculaId" value="torrey_1" />
+          <div class="muted" style="margin-top:8px;font-size:12px">
+            Debe coincidir con el ID que usa el script de Windows.
+          </div>
         </div>
       </div>
 
-      <div style="margin-top:14px" class="actions">
-        <button class="btn" type="button" id="btnAgregar">Agregar</button>
-        <button class="btn-outline" type="button" id="btnLimpiar">Limpiar</button>
+      <div class="actions" style="margin-top:14px">
+        <button type="button" id="btnPeso" class="btn">📥 Tomar peso</button>
+
+        <span class="switch chip">
+          <input type="checkbox" id="rtToggle" />
+          <span>Real-time</span>
+        </span>
+
+        <span id="pesoStatus" class="badge muted">Báscula: esperando…</span>
       </div>
 
-      <p class="muted" style="margin-top:12px">
-        Tip: Deja abierto <b>Viewer 3.0</b> en la PC. Con Real-time ON se llena el Kg automáticamente.
-      </p>
+      <div class="muted" style="margin-top:12px;font-size:12px;line-height:1.4">
+        Para que funcione: la PC Windows debe estar “empujando” el peso a Supabase cada 0.5s.<br/>
+        Si ves <code>sin datos</code>, es que todavía no llega nada a la tabla.
+      </div>
     </section>
 
     <section class="card">
-      <b>Área de tu nota / tabla / impresión…</b>
-      <div class="muted">Aquí va tu contenido actual (no modificado).</div>
+      <b>Debug rápido</b>
+      <div class="muted" style="margin-top:8px">
+        Última lectura: <span id="lastTs">—</span><br/>
+        Peso crudo: <span id="lastRaw">—</span>
+      </div>
     </section>
   </main>
 
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
     // =========================
-    // ✅ CONFIG
+    // ✅ SUPABASE CONFIG (tus datos)
     // =========================
-    const BASCULA_URL = "http://10.211.55.3:8765/peso"; // ⚠️ Pon la IP real de tu PC Windows
-    const kgInputSelector = "#pKg";
+    const SUPABASE_URL = "https://eqynjddcosvdqjzztznn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxeW5qZGRjb3N2ZHFqenp0em5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzYwMzIsImV4cCI6MjA3MTcxMjAzMn0.Q51wsGelUvxRfqsMYRY5JduCGyZ7s6AzOhqsRf3kOhk";
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // =========================
-    // ✅ UI REFS
+    // ✅ UI
     // =========================
+    const kgInput = document.getElementById("pKg");
+    const basculaIdInput = document.getElementById("basculaId");
     const btnPeso = document.getElementById("btnPeso");
-    const pesoStatus = document.getElementById("pesoStatus");
     const rtToggle = document.getElementById("rtToggle");
-    const rtMs = document.getElementById("rtMs");
+    const pesoStatus = document.getElementById("pesoStatus");
+    const lastTs = document.getElementById("lastTs");
+    const lastRaw = document.getElementById("lastRaw");
 
-    // =========================
-    // ✅ STATUS + HELPERS
-    // =========================
     function setStatus(msg, ok=true){
       if(!pesoStatus) return;
       pesoStatus.textContent = msg || "";
@@ -126,184 +114,134 @@
     }
 
     function setKgValue(value){
-      const el = document.querySelector(kgInputSelector);
-      if(!el) return;
-
-      // Solo actualizar si cambió (evita parpadeo)
-      const current = Number(el.value || 0);
+      if(!kgInput) return;
       const next = Number(value || 0);
-      if (Math.abs(current - next) < 0.001) return;
-
-      el.value = next.toFixed(2);
-      el.dispatchEvent(new Event("input", { bubbles:true }));
-      el.dispatchEvent(new Event("change", { bubbles:true }));
-    }
-
-    async function fetchPeso(){
-      const res = await fetch(BASCULA_URL, { cache:"no-store" });
-      const data = await res.json();
-
-      let peso = null;
-      if (typeof data.peso === "number") peso = data.peso;
-      else if (typeof data.last_ok === "number") peso = data.last_ok;
-
-      return { data, peso: (peso==null ? null : Math.abs(peso)) };
+      kgInput.value = next.toFixed(2);
+      kgInput.dispatchEvent(new Event("input", { bubbles:true }));
+      kgInput.dispatchEvent(new Event("change", { bubbles:true }));
     }
 
     // =========================
-    // ✅ FILTRO ANTI-BRINCO (ESTABILIDAD)
-    // - Guardamos últimas lecturas y solo escribimos si se repite / se mantiene estable.
+    // ✅ Leer último peso (Supabase)
+    // Tabla: bascula_live
+    // Campos mínimos: id (text), peso (numeric), updated_at (timestamptz)
     // =========================
-    const stable = {
-      last: null,
-      lastTs: 0,
-      okCount: 0,
-      needed: 2,          // cuántas lecturas estables para “aceptar”
-      tol: 0.03           // tolerancia kg (0.03 = 30g)
-    };
+    async function fetchUltimoPeso(){
+      const id = (basculaIdInput.value || "torrey_1").trim();
 
-    function updateStability(kg){
-      const now = Date.now();
-      if (stable.last == null){
-        stable.last = kg; stable.okCount = 1; stable.lastTs = now;
-        return { accept:false, okCount: stable.okCount };
+      const { data, error } = await sb
+        .from("bascula_live")
+        .select("peso, updated_at")
+        .eq("id", id)
+        .maybeSingle();
+
+      if(error) {
+        console.error(error);
+        return { ok:false, error: error.message };
       }
+      if(!data || data.peso == null) return { ok:false, error: "sin datos" };
 
-      if (Math.abs(kg - stable.last) <= stable.tol){
-        stable.okCount += 1;
-      } else {
-        stable.last = kg;
-        stable.okCount = 1;
+      return { ok:true, data };
+    }
+
+    function fmtTs(ts){
+      try{
+        const d = new Date(ts);
+        return d.toLocaleString();
+      }catch{
+        return String(ts || "—");
       }
-      stable.lastTs = now;
-
-      const accept = stable.okCount >= stable.needed;
-      return { accept, okCount: stable.okCount };
     }
 
     // =========================
-    // ✅ BOTÓN MANUAL (1 lectura)
+    // ✅ Botón manual
     // =========================
-    async function tomarPesoManual(){
+    btnPeso?.addEventListener("click", async ()=>{
       setStatus("Báscula: leyendo…", true);
       btnPeso.disabled = true;
-      try{
-        const { data, peso } = await fetchPeso();
 
-        if (peso == null){
-          setStatus("Báscula: no se pudo leer.", false);
-          alert("No se pudo leer el peso. ¿Está abierto Viewer 3.0?");
-          return;
-        }
-
-        setKgValue(peso);
-        setStatus(`Báscula: OK ${peso.toFixed(2)} kg (${data.metodo})`, true);
-
-      } catch(err){
-        console.error(err);
-        setStatus("Báscula: error de conexión.", false);
-        alert("Error conectando con la báscula. Revisa que bascula_server.py esté corriendo y la IP sea correcta.");
-      } finally {
+      const r = await fetchUltimoPeso();
+      if(!r.ok){
+        setStatus("Báscula: " + r.error, false);
+        alert("No hay lectura en Supabase todavía.\n\nAsegúrate que la PC Windows esté corriendo el script que sube el peso.");
         btnPeso.disabled = false;
+        return;
       }
-    }
 
-    btnPeso?.addEventListener("click", tomarPesoManual);
+      const { peso, updated_at } = r.data;
+      setKgValue(peso);
+      lastTs.textContent = fmtTs(updated_at);
+      lastRaw.textContent = String(peso);
+      setStatus(`Báscula: ${Number(peso).toFixed(2)} kg ✅`, true);
+
+      btnPeso.disabled = false;
+    });
 
     // =========================
-    // ✅ REAL-TIME (POLLING)
+    // ✅ REALTIME SUBSCRIBE
     // =========================
-    let rtTimer = null;
-    let rtInFlight = false;
+    let ch = null;
 
     function stopRealtime(){
-      if (rtTimer) clearInterval(rtTimer);
-      rtTimer = null;
-      rtInFlight = false;
+      if(ch){
+        sb.removeChannel(ch);
+        ch = null;
+      }
       setStatus("Báscula: esperando…", true);
     }
 
-    function startRealtime(){
-      stopRealtime(); // reset
-      const interval = Number(rtMs.value || 500);
+    async function startRealtime(){
+      stopRealtime();
+      setStatus("Báscula: conectando (RT)…", true);
 
-      setStatus("Báscula: real-time ON…", true);
+      const id = (basculaIdInput.value || "torrey_1").trim();
 
-      rtTimer = setInterval(async ()=>{
-        if (rtInFlight) return; // evita llamadas encimadas
-        rtInFlight = true;
+      // carga inicial
+      const init = await fetchUltimoPeso();
+      if(init.ok){
+        setKgValue(init.data.peso);
+        lastTs.textContent = fmtTs(init.data.updated_at);
+        lastRaw.textContent = String(init.data.peso);
+        setStatus(`Báscula: ${Number(init.data.peso).toFixed(2)} kg ✅ (init)`, true);
+      }else{
+        setStatus("Báscula: sin datos (esperando)…", false);
+      }
 
-        try{
-          const { data, peso } = await fetchPeso();
-
-          if (peso == null){
-            setStatus("Báscula: sin lectura…", false);
-            rtInFlight = false;
-            return;
+      // suscribirse
+      ch = sb.channel("bascula-rt-" + id)
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "bascula_live",
+          filter: `id=eq.${id}`
+        }, (payload) => {
+          const row = payload.new || payload.old;
+          if(row && row.peso != null){
+            setKgValue(row.peso);
+            lastTs.textContent = fmtTs(row.updated_at || new Date().toISOString());
+            lastRaw.textContent = String(row.peso);
+            setStatus(`Báscula: ${Number(row.peso).toFixed(2)} kg ✅ (RT)`, true);
           }
-
-          const st = updateStability(peso);
-
-          // Solo escribe cuando hay estabilidad
-          if (st.accept){
-            setKgValue(peso);
-            setStatus(`Báscula: ${peso.toFixed(2)} kg ✅ (${data.metodo})`, true);
-          } else {
-            setStatus(`Báscula: ${peso.toFixed(2)} kg (estabilizando ${st.okCount}/${stable.needed})`, true);
+        })
+        .subscribe((status) => {
+          if(status === "SUBSCRIBED"){
+            setStatus("Báscula: RT ON ✅", true);
           }
-
-        } catch(err){
-          console.error(err);
-          setStatus("Báscula: error conexión (RT).", false);
-        } finally {
-          rtInFlight = false;
-        }
-      }, interval);
+        });
     }
 
     rtToggle?.addEventListener("change", ()=>{
-      if (rtToggle.checked) startRealtime();
+      if(rtToggle.checked) startRealtime();
       else stopRealtime();
     });
 
-    rtMs?.addEventListener("change", ()=>{
-      if (rtToggle.checked) startRealtime(); // reinicia con nuevo intervalo
+    // Si cambias el ID mientras RT está ON, reinicia
+    basculaIdInput?.addEventListener("change", ()=>{
+      if(rtToggle.checked) startRealtime();
     });
 
-    // =========================
-    // (TU LÓGICA EXISTENTE - EJEMPLO MÍNIMO)
-    // =========================
-    const btnAgregar = document.getElementById("btnAgregar");
-    const btnLimpiar = document.getElementById("btnLimpiar");
-
-    btnAgregar?.addEventListener("click", () => {
-      const prod = document.getElementById("pProducto").value.trim();
-      const kg = Number(document.getElementById("pKg").value || 0);
-      const pzas = Number(document.getElementById("pPzas").value || 0);
-
-      if(!prod){
-        alert("Pon el producto.");
-        return;
-      }
-      if(!(kg > 0)){
-        alert("Pon kilos > 0 (o usa Tomar peso / Real-time).");
-        return;
-      }
-
-      console.log("AGREGAR:", {prod, kg, pzas});
-      alert(`Agregado: ${prod} — ${kg.toFixed(2)} kg`);
-    });
-
-    btnLimpiar?.addEventListener("click", () => {
-      document.getElementById("pProducto").value = "";
-      document.getElementById("pKg").value = "0";
-      document.getElementById("pPzas").value = "0";
-      stable.last = null; stable.okCount = 0;
-      setStatus("Báscula: esperando…", true);
-    });
-
-    // ✅ Si quieres que al cargar recuerde el modo RT (opcional)
-    // rtToggle.checked = true; startRealtime();
+    // arranque visual
+    setStatus("Báscula: esperando…", true);
   </script>
 </body>
 </html>
