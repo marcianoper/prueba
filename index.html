@@ -26,6 +26,10 @@
     .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:#f3f4f6;font-weight:800}
     .ok{color:var(--brand)}
     .bad{color:var(--danger)}
+    .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:800}
+    .switch{display:flex;align-items:center;gap:10px}
+    .switch input{width:20px;height:20px}
+    .small{font-size:12px;font-weight:800;color:#374151}
   </style>
 </head>
 
@@ -46,10 +50,31 @@
           <label>Kilos</label>
           <input id="pKg" type="number" min="0" step="0.01" value="0" />
 
-          <!-- ✅ NUEVO: botón para tomar peso -->
+          <!-- ✅ REAL-TIME CONTROL -->
           <div class="actions" style="margin-top:10px">
             <button type="button" id="btnPeso" class="btn mini">📥 Tomar peso</button>
+
+            <span class="switch chip">
+              <input type="checkbox" id="rtToggle" />
+              <span>Real-time</span>
+            </span>
+
+            <span class="chip">
+              <span class="small">Cada</span>
+              <select id="rtMs" class="mini" style="padding:8px 10px;border-radius:10px">
+                <option value="250">0.25s</option>
+                <option value="500" selected>0.50s</option>
+                <option value="800">0.80s</option>
+                <option value="1000">1.0s</option>
+                <option value="1500">1.5s</option>
+              </select>
+            </span>
+
             <span id="pesoStatus" class="badge muted">Báscula: esperando…</span>
+          </div>
+
+          <div class="muted" style="margin-top:10px; font-size:12px">
+            Recomendado: Real-time ON a 0.50s. Para evitar “brincos”, se aplica filtro de estabilidad.
           </div>
         </div>
 
@@ -65,11 +90,10 @@
       </div>
 
       <p class="muted" style="margin-top:12px">
-        Tip: Deja abierto <b>Viewer 3.0</b> en la PC. Con un clic en “Tomar peso” se llena el campo de Kg.
+        Tip: Deja abierto <b>Viewer 3.0</b> en la PC. Con Real-time ON se llena el Kg automáticamente.
       </p>
     </section>
 
-    <!-- Aquí iría tu tabla / lista / lógica de nota a crédito (no la toqué) -->
     <section class="card">
       <b>Área de tu nota / tabla / impresión…</b>
       <div class="muted">Aquí va tu contenido actual (no modificado).</div>
@@ -78,16 +102,22 @@
 
   <script>
     // =========================
-    // ✅ LECTURA AUTOMÁTICA DE BÁSCULA (MISMA PC WINDOWS)
+    // ✅ CONFIG
     // =========================
-    const BASCULA_URL = "http://10.211.55.3:8765/peso"; // MISMA PC
-
-    const btnPeso = document.getElementById("btnPeso");
-    const pesoStatus = document.getElementById("pesoStatus");
-
-    // ✅ input real de kilos
+    const BASCULA_URL = "http://10.211.55.3:8765/peso"; // ⚠️ Pon la IP real de tu PC Windows
     const kgInputSelector = "#pKg";
 
+    // =========================
+    // ✅ UI REFS
+    // =========================
+    const btnPeso = document.getElementById("btnPeso");
+    const pesoStatus = document.getElementById("pesoStatus");
+    const rtToggle = document.getElementById("rtToggle");
+    const rtMs = document.getElementById("rtMs");
+
+    // =========================
+    // ✅ STATUS + HELPERS
+    // =========================
     function setStatus(msg, ok=true){
       if(!pesoStatus) return;
       pesoStatus.textContent = msg || "";
@@ -97,54 +127,151 @@
 
     function setKgValue(value){
       const el = document.querySelector(kgInputSelector);
-      if(!el) {
-        alert("No encontré el input de Kg (#pKg).");
-        return;
-      }
-      el.value = value;
+      if(!el) return;
 
-      // Disparar eventos para que tu sistema recalculen totales
+      // Solo actualizar si cambió (evita parpadeo)
+      const current = Number(el.value || 0);
+      const next = Number(value || 0);
+      if (Math.abs(current - next) < 0.001) return;
+
+      el.value = next.toFixed(2);
       el.dispatchEvent(new Event("input", { bubbles:true }));
       el.dispatchEvent(new Event("change", { bubbles:true }));
     }
 
-    async function tomarPeso(){
+    async function fetchPeso(){
+      const res = await fetch(BASCULA_URL, { cache:"no-store" });
+      const data = await res.json();
+
+      let peso = null;
+      if (typeof data.peso === "number") peso = data.peso;
+      else if (typeof data.last_ok === "number") peso = data.last_ok;
+
+      return { data, peso: (peso==null ? null : Math.abs(peso)) };
+    }
+
+    // =========================
+    // ✅ FILTRO ANTI-BRINCO (ESTABILIDAD)
+    // - Guardamos últimas lecturas y solo escribimos si se repite / se mantiene estable.
+    // =========================
+    const stable = {
+      last: null,
+      lastTs: 0,
+      okCount: 0,
+      needed: 2,          // cuántas lecturas estables para “aceptar”
+      tol: 0.03           // tolerancia kg (0.03 = 30g)
+    };
+
+    function updateStability(kg){
+      const now = Date.now();
+      if (stable.last == null){
+        stable.last = kg; stable.okCount = 1; stable.lastTs = now;
+        return { accept:false, okCount: stable.okCount };
+      }
+
+      if (Math.abs(kg - stable.last) <= stable.tol){
+        stable.okCount += 1;
+      } else {
+        stable.last = kg;
+        stable.okCount = 1;
+      }
+      stable.lastTs = now;
+
+      const accept = stable.okCount >= stable.needed;
+      return { accept, okCount: stable.okCount };
+    }
+
+    // =========================
+    // ✅ BOTÓN MANUAL (1 lectura)
+    // =========================
+    async function tomarPesoManual(){
       setStatus("Báscula: leyendo…", true);
       btnPeso.disabled = true;
-
       try{
-        const res = await fetch(BASCULA_URL, { cache:"no-store" });
-        const data = await res.json();
+        const { data, peso } = await fetchPeso();
 
-        let peso = null;
-        if (typeof data.peso === "number") peso = data.peso;
-        else if (typeof data.last_ok === "number") peso = data.last_ok;
-
-        if (peso === null){
+        if (peso == null){
           setStatus("Báscula: no se pudo leer.", false);
           alert("No se pudo leer el peso. ¿Está abierto Viewer 3.0?");
           return;
         }
 
-        // Si viene negativo por TARE, guardamos positivo
-        const kg = Math.abs(peso);
-
-        setKgValue(kg.toFixed(2));
-        setStatus(`Báscula: OK ${kg.toFixed(2)} kg (${data.metodo})`, true);
+        setKgValue(peso);
+        setStatus(`Báscula: OK ${peso.toFixed(2)} kg (${data.metodo})`, true);
 
       } catch(err){
         console.error(err);
         setStatus("Báscula: error de conexión.", false);
-        alert("Error conectando con el servidor de la báscula. Revisa que bascula_server.py esté corriendo.");
+        alert("Error conectando con la báscula. Revisa que bascula_server.py esté corriendo y la IP sea correcta.");
       } finally {
         btnPeso.disabled = false;
       }
     }
 
-    if(btnPeso) btnPeso.addEventListener("click", tomarPeso);
+    btnPeso?.addEventListener("click", tomarPesoManual);
 
     // =========================
-    // (TU LÓGICA EXISTENTE - EJEMPLO MINIMO)
+    // ✅ REAL-TIME (POLLING)
+    // =========================
+    let rtTimer = null;
+    let rtInFlight = false;
+
+    function stopRealtime(){
+      if (rtTimer) clearInterval(rtTimer);
+      rtTimer = null;
+      rtInFlight = false;
+      setStatus("Báscula: esperando…", true);
+    }
+
+    function startRealtime(){
+      stopRealtime(); // reset
+      const interval = Number(rtMs.value || 500);
+
+      setStatus("Báscula: real-time ON…", true);
+
+      rtTimer = setInterval(async ()=>{
+        if (rtInFlight) return; // evita llamadas encimadas
+        rtInFlight = true;
+
+        try{
+          const { data, peso } = await fetchPeso();
+
+          if (peso == null){
+            setStatus("Báscula: sin lectura…", false);
+            rtInFlight = false;
+            return;
+          }
+
+          const st = updateStability(peso);
+
+          // Solo escribe cuando hay estabilidad
+          if (st.accept){
+            setKgValue(peso);
+            setStatus(`Báscula: ${peso.toFixed(2)} kg ✅ (${data.metodo})`, true);
+          } else {
+            setStatus(`Báscula: ${peso.toFixed(2)} kg (estabilizando ${st.okCount}/${stable.needed})`, true);
+          }
+
+        } catch(err){
+          console.error(err);
+          setStatus("Báscula: error conexión (RT).", false);
+        } finally {
+          rtInFlight = false;
+        }
+      }, interval);
+    }
+
+    rtToggle?.addEventListener("change", ()=>{
+      if (rtToggle.checked) startRealtime();
+      else stopRealtime();
+    });
+
+    rtMs?.addEventListener("change", ()=>{
+      if (rtToggle.checked) startRealtime(); // reinicia con nuevo intervalo
+    });
+
+    // =========================
+    // (TU LÓGICA EXISTENTE - EJEMPLO MÍNIMO)
     // =========================
     const btnAgregar = document.getElementById("btnAgregar");
     const btnLimpiar = document.getElementById("btnLimpiar");
@@ -159,11 +286,10 @@
         return;
       }
       if(!(kg > 0)){
-        alert("Pon kilos > 0 (o usa Tomar peso).");
+        alert("Pon kilos > 0 (o usa Tomar peso / Real-time).");
         return;
       }
 
-      // Aquí va tu lógica real de agregar a la nota (no la toqué).
       console.log("AGREGAR:", {prod, kg, pzas});
       alert(`Agregado: ${prod} — ${kg.toFixed(2)} kg`);
     });
@@ -172,8 +298,12 @@
       document.getElementById("pProducto").value = "";
       document.getElementById("pKg").value = "0";
       document.getElementById("pPzas").value = "0";
+      stable.last = null; stable.okCount = 0;
       setStatus("Báscula: esperando…", true);
     });
+
+    // ✅ Si quieres que al cargar recuerde el modo RT (opcional)
+    // rtToggle.checked = true; startRealtime();
   </script>
 </body>
 </html>
