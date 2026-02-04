@@ -47,6 +47,31 @@
       background:#fff1f2;
       color:#b91c1c;
     }
+
+    /* ====== NUEVO: Bascula live ====== */
+    .bascula-box{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .peso-big{
+      font-size:26px;
+      font-weight:1000;
+    }
+    .peso-status{
+      font-weight:900;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(0,0,0,.08);
+      background:#eef7ef;
+      color:#1f6f26;
+      font-size:12px;
+    }
+    .peso-status.off{
+      background:#fff1f2;
+      color:#b91c1c;
+    }
   </style>
 </head>
 <body>
@@ -73,6 +98,23 @@
   </h1>
 
   <label><strong>Fecha del viaje:</strong> <input type="date" id="fechaViaje"></label>
+
+  <!-- ===============================
+       NUEVO: BÁSCULA EN VIVO (Supabase)
+       =============================== -->
+  <div class="section">
+    <h2>Báscula en vivo</h2>
+    <div class="bascula-box">
+      <div><strong>Peso actual:</strong> <span id="pesoLive" class="peso-big">--</span> kg</div>
+      <span id="pesoStatus" class="peso-status">CONECTANDO</span>
+      <button class="btn" type="button" onclick="tomarPesoEnInputActivo()">Usar este peso en la pesada seleccionada</button>
+      <button class="btn" type="button" onclick="leerPesoManual()">Actualizar ahora</button>
+    </div>
+    <p style="font-size:12px; color:#555; margin:8px 0 0 0;">
+      Tip: haz click dentro de un input de <b>Kg</b> (una pesada) y luego presiona “Usar este peso”.
+    </p>
+  </div>
+
   <div id="contenedorProductos"></div>
 
   <button class="btn" onclick="guardarViaje()">Guardar Viaje</button>
@@ -90,6 +132,13 @@
 
     /* ========= REALTIME LIVE TABLE ========= */
     const LIVE_TABLE = 'hoja_viaje_live';
+
+    /* ========= NUEVO: BASCULA LIVE TABLE ========= */
+    const BASCULA_TABLE = 'bascula_live';
+    const BASCULA_ID = 'torrey_1';
+    let ultimoPeso = null;
+    let kgInputActivo = null;
+    let basculaSub = null;
 
     /* ========= DEVICE ID (para no “rebotar” tus propios updates) ========= */
     const DEVICE_ID = (() => {
@@ -304,7 +353,7 @@
 
     function getFechaISO(){ return document.getElementById('fechaViaje')?.value || todayISO(); }
 
-    function liveKey(){ return `viaje-${getFechaISO()}`; } // clave por fecha (como tu realtime del mostrador)
+    function liveKey(){ return `viaje-${getFechaISO()}`; }
 
     function recolectarResultados(){
       const resultados = {};
@@ -358,7 +407,6 @@
 
     // LIVE (Supabase)
     async function saveLive(){
-      // evita mandar de regreso lo que llega remoto
       if(applyingRemote) return;
 
       const state = collectState();
@@ -411,7 +459,6 @@
         rtSub = null;
       }
 
-      // v1 realtime: escuchamos UPDATE + INSERT en la fila id=liveKey()
       rtSub = supabase
         .from(`${LIVE_TABLE}:id=eq.${liveKey()}`)
         .on('INSERT', payload => onLivePayload(payload))
@@ -426,7 +473,6 @@
         const row = payload.new || payload.record || null;
         if(!row) return;
 
-        // no aplicar nuestros propios updates
         if(row.updated_by && row.updated_by === DEVICE_ID) return;
 
         if(row.data){
@@ -462,13 +508,107 @@
 
     // Cambio de fecha => cambia la “sala” realtime (otra key)
     document.getElementById('fechaViaje')?.addEventListener('change', async ()=>{
-      // carga live de esa fecha y se suscribe a esa fecha
       applyingRemote = true;
       await loadLive();
       loadLocal();
       applyingRemote = false;
       subscribeLive();
+      // también refresca la báscula al cambiar fecha (no afecta, pero mantiene UI viva)
+      await leerPesoManual();
+      subscribeBascula();
     });
+
+    /* ==========================================
+       NUEVO: BASCULA LIVE (leer + realtime)
+       ========================================== */
+    function setPesoStatus(on, text){
+      const pill = $('#pesoStatus');
+      if(!pill) return;
+      pill.textContent = text || (on ? 'EN VIVO' : 'OFF');
+      pill.classList.toggle('off', !on);
+    }
+
+    function setPesoUI(p){
+      const el = $('#pesoLive');
+      if(!el) return;
+      el.textContent = (Number(p)||0).toFixed(2);
+    }
+
+    // Detecta el input Kg “activo” (columna 0)
+    function hookKgFocusGlobal(){
+      document.addEventListener('focusin', (e)=>{
+        if(!e.target || !e.target.matches('input[type="number"]')) return;
+        const td = e.target.closest('td');
+        const tr = e.target.closest('tr');
+        if(td && tr && td.cellIndex === 0){
+          kgInputActivo = e.target;
+        }
+      });
+    }
+
+    async function leerPesoManual(){
+      try{
+        const { data, error } = await supabase
+          .from(BASCULA_TABLE)
+          .select('peso, updated_at')
+          .eq('id', BASCULA_ID)
+          .single();
+
+        if(error) throw error;
+
+        ultimoPeso = Number(data?.peso ?? 0);
+        setPesoUI(ultimoPeso);
+        setPesoStatus(true, 'OK');
+      }catch(err){
+        console.log('BASCULA READ ERROR:', err);
+        setPesoStatus(false, 'ERROR');
+      }
+    }
+
+    function tomarPesoEnInputActivo(){
+      if(ultimoPeso === null){
+        alert('Aún no tengo peso. Dale “Actualizar ahora” primero.');
+        return;
+      }
+      if(!kgInputActivo){
+        alert('Selecciona un input de Kg (en una pesada) y luego presiona “Usar este peso”.');
+        return;
+      }
+      kgInputActivo.value = Number(ultimoPeso).toFixed(1);
+      kgInputActivo.dispatchEvent(new Event('input', { bubbles:true }));
+      kgInputActivo.dispatchEvent(new Event('change', { bubbles:true }));
+    }
+
+    function subscribeBascula(){
+      // limpia suscripción previa
+      if(basculaSub){
+        try{ supabase.removeSubscription(basculaSub); }catch(e){}
+        basculaSub = null;
+      }
+
+      // v1 realtime
+      basculaSub = supabase
+        .from(`${BASCULA_TABLE}:id=eq.${BASCULA_ID}`)
+        .on('UPDATE', payload => {
+          const row = payload.new || payload.record;
+          if(!row) return;
+          ultimoPeso = Number(row.peso ?? 0);
+          setPesoUI(ultimoPeso);
+          setPesoStatus(true, 'EN VIVO');
+        })
+        .on('INSERT', payload => {
+          const row = payload.new || payload.record;
+          if(!row) return;
+          ultimoPeso = Number(row.peso ?? 0);
+          setPesoUI(ultimoPeso);
+          setPesoStatus(true, 'EN VIVO');
+        })
+        .subscribe((status)=>{
+          if(status === 'SUBSCRIBED'){
+            setPesoStatus(true, 'EN VIVO');
+          }
+        });
+    }
 
     /* ========= ARRANQUE ========= */
     document.addEventListener('DOMContentLoaded', async () => {
@@ -488,11 +628,16 @@
       await loadLive();
       loadLocal();
 
-      // 3) suscribir realtime para esa fecha
+      // 2) suscribir realtime para esa fecha
       subscribeLive();
 
-      // 4) si no había nada en live, sube el estado inicial vacío (para “crear la sala”)
+      // 3) si no había nada en live, sube el estado inicial vacío
       await saveLive();
+
+      // ===== NUEVO: iniciar bascula live =====
+      hookKgFocusGlobal();
+      await leerPesoManual();
+      subscribeBascula();
     });
   </script>
 </body>
