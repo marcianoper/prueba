@@ -4,25 +4,32 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hoja de Viaje - VDC360°</title>
+
+  <!-- Supabase v1 (como tu proyecto) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; }
     h1 { text-align: center; }
-    .section { border: 1px solid #ddd; padding: 10px; margin-bottom: 20px; }
+    .section { border: 1px solid #ddd; padding: 10px; margin-bottom: 20px; border-radius:10px; background:#fff; }
     .section h2 { margin-top: 0; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
     th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    input[type="number"] { width: 80px; }
-    .btn { padding: 6px 12px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 4px; margin-top: 5px; }
+    input[type="number"] { width: 110px; padding:8px; }
+    .btn { padding: 10px 14px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 10px; margin-top: 6px; font-weight:900; }
+    .btn.secondary{ background:#0a7a3b; }
+    .btn.danger{ background:#b91c1c; }
+    .row2 { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .muted { color:#555; font-size:12px; }
 
     /* ====== NUEVO: estilos del marcador ====== */
     .mark-select{
-      width: 120px;
-      padding: 6px;
-      border-radius: 8px;
+      width: 140px;
+      padding: 8px;
+      border-radius: 10px;
       border: 1px solid #cfd3d8;
       background: #fff;
-      font-weight: 700;
+      font-weight: 800;
     }
     .row-mark-none { background: transparent; }
     .row-mark-yellow { background: rgba(255, 235, 59, .35); }
@@ -48,80 +55,141 @@
       color:#b91c1c;
     }
 
-    /* ====== NUEVO: Bascula live ====== */
+    /* ===== Báscula box ===== */
     .bascula-box{
       display:flex;
       gap:10px;
       align-items:center;
       flex-wrap:wrap;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.10);
+      background:#f7faf7;
     }
     .peso-big{
-      font-size:26px;
-      font-weight:1000;
+      font-size: 34px;
+      font-weight: 1000;
+      letter-spacing:.5px;
     }
     .peso-status{
-      font-weight:900;
-      padding:4px 10px;
-      border-radius:999px;
-      border:1px solid rgba(0,0,0,.08);
+      display:inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 1000;
+      font-size: 12px;
       background:#eef7ef;
       color:#1f6f26;
-      font-size:12px;
+      border:1px solid rgba(0,0,0,.08);
     }
     .peso-status.off{
       background:#fff1f2;
       color:#b91c1c;
     }
+
+    /* ===== NUEVO: Barra flotante “Usar peso” ===== */
+    .peso-floatbar{
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      bottom: 14px;
+      z-index: 99999;
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,.12);
+      border-radius: 14px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.18);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .peso-float-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .peso-mini{
+      font-weight: 1000;
+      font-size: 18px;
+    }
+    .peso-help{
+      font-size: 12px;
+      color: #555;
+    }
+
+    /* Para que el contenido no quede tapado por la barra */
+    body{ padding-bottom: 120px; }
   </style>
 </head>
+
 <body>
   <a href="https://marcianoper.github.io/vdc-central/"
-   style="
-     position:fixed;
-     top:12px;
-     left:12px;
-     background:#0a7a3b;
-     color:#fff;
-     padding:10px 14px;
-     border-radius:12px;
-     text-decoration:none;
-     font-weight:900;
-     z-index:9999;
-     box-shadow:0 10px 20px rgba(0,0,0,.15);
-   ">
-  ← VDC Central
-</a>
+     style="
+       position:fixed;
+       top:12px;
+       left:12px;
+       background:#0a7a3b;
+       color:#fff;
+       padding:10px 14px;
+       border-radius:12px;
+       text-decoration:none;
+       font-weight:900;
+       z-index:9999;
+       box-shadow:0 10px 20px rgba(0,0,0,.15);
+     ">
+    ← VDC Central
+  </a>
 
   <h1>
     Hoja de Viaje - VDC360°
     <span id="rt" class="rt-pill">REAL TIME</span>
   </h1>
 
-  <label><strong>Fecha del viaje:</strong> <input type="date" id="fechaViaje"></label>
+  <div class="row2" style="margin: 10px 0 16px 0;">
+    <label><strong>Fecha del viaje:</strong> <input type="date" id="fechaViaje"></label>
+  </div>
 
-  <!-- ===============================
-       NUEVO: BÁSCULA EN VIVO (Supabase)
-       =============================== -->
+  <!-- ===== BÁSCULA EN VIVO ===== -->
   <div class="section">
     <h2>Báscula en vivo</h2>
+
     <div class="bascula-box">
-      <div><strong>Peso actual:</strong> <span id="pesoLive" class="peso-big">--</span> kg</div>
+      <div>
+        <strong>Peso actual:</strong>
+        <span id="pesoLive" class="peso-big">--</span> kg
+      </div>
       <span id="pesoStatus" class="peso-status">CONECTANDO</span>
-      <button class="btn" type="button" onclick="tomarPesoEnInputActivo()">Usar este peso en la pesada seleccionada</button>
-      <button class="btn" type="button" onclick="leerPesoManual()">Actualizar ahora</button>
+
+      <button class="btn secondary" type="button" onclick="leerPesoManual()">Actualizar ahora</button>
     </div>
-    <p style="font-size:12px; color:#555; margin:8px 0 0 0;">
+
+    <p class="muted" style="margin-top:8px;">
       Tip: haz click dentro de un input de <b>Kg</b> (una pesada) y luego presiona “Usar este peso”.
     </p>
   </div>
 
+  <!-- ===== CONTENEDOR PRODUCTOS ===== -->
   <div id="contenedorProductos"></div>
 
   <button class="btn" onclick="guardarViaje()">Guardar Viaje</button>
-  <button class="btn" onclick="mostrarHistorial()">Ver Historial</button>
-  <button class="btn" onclick="generarResumenTotales()">Generar Documento de Totales</button>
+  <button class="btn secondary" onclick="mostrarHistorial()">Ver Historial</button>
+  <button class="btn secondary" onclick="generarResumenTotales()">Generar Documento de Totales</button>
 
   <div id="historialContainer" style="margin-top: 30px;"></div>
+
+  <!-- ===== NUEVO: Barra flotante siempre visible ===== -->
+  <div class="peso-floatbar">
+    <div class="peso-float-left">
+      <span class="peso-mini">Peso: <span id="pesoLiveMini">--</span> kg</span>
+      <span id="pesoStatusMini" class="peso-status">CONECTANDO</span>
+      <span class="peso-help">Selecciona un input de Kg y presiona el botón</span>
+    </div>
+
+    <button class="btn" type="button" onclick="tomarPesoEnInputActivo()">
+      Usar este peso
+    </button>
+  </div>
 
   <script>
     /* ========= CLIENTE SUPABASE ========= */
@@ -130,17 +198,17 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8'
     );
 
-    /* ========= REALTIME LIVE TABLE ========= */
-    const LIVE_TABLE = 'hoja_viaje_live';
-
-    /* ========= NUEVO: BASCULA LIVE TABLE ========= */
+    /* ========= TABLA LIVE DE BÁSCULA ========= */
+    // Debe existir en esta misma supabase (igual que tu bascula_live de otros proyectos)
+    // Estructura típica:
+    // id (text pk) | peso (numeric) | updated_at (timestamptz)
     const BASCULA_TABLE = 'bascula_live';
     const BASCULA_ID = 'torrey_1';
-    let ultimoPeso = null;
-    let kgInputActivo = null;
-    let basculaSub = null;
 
-    /* ========= DEVICE ID (para no “rebotar” tus propios updates) ========= */
+    /* ========= REALTIME LIVE TABLE (estado hoja) ========= */
+    const LIVE_TABLE = 'hoja_viaje_live';
+
+    /* ========= DEVICE ID ========= */
     const DEVICE_ID = (() => {
       const k = 'vdc_device_id';
       let v = localStorage.getItem(k);
@@ -164,29 +232,6 @@
 
     function getID(producto) {
       return producto.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    }
-
-    function crearTabla(producto) {
-      const id = getID(producto);
-      const section = document.createElement('div');
-      section.className = 'section';
-      section.innerHTML = `
-        <h2>${producto}</h2>
-        <table id="tabla-${id}">
-          <thead>
-            <tr>
-              <th>Kg</th>
-              <th>Piezas</th>
-              <th>Marcador</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <button class="btn agregar-btn" data-producto="${producto}">Agregar Pesada</button>
-        <p><strong>Total Kg:</strong> <span id="totalKg-${id}">0</span> |
-           <strong>Total Pzas:</strong> <span id="totalPzas-${id}">0</span></p>`;
-      document.getElementById('contenedorProductos').appendChild(section);
     }
 
     /* ========= marcador por fila ========= */
@@ -217,6 +262,29 @@
       row.dataset.mark = markKey || 'none';
     }
 
+    function crearTabla(producto) {
+      const id = getID(producto);
+      const section = document.createElement('div');
+      section.className = 'section';
+      section.innerHTML = `
+        <h2>${producto}</h2>
+        <table id="tabla-${id}">
+          <thead>
+            <tr>
+              <th>Kg</th>
+              <th>Piezas</th>
+              <th>Marcador</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <button class="btn agregar-btn" data-producto="${producto}">Agregar Pesada</button>
+        <p><strong>Total Kg:</strong> <span id="totalKg-${id}">0</span> |
+           <strong>Total Pzas:</strong> <span id="totalPzas-${id}">0</span></p>`;
+      document.getElementById('contenedorProductos').appendChild(section);
+    }
+
     /* ========= FILAS Y TOTALES ========= */
     function agregarFila(producto, kgValue = '', pzasValue = '', markKey = 'none') {
       const id = getID(producto);
@@ -231,10 +299,12 @@
       });
 
       fila.innerHTML = `
-        <td><input type="number" step="0.1" value="${kgValue}" onchange="actualizarTotales('${producto}'); scheduleSaves();"></td>
-        <td><input type="number" value="${pzasValue}" onchange="actualizarTotales('${producto}'); scheduleSaves();"></td>
+        <td><input class="kg-input" type="number" step="0.1" value="${kgValue}"
+              onchange="actualizarTotales('${producto}'); scheduleSaves();"></td>
+        <td><input type="number" value="${pzasValue}"
+              onchange="actualizarTotales('${producto}'); scheduleSaves();"></td>
         <td class="mark-cell"></td>
-        <td><button class="btn" onclick="eliminarFila(this)">Eliminar</button></td>`;
+        <td><button class="btn danger" onclick="eliminarFila(this)">Eliminar</button></td>`;
 
       fila.querySelector('.mark-cell').appendChild(markSelect);
       tabla.appendChild(fila);
@@ -269,6 +339,22 @@
     }
 
     /* ========= GUARDAR / HISTORIAL / RESUMEN ========= */
+    function recolectarResultados(){
+      const resultados = {};
+      productos.forEach(producto => {
+        const id = getID(producto);
+        const filas = document.querySelectorAll(`#tabla-${id} tbody tr`);
+        resultados[producto] = [];
+        filas.forEach(row => {
+          const kg = parseFloat(row.children[0].children[0].value) || 0;
+          const pzas = parseFloat(row.children[1].children[0].value) || 0;
+          const mark = row.dataset.mark || 'none';
+          if (kg || pzas) resultados[producto].push({ kg, pzas, mark });
+        });
+      });
+      return resultados;
+    }
+
     async function guardarViaje() {
       const fecha = document.getElementById('fechaViaje').value;
       if (!fecha) return alert("⚠️ Por favor selecciona una fecha.");
@@ -287,7 +373,7 @@
         alert("✅ Viaje guardado correctamente.");
         if (data && data.id) {
           window.viaje_id = data.id;
-          await saveLive(); // deja el estado live actualizado
+          await saveLive();
           saveLocal();
         }
       }
@@ -345,35 +431,15 @@
       window.open(url, '_blank');
     }
 
-    /* ========= AUTOSAVE LOCAL + LIVE ========= */
+    /* ========= LIVE (estado hoja) ========= */
     const MODULE = 'hoja_viaje';
     let dirty=false, tLocal=null, tLive=null;
     let rtSub = null;
     let applyingRemote = false;
 
     function getFechaISO(){ return document.getElementById('fechaViaje')?.value || todayISO(); }
-
     function liveKey(){ return `viaje-${getFechaISO()}`; }
-
-    function recolectarResultados(){
-      const resultados = {};
-      productos.forEach(producto => {
-        const id = getID(producto);
-        const filas = document.querySelectorAll(`#tabla-${id} tbody tr`);
-        resultados[producto] = [];
-        filas.forEach(row => {
-          const kg = parseFloat(row.children[0].children[0].value) || 0;
-          const pzas = parseFloat(row.children[1].children[0].value) || 0;
-          const mark = row.dataset.mark || 'none';
-          if (kg || pzas) resultados[producto].push({ kg, pzas, mark });
-        });
-      });
-      return resultados;
-    }
-
-    function collectState(){
-      return { fecha: getFechaISO(), resultados: recolectarResultados() };
-    }
+    function collectState(){ return { fecha: getFechaISO(), resultados: recolectarResultados() }; }
 
     function aplicarResultados(resultados){
       if(!resultados) return;
@@ -405,7 +471,6 @@
       try{ applyState(JSON.parse(raw).data); }catch{}
     }
 
-    // LIVE (Supabase)
     async function saveLive(){
       if(applyingRemote) return;
 
@@ -436,9 +501,7 @@
         .select('data, updated_by, updated_at')
         .eq('id', liveKey())
         .single();
-
       if(error) return;
-
       if(data && data.data){
         applyingRemote = true;
         applyState(data.data);
@@ -472,7 +535,6 @@
       try{
         const row = payload.new || payload.record || null;
         if(!row) return;
-
         if(row.updated_by && row.updated_by === DEVICE_ID) return;
 
         if(row.data){
@@ -494,124 +556,134 @@
       tLive=setTimeout(saveLive, 700);
     }
 
-    // Autosave global
     document.addEventListener('input', (e)=>{
       if (e.target.matches('input,select,textarea')) scheduleSaves();
     });
 
-    // Aviso al salir con cambios
     window.addEventListener('beforeunload', (e)=>{
       if(!dirty) return;
       e.preventDefault();
       e.returnValue='';
     });
 
-    // Cambio de fecha => cambia la “sala” realtime (otra key)
     document.getElementById('fechaViaje')?.addEventListener('change', async ()=>{
       applyingRemote = true;
       await loadLive();
       loadLocal();
       applyingRemote = false;
       subscribeLive();
-      // también refresca la báscula al cambiar fecha (no afecta, pero mantiene UI viva)
-      await leerPesoManual();
-      subscribeBascula();
     });
 
-    /* ==========================================
-       NUEVO: BASCULA LIVE (leer + realtime)
-       ========================================== */
-    function setPesoStatus(on, text){
-      const pill = $('#pesoStatus');
-      if(!pill) return;
-      pill.textContent = text || (on ? 'EN VIVO' : 'OFF');
-      pill.classList.toggle('off', !on);
-    }
+    /* ========= BÁSCULA EN VIVO (como tus otros proyectos) ========= */
+    let pesoActual = null;
+    let pesoSub = null;
+    let lastFocusedKgInput = null;
+
+    // Detectar el último input de kg seleccionado (focus)
+    document.addEventListener('focusin', (e)=>{
+      const el = e.target;
+      if(el && el.classList && el.classList.contains('kg-input')){
+        lastFocusedKgInput = el;
+      }
+    });
 
     function setPesoUI(p){
+      const v = (Number(p)||0);
       const el = $('#pesoLive');
-      if(!el) return;
-      el.textContent = (Number(p)||0).toFixed(2);
+      if(el) el.textContent = v.toFixed(2);
+      const mini = $('#pesoLiveMini');
+      if(mini) mini.textContent = v.toFixed(2);
+      pesoActual = v;
     }
 
-    // Detecta el input Kg “activo” (columna 0)
-    function hookKgFocusGlobal(){
-      document.addEventListener('focusin', (e)=>{
-        if(!e.target || !e.target.matches('input[type="number"]')) return;
-        const td = e.target.closest('td');
-        const tr = e.target.closest('tr');
-        if(td && tr && td.cellIndex === 0){
-          kgInputActivo = e.target;
-        }
-      });
+    function setPesoStatus(on, text){
+      const t = text || (on ? 'OK' : 'OFF');
+
+      const pill = $('#pesoStatus');
+      if(pill){
+        pill.textContent = t;
+        pill.classList.toggle('off', !on);
+      }
+
+      const pill2 = $('#pesoStatusMini');
+      if(pill2){
+        pill2.textContent = t;
+        pill2.classList.toggle('off', !on);
+      }
     }
 
     async function leerPesoManual(){
-      try{
-        const { data, error } = await supabase
-          .from(BASCULA_TABLE)
-          .select('peso, updated_at')
-          .eq('id', BASCULA_ID)
-          .single();
+      const { data, error } = await supabase
+        .from(BASCULA_TABLE)
+        .select('peso, updated_at')
+        .eq('id', BASCULA_ID)
+        .single();
 
-        if(error) throw error;
-
-        ultimoPeso = Number(data?.peso ?? 0);
-        setPesoUI(ultimoPeso);
-        setPesoStatus(true, 'OK');
-      }catch(err){
-        console.log('BASCULA READ ERROR:', err);
-        setPesoStatus(false, 'ERROR');
+      if(error){
+        console.log("BASCULA READ ERROR:", error);
+        setPesoStatus(false, 'OFF');
+        alert("Error leyendo Supabase (bascula_live). Revisa internet / RLS / tabla.");
+        return;
       }
+
+      setPesoUI(data?.peso ?? 0);
+      setPesoStatus(true, 'OK');
     }
 
     function tomarPesoEnInputActivo(){
-      if(ultimoPeso === null){
-        alert('Aún no tengo peso. Dale “Actualizar ahora” primero.');
+      if(pesoActual == null){
+        alert("Aún no hay peso. Presiona 'Actualizar ahora' o espera el realtime.");
         return;
       }
-      if(!kgInputActivo){
-        alert('Selecciona un input de Kg (en una pesada) y luego presiona “Usar este peso”.');
+
+      const target = lastFocusedKgInput || document.querySelector('.kg-input:focus');
+      if(!target){
+        alert("Primero haz click en un input de Kg (una pesada) y luego presiona 'Usar este peso'.");
         return;
       }
-      kgInputActivo.value = Number(ultimoPeso).toFixed(1);
-      kgInputActivo.dispatchEvent(new Event('input', { bubbles:true }));
-      kgInputActivo.dispatchEvent(new Event('change', { bubbles:true }));
+
+      target.value = Number(pesoActual).toFixed(2);
+      target.dispatchEvent(new Event('input', { bubbles:true }));
+      target.dispatchEvent(new Event('change', { bubbles:true }));
+      // Totales y guardado
+      const producto = target.closest('.section')?.querySelector('h2')?.textContent;
+      if(producto) actualizarTotales(producto);
+      scheduleSaves();
     }
 
     function subscribeBascula(){
-      // limpia suscripción previa
-      if(basculaSub){
-        try{ supabase.removeSubscription(basculaSub); }catch(e){}
-        basculaSub = null;
+      // v1 realtime
+      if(pesoSub){
+        try{ supabase.removeSubscription(pesoSub); }catch(e){}
+        pesoSub = null;
       }
 
-      // v1 realtime
-      basculaSub = supabase
+      pesoSub = supabase
         .from(`${BASCULA_TABLE}:id=eq.${BASCULA_ID}`)
         .on('UPDATE', payload => {
           const row = payload.new || payload.record;
-          if(!row) return;
-          ultimoPeso = Number(row.peso ?? 0);
-          setPesoUI(ultimoPeso);
-          setPesoStatus(true, 'EN VIVO');
+          if(row && row.peso != null){
+            setPesoUI(row.peso);
+            setPesoStatus(true, 'OK');
+          }
         })
         .on('INSERT', payload => {
           const row = payload.new || payload.record;
-          if(!row) return;
-          ultimoPeso = Number(row.peso ?? 0);
-          setPesoUI(ultimoPeso);
-          setPesoStatus(true, 'EN VIVO');
+          if(row && row.peso != null){
+            setPesoUI(row.peso);
+            setPesoStatus(true, 'OK');
+          }
         })
         .subscribe((status)=>{
           if(status === 'SUBSCRIBED'){
-            setPesoStatus(true, 'EN VIVO');
+            setPesoStatus(true, 'OK');
           }
         });
     }
 
     /* ========= ARRANQUE ========= */
     document.addEventListener('DOMContentLoaded', async () => {
+      // tablas productos
       productos.forEach(crearTabla);
 
       document.addEventListener('click', function(e) {
@@ -624,18 +696,18 @@
       // Fecha hoy por defecto
       document.getElementById('fechaViaje').value = todayISO();
 
-      // 1) cargar LIVE primero (si existe), 2) luego local como fallback
+      // 1) cargar LIVE primero, 2) luego local
       await loadLive();
       loadLocal();
 
-      // 2) suscribir realtime para esa fecha
+      // 3) suscribir realtime hoja
       subscribeLive();
 
-      // 3) si no había nada en live, sube el estado inicial vacío
+      // 4) crear sala si no existe
       await saveLive();
 
-      // ===== NUEVO: iniciar bascula live =====
-      hookKgFocusGlobal();
+      // 5) bascula: leer una vez y suscribir realtime
+      setPesoStatus(true, 'CONECTANDO');
       await leerPesoManual();
       subscribeBascula();
     });
