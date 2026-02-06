@@ -1,19 +1,3 @@
-A continuación, te proporciono una versión revisada y más limpia del código HTML que me enviaste. He hecho varios ajustes para mejorar la legibilidad, mantenibilidad y estructura general, sin cambiar la funcionalidad principal. Aquí van las mejoras clave:
-
-### Cambios principales:
-1. **Estructura del HTML**: Mantuve el HTML básico, pero lo organicé mejor con secciones más claras (usando comentarios HTML para dividir partes como "Header", "Formularios", "Tablas", etc.).
-2. **CSS**: Moví todo el CSS a una sección `<style>` más organizada al inicio, agrupando reglas relacionadas (e.g., estilos para botones, tablas, báscula). Eliminé redundancias y usé variables CSS simples para colores repetidos (aunque no es necesario, ayuda a la consistencia).
-3. **JavaScript**: 
-   - **Modularización**: Dividí el código en secciones lógicas con comentarios (e.g., "Configuración de Supabase", "Funciones de Báscula", "Funciones de Edición", etc.). Creé funciones auxiliares más pequeñas para reducir repeticiones (e.g., una función genérica para manejar estados de edición).
-   - **Legibilidad**: Usé nombres de variables más descriptivos, eliminé código duplicado (e.g., en las funciones de render de tablas), y agregué más comentarios explicativos.
-   - **Optimizaciones**: Simplifiqué algunas lógicas (e.g., en el manejo de realtime y báscula), y usé `async/await` de manera más consistente. Reduje el uso de `window` para exponer funciones, prefiriendo event listeners directos donde sea posible.
-   - **Errores y edge cases**: Agregué validaciones adicionales y manejo de errores más robusto.
-   - **Rendimiento**: Evité re-renderizados innecesarios en algunas funciones.
-4. **General**: Eliminé espacios innecesarios, usé indentación consistente (2 espacios), y aseguré compatibilidad con navegadores modernos. El código sigue siendo funcional y compatible con Supabase/Chart.js.
-
-Si tienes preferencias específicas (e.g., mover JS a un archivo externo, agregar más funcionalidades, o enfocarte en una parte), dime para ajustar. Aquí está el código revisado:
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -22,264 +6,94 @@ Si tienes preferencias específicas (e.g., mover JS a un archivo externo, agrega
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    /* Variables CSS para consistencia */
-    :root {
-      --primary-color: #1f6f26;
-      --secondary-color: #0a7a3b;
-      --error-color: #b91c1c;
-      --gray-color: #374151;
-      --light-bg: #f2f2f2;
-      --white: #fff;
-      --border-color: #1f6f26;
-    }
+    body { font-family: sans-serif; background:#f2f2f2; padding:20px; }
+    .container { background:#fff; padding:30px; border-radius:10px; max-width:900px; margin:auto; }
+    h1 { color:green; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    label { display:block; margin-top:15px; }
+    input, select { width:100%; padding:10px; margin-top:5px; }
+    button { margin-top:20px; padding:12px; background:#1f6f26; color:#fff; border:none; border-radius:5px; cursor:pointer; width:100%; font-weight:bold; }
+    table { width:100%; margin-top:20px; border-collapse:collapse; }
+    th, td { border:2px solid #1f6f26; padding:8px; text-align:center; }
+    th { background:#1f6f26; color:#fff; }
+    .subtitulo { font-size:22px; font-weight:bold; margin-top:40px; }
+    .hint { font-size:12px; color:#555; margin-top:8px; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#eef7ef; color:#1f6f26; font-weight:800; font-size:12px; }
+    .pill.off { background:#fff1f2; color:#b91c1c; }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:720px){ .row2{ grid-template-columns:1fr; } }
+    canvas{ width:100%; }
 
-    /* Estilos generales */
-    body {
-      font-family: sans-serif;
-      background: var(--light-bg);
-      padding: 20px;
-    }
+    /* UI BASCULA */
+    .pesoBox{ margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .pesoBtn{ width:auto; margin-top:0; padding:10px 12px; border-radius:10px; background:#0a7a3b; }
+    .pesoToggle{ display:flex; gap:8px; align-items:center; border:1px solid #e5e7eb; padding:8px 10px; border-radius:999px; background:#f9fafb; font-weight:800; font-size:12px; color:#111; }
+    .pesoToggle input{ width:18px; height:18px; }
+    .pesoStatus{ display:inline-block; padding:6px 10px; border-radius:999px; background:#f3f4f6; font-weight:800; font-size:12px; color:#374151; }
+    .pesoStatus.ok{ color:#0a7a3b; }
+    .pesoStatus.bad{ color:#b91c1c; background:#fff1f2; }
 
-    .container {
-      background: var(--white);
-      padding: 30px;
-      border-radius: 10px;
-      max-width: 900px;
-      margin: auto;
+    /* ✅ Edición inline */
+    .miniBtn{
+      margin-top:0;
+      width:auto;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#1f6f26;
+      font-weight:900;
     }
-
-    h1 {
-      color: var(--primary-color);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
+    .miniBtn.gray{ background:#374151; }
+    .miniBtn.red{ background:#b91c1c; }
+    .miniBtnRow{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+    .cellInput{
+      width:100%;
+      padding:8px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+      font-weight:700;
     }
-
-    /* Formularios */
-    label {
-      display: block;
-      margin-top: 15px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-    }
-
-    button {
-      margin-top: 20px;
-      padding: 12px;
-      background: var(--secondary-color);
-      color: var(--white);
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      width: 100%;
-      font-weight: bold;
-    }
-
-    /* Tablas */
-    table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      border: 2px solid var(--border-color);
-      padding: 8px;
-      text-align: center;
-    }
-
-    th {
-      background: var(--primary-color);
-      color: var(--white);
-    }
-
-    /* Subtítulos */
-    .subtitulo {
-      font-size: 22px;
-      font-weight: bold;
-      margin-top: 40px;
-    }
-
-    .hint {
-      font-size: 12px;
-      color: #555;
-      margin-top: 8px;
-    }
-
-    /* Píldoras y estados */
-    .pill {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: #eef7ef;
-      color: var(--primary-color);
-      font-weight: 800;
-      font-size: 12px;
-    }
-
-    .pill.off {
-      background: #fff1f2;
-      color: var(--error-color);
-    }
-
-    /* Layout responsive */
-    .row2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    @media (max-width: 720px) {
-      .row2 {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Canvas para gráficos */
-    canvas {
-      width: 100%;
-    }
-
-    /* UI de Báscula */
-    .pesoBox {
-      margin-top: 10px;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .pesoBtn {
-      width: auto;
-      margin-top: 0;
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: var(--secondary-color);
-    }
-
-    .pesoToggle {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      border: 1px solid #e5e7eb;
-      padding: 8px 10px;
-      border-radius: 999px;
-      background: #f9fafb;
-      font-weight: 800;
-      font-size: 12px;
-      color: #111;
-    }
-
-    .pesoToggle input {
-      width: 18px;
-      height: 18px;
-    }
-
-    .pesoStatus {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #f3f4f6;
-      font-weight: 800;
-      font-size: 12px;
-      color: var(--gray-color);
-    }
-
-    .pesoStatus.ok {
-      color: var(--secondary-color);
-    }
-
-    .pesoStatus.bad {
-      color: var(--error-color);
-      background: #fff1f2;
-    }
-
-    /* Edición inline */
-    .miniBtn {
-      margin-top: 0;
-      width: auto;
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: var(--primary-color);
-      font-weight: 900;
-    }
-
-    .miniBtn.gray {
-      background: var(--gray-color);
-    }
-
-    .miniBtn.red {
-      background: var(--error-color);
-    }
-
-    .miniBtnRow {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .cellInput {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      font-weight: 700;
-    }
-
-    .cellSelect {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      font-weight: 800;
-      background: var(--white);
+    .cellSelect{
+      width:100%;
+      padding:8px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+      font-weight:800;
+      background:#fff;
     }
   </style>
 </head>
 
 <body>
-  <!-- Enlace de vuelta -->
   <a href="https://marcianoper.github.io/vdc-central/"
-     style="
-       position: fixed;
-       top: 12px;
-       left: 12px;
-       background: var(--secondary-color);
-       color: var(--white);
-       padding: 10px 14px;
-       border-radius: 12px;
-       text-decoration: none;
-       font-weight: 900;
-       z-index: 9999;
-       box-shadow: 0 10px 20px rgba(0,0,0,.15);
-     ">
-    ← VDC Central
-  </a>
+   style="
+     position:fixed;
+     top:12px;
+     left:12px;
+     background:#0a7a3b;
+     color:#fff;
+     padding:10px 14px;
+     border-radius:12px;
+     text-decoration:none;
+     font-weight:900;
+     z-index:9999;
+     box-shadow:0 10px 20px rgba(0,0,0,.15);
+   ">
+  ← VDC Central
+</a>
 
   <div class="container">
-    <!-- Header -->
     <h1>
       Registro Mostrador VDC 360° matrix
       <span id="rt" class="pill">REAL TIME</span>
     </h1>
     <div class="hint">Todo lo que agregues/eliminés se sincroniza en vivo en otros dispositivos abiertos en la misma fecha.</div>
 
-    <!-- Formulario de Fecha -->
     <label>Fecha:
-      <input type="date" id="fecha" value="" />
+      <input type="date" id="fecha" value="">
     </label>
 
-    <!-- Formulario de Producto Enviado -->
     <label>Producto:
       <select id="producto">
         <option value="">Seleccionar</option>
-        <!-- Opciones de productos (mantengo las originales) -->
         <option value="Caja menudo vísceras">Caja menudo vísceras</option>
         <option value="Caja Menudo National">Caja Menudo National</option>
         <option value="Panza">Panza</option>
@@ -315,15 +129,19 @@ Si tienes preferencias específicas (e.g., mover JS a un archivo externo, agrega
     <div class="row2">
       <label>Kilos:
         <input type="number" id="kilos" step="0.01" />
+
         <div class="pesoBox">
           <button id="btnPeso" type="button" class="pesoBtn">📥 Tomar peso</button>
+
           <span class="pesoToggle">
             <input type="checkbox" id="rtPesoToggle" />
             <span>Peso Real-time</span>
           </span>
+
           <span id="pesoStatus" class="pesoStatus">Báscula: esperando…</span>
         </div>
       </label>
+
       <label>Piezas (opcional):
         <input type="number" id="piezas" />
       </label>
@@ -342,7 +160,6 @@ Si tienes preferencias específicas (e.g., mover JS a un archivo externo, agrega
 
     <button id="btnAgregar">Agregar producto</button>
 
-    <!-- Tabla de Productos Enviados -->
     <h2 class="subtitulo">Productos enviados (lo más nuevo arriba)</h2>
     <table id="tablaEnviados">
       <thead>
@@ -358,7 +175,6 @@ Si tienes preferencias específicas (e.g., mover JS a un archivo externo, agrega
       <tbody></tbody>
     </table>
 
-    <!-- Formulario de Producto Devuelto -->
     <h2 class="subtitulo">Productos devueltos (lo más nuevo arriba)</h2>
 
     <label>Producto devuelto:
@@ -367,12 +183,16 @@ Si tienes preferencias específicas (e.g., mover JS a un archivo externo, agrega
 
     <label>Kilos devueltos:
       <input type="number" id="kilosDevuelto" step="0.01" />
+
+      <!-- ✅ BASCULA TAMBIÉN PARA DEVUELTOS -->
       <div class="pesoBox">
         <button id="btnPesoDev" type="button" class="pesoBtn">📥 Tomar peso</button>
+
         <span class="pesoToggle">
           <input type="checkbox" id="rtPesoToggleDev" />
           <span>Peso Real-time</span>
         </span>
+
         <span id="pesoStatusDev" class="pesoStatus">Báscula: esperando…</span>
       </div>
     </label>
@@ -390,7 +210,6 @@ Si tienes preferencias específicas (e.g., mover JS a un archivo externo, agrega
       <tbody></tbody>
     </table>
 
-    <!-- Resumen y Gráfico -->
     <h2 class="subtitulo">Resumen del día (kilos y piezas)</h2>
     <table id="tablaResumen">
       <thead>
@@ -403,69 +222,880 @@ Si tienes preferencias específicas (e.g., mover JS a un archivo externo, agrega
       <tbody></tbody>
     </table>
 
-    <div style="height: 260px; margin-top: 16px;">
+    <div style="height:260px; margin-top:16px;">
       <canvas id="chartResumen"></canvas>
     </div>
 
     <button onclick="enviarWhatsApp()">Enviar resumen a WhatsApp</button>
   </div>
 
-  <!-- Scripts externos -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <script>
-    // ========== CONFIGURACIÓN DE SUPABASE ==========
+    /* ===== CONFIG SUPABASE ===== */
     const SUPABASE_URL = "https://eqynjddcosvdqjzztznn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxeW5qZGRjb3N2ZHFqenp0em5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzYwMzIsImV4cCI6MjA3MTcxMjAzMn0.Q51wsGelUvxRfqsMYRY5JduCGyZ7s6AzOhqsRf3kOhk";
-    const sb = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    const sb = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
 
     const T_ENVIADOS = "mostrador_enviados";
     const T_DEVUELTOS = "mostrador_devueltos";
+
     const T_BASCULA = "bascula_live";
     const BASCULA_ID = "torrey_1";
 
-    // Variables globales
     let enviados = [];
     let devueltos = [];
     let rtChannel = null;
     let chBascula = null;
-    let chartResumen = null;
-    const editState = { envi: new Map(), dev: new Map() };
 
-    // ========== UTILIDADES ==========
-    const $ = (s) => document.querySelector(s);
-    const num = (v) => Number(v) || 0;
-    const escapeHtml = (str) => String(str || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
-    const todayISODate = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-    const fechaSeleccionada = () => $('#fecha')?.value || todayISODate();
+    const $ = (s)=>document.querySelector(s);
 
-    // ========== FUNCIONES DE BÁSCULA ==========
-    const setPesoStatus = (msg, ok = true) => {
+    function todayISODate(){
+      const d = new Date();
+      const off = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - off*60000);
+      return local.toISOString().slice(0,10);
+    }
+    function fechaSeleccionada(){ return $('#fecha')?.value || todayISODate(); }
+    function num(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+    function escapeHtml(str){
+      return String(str ?? '')
+        .replaceAll('&','&amp;').replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    /* ======= Báscula ======= */
+    function setPesoStatus(msg, ok=true){
       const el = $('#pesoStatus');
-      if (!el) return;
+      if(!el) return;
       el.textContent = msg || '';
-      el.classList.toggle('ok', ok);
-      el.classList.toggle('bad', !ok);
-    };
-
-    const setPesoStatusDev = (msg, ok = true) => {
+      el.classList.remove('ok','bad');
+      el.classList.add(ok ? 'ok' : 'bad');
+    }
+    function setPesoStatusDev(msg, ok=true){
       const el = $('#pesoStatusDev');
-      if (!el) return;
+      if(!el) return;
       el.textContent = msg || '';
-      el.classList.toggle('ok', ok);
-      el.classList.toggle('bad', !ok);
-    };
+      el.classList.remove('ok','bad');
+      el.classList.add(ok ? 'ok' : 'bad');
+    }
 
-    const setKilosFromBascula = (inputId, peso) => {
-      const input = $(`#${inputId}`);
-      if (!input || !Number.isFinite(peso)) return;
+    function setKilosFromBasculaToInput(inputId, peso){
+      const k = document.getElementById(inputId);
+      if(!k) return;
+      const next = Number(peso || 0);
+      if(!Number.isFinite(next)) return;
+      const cur = Number(k.value || 0);
+      if(Math.abs(cur - next) < 0.001) return;
+      k.value = next.toFixed(2);
+      k.dispatchEvent(new Event('input', { bubbles:true }));
+      k.dispatchEvent(new Event('change', { bubbles:true }));
+    }
+
+    async function leerBasculaOnce(targetInputId='kilos', isDev=false){
+      if(!sb){ alert("No cargó Supabase. Revisa el CDN o internet."); return; }
+      (isDev ? setPesoStatusDev : setPesoStatus)("Báscula: leyendo…", true);
+
+      const { data, error } = await sb
+        .from(T_BASCULA)
+        .select("id,peso,updated_at")
+        .eq("id", BASCULA_ID)
+        .maybeSingle();
+
+      if(error){
+        console.error(error);
+        (isDev ? setPesoStatusDev : setPesoStatus)("Báscula: error lectura", false);
+        alert("Error leyendo báscula (bascula_live). Revisa RLS / tabla / internet.");
+        return;
+      }
+      if(!data){
+        (isDev ? setPesoStatusDev : setPesoStatus)("Báscula: sin fila torrey_1", false);
+        alert("No existe la fila bascula_live.id='torrey_1'.");
+        return;
+      }
+      const peso = Number(data.peso);
+      if(!Number.isFinite(peso)){
+        (isDev ? setPesoStatusDev : setPesoStatus)("Báscula: peso inválido", false);
+        return;
+      }
+
       const abs = Math.abs(peso);
-      if (Math.abs(Number(input.value) - abs) < 0.001) return;
-      input.value = abs.toFixed(2);
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.dispatchEvent(new Event('change', { bubbles: true }));
+      setKilosFromBasculaToInput(targetInputId, abs);
+      (isDev ? setPesoStatusDev : setPesoStatus)(`Báscula: OK ${abs.toFixed(2)} kg`, true);
+    }
+
+    // Un solo canal realtime para la bascula; actualiza el/los inputs según toggles activos
+    async function conectarBasculaRealtime(){
+      if(!sb) return;
+      if(chBascula){
+        try { await sb.removeChannel(chBascula); } catch(e){}
+        chBascula = null;
+      }
+
+      chBascula = sb
+        .channel(`bascula-live-${BASCULA_ID}`)
+        .on(
+          "postgres_changes",
+          { event:"UPDATE", schema:"public", table:T_BASCULA, filter:`id=eq.${BASCULA_ID}` },
+          (payload)=>{
+            const peso = payload.new?.peso;
+            if(typeof peso !== 'number') return;
+            const abs = Math.abs(peso);
+
+            const rtEnv = document.getElementById('rtPesoToggle')?.checked;
+            const rtDev = document.getElementById('rtPesoToggleDev')?.checked;
+
+            if(rtEnv){
+              setKilosFromBasculaToInput('kilos', abs);
+              setPesoStatus(`Báscula: ${abs.toFixed(2)} kg (RT)`, true);
+            }
+            if(rtDev){
+              setKilosFromBasculaToInput('kilosDevuelto', abs);
+              setPesoStatusDev(`Báscula: ${abs.toFixed(2)} kg (RT)`, true);
+            }
+
+            // si ninguno está activo, no hace nada
+          }
+        )
+        .subscribe((s)=>{
+          // Solo mensajes “listo” cuando cualquiera esté activo
+          if(s === 'SUBSCRIBED'){
+            const rtEnv = document.getElementById('rtPesoToggle')?.checked;
+            const rtDev = document.getElementById('rtPesoToggleDev')?.checked;
+            if(rtEnv) setPesoStatus("Báscula: RT listo ✅", true);
+            if(rtDev) setPesoStatusDev("Báscula: RT listo ✅", true);
+          } else if(s === 'CHANNEL_ERROR' || s === 'TIMED_OUT'){
+            setPesoStatus("Báscula: RT error", false);
+            setPesoStatusDev("Báscula: RT error", false);
+          }
+        });
+    }
+
+    async function apagarBasculaRealtimeSiNadieLaUsa(){
+      const rtEnv = document.getElementById('rtPesoToggle')?.checked;
+      const rtDev = document.getElementById('rtPesoToggleDev')?.checked;
+
+      if(rtEnv || rtDev){
+        // alguien la sigue usando -> no apagar
+        return;
+      }
+
+      if(!sb) return;
+      if(chBascula){
+        try { await sb.removeChannel(chBascula); } catch(e){}
+        chBascula = null;
+      }
+      setPesoStatus("Báscula: esperando…", true);
+      setPesoStatusDev("Báscula: esperando…", true);
+    }
+
+    /* ===== Orden A-Z ===== */
+    function ordenarSelectAlfabeticamente(selectId){
+      const select = document.getElementById(selectId);
+      if(!select) return;
+      const options = Array.from(select.options);
+      if(options.length <= 2) return;
+      const first = options.shift();
+      options.sort((a, b) => a.text.localeCompare(b.text, 'es', { sensitivity: 'base' }));
+      select.innerHTML = '';
+      select.appendChild(first);
+      options.forEach(opt => select.appendChild(opt));
+    }
+
+    /* ===== Autofill (igual) ===== */
+    const PESO_CAJA_2722 = 27.22;
+    function norm(s){
+      return String(s||'').trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    }
+    const PRODUCTOS_VIAJE = new Set([
+      "bofe","cabeza de res","cabeza de rastro","cabeza sin lengua","corazon",
+      "higado","libro","nana","panza","pata blanca","pata morena","cuajo",
+      "quajo","sebo","teleco","tripa","tripa de rastro","tripa gorda"
+    ].map(norm));
+    const REGLAS_PRODUCTO = new Map([
+      [norm("Menudo Canadian"),     { origen: "Promerca",  congelado: "Sí" }],
+      [norm("Caja Menudo National"),{ origen: "Congelado", congelado: "Sí" }],
+      [norm("Caja Washington"),     { origen: "Daniel",    congelado: "Sí" }],
+      [norm("Lengua"),             { origen: "Anglo",     congelado: "Sí" }]
+    ]);
+    const PRODUCTOS_PESO_FIJO_2722 = new Set([ norm("Menudo Canadian"), norm("Caja Menudo National") ]);
+
+    const touched = { origen:false, congelado:false, kilos:false };
+    function markTouched(){
+      const o = $('#origen'), c = $('#congelado'), k = $('#kilos');
+      if(o) o.addEventListener('input', ()=> touched.origen = true);
+      if(c) c.addEventListener('change', ()=> touched.congelado = true);
+      if(k) k.addEventListener('input', ()=> touched.kilos = true);
+    }
+    function setIfNotTouched(field, value){
+      if(field === 'origen' && !touched.origen) $('#origen').value = value;
+      if(field === 'congelado' && !touched.congelado) $('#congelado').value = value;
+      if(field === 'kilos' && !touched.kilos) $('#kilos').value = value;
+    }
+    function aplicarAutofillPorProducto(){
+      const p = norm($('#producto')?.value || '');
+      touched.origen = touched.congelado = touched.kilos = false;
+
+      if(REGLAS_PRODUCTO.has(p)){
+        const r = REGLAS_PRODUCTO.get(p);
+        setIfNotTouched('origen', r.origen);
+        setIfNotTouched('congelado', r.congelado);
+      } else if(PRODUCTOS_VIAJE.has(p)){
+        setIfNotTouched('origen', 'Viaje');
+        setIfNotTouched('congelado', 'No');
+      }
+      recalcularKilosSiAplica();
+    }
+    function recalcularKilosSiAplica(){
+      const p = norm($('#producto')?.value || '');
+      if(!PRODUCTOS_PESO_FIJO_2722.has(p)) return;
+      const piezas = num($('#piezas')?.value);
+      if(!piezas) return;
+      setIfNotTouched('kilos', (piezas * PESO_CAJA_2722).toFixed(2));
+    }
+
+    /* ===========================
+       ✅ EDICIÓN INLINE
+    =========================== */
+    const editState = {
+      envi: new Map(),
+      dev:  new Map()
     };
 
-    const leerBasculaOnce = async (targetInputId, isDev = false) => {
-      if (!sb) return alert("No cargó Supabase. Re
+    function startEdit(kind, id){
+      const list = (kind === 'envi') ? enviados : devueltos;
+      const row = list.find(x=>x.id===id);
+      if(!row) return;
+
+      for(const [k,v] of (kind==='envi'?editState.envi:editState.dev).entries()){
+        if(v.editing && k !== id){
+          cancelEdit(kind, k);
+        }
+      }
+
+      const stMap = (kind==='envi') ? editState.envi : editState.dev;
+      stMap.set(id, {
+        editing:true,
+        backup: JSON.parse(JSON.stringify(row)),
+        draft:  JSON.parse(JSON.stringify(row))
+      });
+      renderAll();
+    }
+
+    function cancelEdit(kind, id){
+      const stMap = (kind==='envi') ? editState.envi : editState.dev;
+      const s = stMap.get(id);
+      if(!s) return;
+
+      const list = (kind === 'envi') ? enviados : devueltos;
+      const idx = list.findIndex(x=>x.id===id);
+      if(idx >= 0) list[idx] = s.backup;
+
+      stMap.delete(id);
+      renderAll();
+    }
+
+    function setDraft(kind, id, field, value){
+      const stMap = (kind==='envi') ? editState.envi : editState.dev;
+      const s = stMap.get(id);
+      if(!s) return;
+      s.draft[field] = value;
+    }
+
+    async function saveEdit(kind, id){
+      const stMap = (kind==='envi') ? editState.envi : editState.dev;
+      const s = stMap.get(id);
+      if(!s) return;
+
+      const d = s.draft;
+
+      if(kind === 'envi'){
+        const payload = {
+          producto: String(d.producto || '').trim(),
+          kilos: Number(parseFloat(d.kilos).toFixed(2)),
+          piezas: parseInt(d.piezas || 0, 10) || 0,
+          origen: String(d.origen || '').trim(),
+          congelado: (d.congelado === 'Sí' ? 'Sí' : 'No')
+        };
+
+        if(!payload.producto || !Number.isFinite(payload.kilos) || !payload.origen){
+          alert("En edición: producto, kilos y origen son obligatorios.");
+          return;
+        }
+
+        const { data, error } = await sb
+          .from(T_ENVIADOS)
+          .update(payload)
+          .eq('id', id)
+          .select("id, producto, kilos, piezas, origen, congelado, created_at")
+          .single();
+
+        if(error){
+          console.error(error);
+          alert("No se pudo guardar cambios (UPDATE). Revisa RLS / permisos.");
+          cancelEdit(kind, id);
+          return;
+        }
+
+        const idx = enviados.findIndex(x=>x.id===id);
+        if(idx>=0){
+          enviados[idx] = {
+            id:data.id,
+            producto:data.producto,
+            kilos:+data.kilos,
+            piezas:+(data.piezas||0),
+            origen:data.origen,
+            congelado:data.congelado,
+            created_at:data.created_at
+          };
+        }
+
+      } else {
+        const payload = {
+          producto: String(d.producto || '').trim(),
+          kilos: Number(parseFloat(d.kilos).toFixed(2))
+        };
+        if(!payload.producto || !Number.isFinite(payload.kilos)){
+          alert("En devueltos: producto y kilos son obligatorios.");
+          return;
+        }
+
+        const { data, error } = await sb
+          .from(T_DEVUELTOS)
+          .update(payload)
+          .eq('id', id)
+          .select("id, producto, kilos, created_at")
+          .single();
+
+        if(error){
+          console.error(error);
+          alert("No se pudo guardar cambios (UPDATE) en devueltos. Revisa RLS.");
+          cancelEdit(kind, id);
+          return;
+        }
+
+        const idx = devueltos.findIndex(x=>x.id===id);
+        if(idx>=0){
+          devueltos[idx] = { id:data.id, producto:data.producto, kilos:+data.kilos, created_at:data.created_at };
+        }
+      }
+
+      stMap.delete(id);
+      renderAll();
+    }
+
+    /* ===== Render tablas ===== */
+    function renderTablaEnviados() {
+      const tbody = document.querySelector("#tablaEnviados tbody");
+      tbody.innerHTML = enviados.map((item) => {
+        const st = editState.envi.get(item.id);
+        const editing = !!st?.editing;
+        const d = editing ? st.draft : item;
+
+        return `
+        <tr>
+          <td>${
+            editing
+              ? `<input class="cellInput" value="${escapeHtml(d.producto)}"
+                   oninput="setDraft('envi','${item.id}','producto', this.value)">`
+              : `${escapeHtml(item.producto)}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<input class="cellInput" type="number" step="0.01" value="${Number(d.kilos||0).toFixed(2)}"
+                   oninput="setDraft('envi','${item.id}','kilos', this.value)">`
+              : `${(+item.kilos).toFixed(2)}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<input class="cellInput" type="number" value="${parseInt(d.piezas||0,10)}"
+                   oninput="setDraft('envi','${item.id}','piezas', this.value)">`
+              : `${item.piezas || 0}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<input class="cellInput" value="${escapeHtml(d.origen||'')}"
+                   oninput="setDraft('envi','${item.id}','origen', this.value)">`
+              : `${escapeHtml(item.origen || '')}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<select class="cellSelect"
+                   onchange="setDraft('envi','${item.id}','congelado', this.value)">
+                   <option value="No" ${d.congelado==='No'?'selected':''}>No</option>
+                   <option value="Sí" ${d.congelado==='Sí'?'selected':''}>Sí</option>
+                 </select>`
+              : `${escapeHtml(item.congelado || 'No')}`
+          }</td>
+
+          <td>
+            <div class="miniBtnRow">
+              ${
+                editing
+                  ? `
+                    <button class="miniBtn" onclick="saveEdit('envi','${item.id}')">Guardar</button>
+                    <button class="miniBtn gray" onclick="cancelEdit('envi','${item.id}')">Cancelar</button>
+                  `
+                  : `
+                    <button class="miniBtn" onclick="startEdit('envi','${item.id}')">Editar</button>
+                    <button class="miniBtn red" onclick="eliminarProducto('${item.id}')">Eliminar</button>
+                  `
+              }
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderTablaDevueltos() {
+      const tbody = document.querySelector("#tablaDevueltos tbody");
+      tbody.innerHTML = devueltos.map((item) => {
+        const st = editState.dev.get(item.id);
+        const editing = !!st?.editing;
+        const d = editing ? st.draft : item;
+
+        return `
+        <tr>
+          <td>${
+            editing
+              ? `<input class="cellInput" value="${escapeHtml(d.producto)}"
+                   oninput="setDraft('dev','${item.id}','producto', this.value)">`
+              : `${escapeHtml(item.producto)}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<input class="cellInput" type="number" step="0.01" value="${Number(d.kilos||0).toFixed(2)}"
+                   oninput="setDraft('dev','${item.id}','kilos', this.value)">`
+              : `${(+item.kilos).toFixed(2)}`
+          }</td>
+
+          <td>
+            <div class="miniBtnRow">
+              ${
+                editing
+                  ? `
+                    <button class="miniBtn" onclick="saveEdit('dev','${item.id}')">Guardar</button>
+                    <button class="miniBtn gray" onclick="cancelEdit('dev','${item.id}')">Cancelar</button>
+                  `
+                  : `
+                    <button class="miniBtn" onclick="startEdit('dev','${item.id}')">Editar</button>
+                    <button class="miniBtn red" onclick="eliminarDevuelto('${item.id}')">Eliminar</button>
+                  `
+              }
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    /* ===== Resumen + chart ===== */
+    function buildResumen(){
+      const map = new Map();
+      for(const r of enviados){
+        const k = r.producto;
+        if(!map.has(k)) map.set(k, { producto:k, kilos:0, piezas:0 });
+        const o = map.get(k);
+        o.kilos += num(r.kilos);
+        o.piezas += parseInt(r.piezas||0,10);
+      }
+      return Array.from(map.values()).sort((a,b)=>b.kilos-a.kilos);
+    }
+    function renderResumen(){
+      const rows = buildResumen();
+      const tbody = document.querySelector("#tablaResumen tbody");
+      tbody.innerHTML = rows.map(r=>`
+        <tr>
+          <td>${escapeHtml(r.producto)}</td>
+          <td>${r.kilos.toFixed(2)}</td>
+          <td>${r.piezas}</td>
+        </tr>
+      `).join('');
+    }
+    let chartResumen = null;
+    function renderChart(){
+      const rows = buildResumen();
+      const labels = rows.map(r=>r.producto);
+      const kilos = rows.map(r=>Number(r.kilos.toFixed(2)));
+      const piezas = rows.map(r=>r.piezas);
+      const canvas = document.getElementById('chartResumen');
+      if(!canvas) return;
+
+      if(chartResumen){
+        chartResumen.data.labels = labels;
+        chartResumen.data.datasets[0].data = kilos;
+        chartResumen.data.datasets[1].data = piezas;
+        chartResumen.update();
+        return;
+      }
+
+      chartResumen = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Kilos', data: kilos },
+            { label: 'Piezas', data: piezas }
+          ]
+        },
+        options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+      });
+    }
+    function renderAll(){
+      renderTablaEnviados();
+      renderTablaDevueltos();
+      renderResumen();
+      renderChart();
+    }
+
+    /* ===== Cargar día ===== */
+    async function cargarDia(fecha){
+      if(!sb){ alert("No cargó Supabase. Revisa el CDN o internet."); return; }
+
+      const { data: env, error: e1 } = await sb
+        .from(T_ENVIADOS)
+        .select("id, producto, kilos, piezas, origen, congelado, created_at")
+        .eq("fecha", fecha)
+        .order("created_at", { ascending: false });
+
+      if(e1) console.error(e1);
+
+      const { data: dev, error: e2 } = await sb
+        .from(T_DEVUELTOS)
+        .select("id, producto, kilos, created_at")
+        .eq("fecha", fecha)
+        .order("created_at", { ascending: false });
+
+      if(e2) console.error(e2);
+
+      enviados = (env || []).map(x=>({
+        id:x.id,
+        producto:x.producto,
+        kilos:+x.kilos,
+        piezas:+(x.piezas||0),
+        origen:x.origen,
+        congelado:x.congelado,
+        created_at:x.created_at
+      }));
+      devueltos = (dev || []).map(x=>({
+        id:x.id,
+        producto:x.producto,
+        kilos:+x.kilos,
+        created_at:x.created_at
+      }));
+
+      editState.envi.clear();
+      editState.dev.clear();
+
+      renderAll();
+    }
+
+    /* ===== Realtime ===== */
+    async function conectarRealtime(fecha){
+      if(!sb) return;
+
+      if(rtChannel){
+        try { await sb.removeChannel(rtChannel); } catch(e){}
+        rtChannel = null;
+      }
+
+      rtChannel = sb.channel(`mostrador-rt-${fecha}`);
+
+      rtChannel
+        .on('postgres_changes',
+          { event:'INSERT', schema:'public', table:T_ENVIADOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const r = payload.new;
+            if(enviados.some(x=>x.id===r.id)) return;
+            enviados.unshift({
+              id:r.id,
+              producto:r.producto,
+              kilos:+r.kilos,
+              piezas:+(r.piezas||0),
+              origen:r.origen,
+              congelado:r.congelado,
+              created_at:r.created_at
+            });
+            renderAll();
+          }
+        )
+        .on('postgres_changes',
+          { event:'DELETE', schema:'public', table:T_ENVIADOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const id = payload.old?.id;
+            if(!id) return;
+            enviados = enviados.filter(x=>x.id!==id);
+            editState.envi.delete(id);
+            renderAll();
+          }
+        )
+        .on('postgres_changes',
+          { event:'UPDATE', schema:'public', table:T_ENVIADOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const r = payload.new;
+            const idx = enviados.findIndex(x=>x.id===r.id);
+            if(idx>=0 && !editState.envi.get(r.id)?.editing){
+              enviados[idx] = {
+                id:r.id,
+                producto:r.producto,
+                kilos:+r.kilos,
+                piezas:+(r.piezas||0),
+                origen:r.origen,
+                congelado:r.congelado,
+                created_at:r.created_at
+              };
+              renderAll();
+            }
+          }
+        )
+        .on('postgres_changes',
+          { event:'INSERT', schema:'public', table:T_DEVUELTOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const r = payload.new;
+            if(devueltos.some(x=>x.id===r.id)) return;
+            devueltos.unshift({ id:r.id, producto:r.producto, kilos:+r.kilos, created_at:r.created_at });
+            renderAll();
+          }
+        )
+        .on('postgres_changes',
+          { event:'DELETE', schema:'public', table:T_DEVUELTOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const id = payload.old?.id;
+            if(!id) return;
+            devueltos = devueltos.filter(x=>x.id!==id);
+            editState.dev.delete(id);
+            renderAll();
+          }
+        )
+        .on('postgres_changes',
+          { event:'UPDATE', schema:'public', table:T_DEVUELTOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const r = payload.new;
+            const idx = devueltos.findIndex(x=>x.id===r.id);
+            if(idx>=0 && !editState.dev.get(r.id)?.editing){
+              devueltos[idx] = { id:r.id, producto:r.producto, kilos:+r.kilos, created_at:r.created_at };
+              renderAll();
+            }
+          }
+        );
+
+      await rtChannel.subscribe((s)=>{
+        const pill = $('#rt');
+        if(!pill) return;
+        if(s === 'SUBSCRIBED'){ pill.textContent = 'REAL TIME'; pill.classList.remove('off'); }
+        else if(s === 'CHANNEL_ERROR' || s === 'TIMED_OUT'){ pill.textContent = 'RT: ' + s; pill.classList.add('off'); }
+        else pill.textContent = 'RT: ' + s;
+      });
+    }
+
+    /* ===== Inserts ===== */
+    async function agregarProducto(){
+      const fecha = fechaSeleccionada();
+      const producto = $('#producto').value;
+      const kilos = $('#kilos').value;
+      const piezas = $('#piezas').value || 0;
+      const origen = $('#origen').value;
+      const congelado = $('#congelado').value;
+
+      if(!producto || !kilos || !origen){
+        alert("Por favor completa los campos obligatorios.");
+        return;
+      }
+
+      const row = {
+        fecha,
+        producto,
+        kilos: Number(parseFloat(kilos).toFixed(2)),
+        piezas: parseInt(piezas || 0, 10) || 0,
+        origen,
+        congelado
+      };
+
+      const { data, error } = await sb
+        .from(T_ENVIADOS)
+        .insert(row)
+        .select("id, producto, kilos, piezas, origen, congelado, created_at")
+        .single();
+
+      if(error){
+        console.error(error);
+        alert("No se pudo guardar. Revisa internet o políticas RLS / Realtime.");
+        return;
+      }
+
+      if(!enviados.some(x=>x.id===data.id)){
+        enviados.unshift({
+          id:data.id,
+          producto:data.producto,
+          kilos:+data.kilos,
+          piezas:+(data.piezas||0),
+          origen:data.origen,
+          congelado:data.congelado,
+          created_at:data.created_at
+        });
+        renderAll();
+      }
+
+      $('#kilos').value = '';
+      $('#piezas').value = '';
+    }
+
+    async function agregarDevuelto(){
+      const fecha = fechaSeleccionada();
+      const producto = $('#productoDevuelto').value;
+      const kilos = $('#kilosDevuelto').value;
+
+      if(!producto || !kilos){
+        alert("Completa ambos campos del producto devuelto.");
+        return;
+      }
+
+      const row = { fecha, producto, kilos: Number(parseFloat(kilos).toFixed(2)) };
+
+      const { data, error } = await sb
+        .from(T_DEVUELTOS)
+        .insert(row)
+        .select("id, producto, kilos, created_at")
+        .single();
+
+      if(error){
+        console.error(error);
+        alert("No se pudo guardar devuelto. Revisa internet o RLS / Realtime.");
+        return;
+      }
+
+      if(!devueltos.some(x=>x.id===data.id)){
+        devueltos.unshift({ id:data.id, producto:data.producto, kilos:+data.kilos, created_at:data.created_at });
+        renderAll();
+      }
+
+      $('#productoDevuelto').value = '';
+      $('#kilosDevuelto').value = '';
+    }
+
+    async function eliminarProducto(id){
+      if(!id) return;
+      const { error } = await sb.from(T_ENVIADOS).delete().eq('id', id);
+      if(error){ console.error(error); alert("No se pudo eliminar. Revisa internet o RLS."); }
+    }
+
+    async function eliminarDevuelto(id){
+      if(!id) return;
+      const { error } = await sb.from(T_DEVUELTOS).delete().eq('id', id);
+      if(error){ console.error(error); alert("No se pudo eliminar devuelto. Revisa internet o RLS."); }
+    }
+
+    /* ===== WhatsApp ===== */
+    function enviarWhatsApp(){
+      const fecha = fechaSeleccionada();
+      const agrupadoEnviados = {};
+      const agrupadoDevueltos = {};
+      let totalKilosEnviados = 0;
+      let totalKilosDevueltos = 0;
+
+      enviados.forEach(p => {
+        if(!agrupadoEnviados[p.producto]) agrupadoEnviados[p.producto] = { kilos:0, piezas:0 };
+        agrupadoEnviados[p.producto].kilos += num(p.kilos);
+        agrupadoEnviados[p.producto].piezas += parseInt(p.piezas||0,10);
+        totalKilosEnviados += num(p.kilos);
+      });
+
+      devueltos.forEach(p => {
+        if(!agrupadoDevueltos[p.producto]) agrupadoDevueltos[p.producto] = 0;
+        agrupadoDevueltos[p.producto] += num(p.kilos);
+        totalKilosDevueltos += num(p.kilos);
+      });
+
+      let mensaje = `*Resumen VDC 360° - ${fecha}*\n\n`;
+      mensaje += `🟢 *Productos enviados:*\n`;
+      for(const [producto, datos] of Object.entries(agrupadoEnviados)){
+        mensaje += `• ${producto}: ${datos.kilos.toFixed(2)} kg / ${datos.piezas} pzas\n`;
+      }
+      mensaje += `\n📦 *Total kilos enviados:* ${totalKilosEnviados.toFixed(2)} kg\n`;
+
+      if(devueltos.length > 0){
+        mensaje += `\n🔴 *Productos devueltos:*\n`;
+        for(const [producto, kilos] of Object.entries(agrupadoDevueltos)){
+          mensaje += `• ${producto}: ${kilos.toFixed(2)} kg\n`;
+        }
+        mensaje += `\n📦 *Total kilos devueltos:* ${totalKilosDevueltos.toFixed(2)} kg\n`;
+      }
+
+      const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+      window.open(url, "_blank");
+    }
+
+    /* ===== Arranque ===== */
+    document.getElementById("fecha").value = todayISODate();
+    ordenarSelectAlfabeticamente('producto');
+    markTouched();
+
+    $('#producto').addEventListener('change', aplicarAutofillPorProducto);
+    $('#piezas').addEventListener('input', ()=>{ touched.kilos = false; recalcularKilosSiAplica(); });
+
+    $('#btnAgregar').addEventListener('click', agregarProducto);
+    $('#btnAgregarDev').addEventListener('click', agregarDevuelto);
+
+    // ENVIADOS
+    $('#btnPeso').addEventListener('click', ()=> leerBasculaOnce('kilos', false));
+    $('#rtPesoToggle').addEventListener('change', async (e)=>{
+      if(e.target.checked){
+        await conectarBasculaRealtime();
+        await leerBasculaOnce('kilos', false);
+      }else{
+        setPesoStatus("Báscula: esperando…", true);
+        await apagarBasculaRealtimeSiNadieLaUsa();
+      }
+    });
+
+    // DEVUELTOS
+    $('#btnPesoDev').addEventListener('click', ()=> leerBasculaOnce('kilosDevuelto', true));
+    $('#rtPesoToggleDev').addEventListener('change', async (e)=>{
+      if(e.target.checked){
+        await conectarBasculaRealtime();
+        await leerBasculaOnce('kilosDevuelto', true);
+      }else{
+        setPesoStatusDev("Báscula: esperando…", true);
+        await apagarBasculaRealtimeSiNadieLaUsa();
+      }
+    });
+
+    async function iniciar(){
+      const f = fechaSeleccionada();
+      await cargarDia(f);
+      await conectarRealtime(f);
+      aplicarAutofillPorProducto();
+      setPesoStatus("Báscula: esperando…", true);
+      setPesoStatusDev("Báscula: esperando…", true);
+    }
+
+    $('#fecha').addEventListener('change', async ()=>{
+      const f = fechaSeleccionada();
+      await cargarDia(f);
+      await conectarRealtime(f);
+    });
+
+    iniciar();
+
+    /* ✅ Exponer funciones para onclick inline */
+    window.startEdit = startEdit;
+    window.cancelEdit = cancelEdit;
+    window.saveEdit = saveEdit;
+    window.setDraft = setDraft;
+    window.eliminarProducto = eliminarProducto;
+    window.eliminarDevuelto = eliminarDevuelto;
+    window.enviarWhatsApp = enviarWhatsApp;
+  </script>
+</body>
+</html>
