@@ -2,715 +2,1100 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hoja de Viaje - VDC360°</title>
-
-  <!-- Supabase v1 (como tu proyecto) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.6/dist/umd/supabase.min.js"></script>
+  <title>Registro Mostrador VDC 360°</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h1 { text-align: center; }
-    .section { border: 1px solid #ddd; padding: 10px; margin-bottom: 20px; border-radius:10px; background:#fff; }
-    .section h2 { margin-top: 0; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    input[type="number"] { width: 110px; padding:8px; }
-    .btn { padding: 10px 14px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 10px; margin-top: 6px; font-weight:900; }
-    .btn.secondary{ background:#0a7a3b; }
-    .btn.danger{ background:#b91c1c; }
-    .row2 { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .muted { color:#555; font-size:12px; }
+    body { font-family: sans-serif; background:#f2f2f2; padding:20px; }
+    .container { background:#fff; padding:30px; border-radius:10px; max-width:900px; margin:auto; }
+    h1 { color:green; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    label { display:block; margin-top:15px; }
+    input, select { width:100%; padding:10px; margin-top:5px; }
+    button { margin-top:20px; padding:12px; background:#1f6f26; color:#fff; border:none; border-radius:5px; cursor:pointer; width:100%; font-weight:bold; }
+    table { width:100%; margin-top:20px; border-collapse:collapse; }
+    th, td { border:2px solid #1f6f26; padding:8px; text-align:center; }
+    th { background:#1f6f26; color:#fff; }
+    .subtitulo { font-size:22px; font-weight:bold; margin-top:40px; }
+    .hint { font-size:12px; color:#555; margin-top:8px; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:999px; background:#eef7ef; color:#1f6f26; font-weight:800; font-size:12px; }
+    .pill.off { background:#fff1f2; color:#b91c1c; }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:720px){ .row2{ grid-template-columns:1fr; } }
+    canvas{ width:100%; }
 
-    /* ====== NUEVO: estilos del marcador ====== */
-    .mark-select{
-      width: 140px;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #cfd3d8;
-      background: #fff;
-      font-weight: 800;
-    }
-    .row-mark-none { background: transparent; }
-    .row-mark-yellow { background: rgba(255, 235, 59, .35); }
-    .row-mark-blue { background: rgba(33, 150, 243, .20); }
-    .row-mark-green { background: rgba(76, 175, 80, .20); }
-    .row-mark-red { background: rgba(244, 67, 54, .18); }
-    .row-mark-purple { background: rgba(156, 39, 176, .16); }
+    /* UI BASCULA */
+    .pesoBox{ margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .pesoBtn{ width:auto; margin-top:0; padding:10px 12px; border-radius:10px; background:#0a7a3b; }
+    .pesoToggle{ display:flex; gap:8px; align-items:center; border:1px solid #e5e7eb; padding:8px 10px; border-radius:999px; background:#f9fafb; font-weight:800; font-size:12px; color:#111; }
+    .pesoToggle input{ width:18px; height:18px; }
+    .pesoStatus{ display:inline-block; padding:6px 10px; border-radius:999px; background:#f3f4f6; font-weight:800; font-size:12px; color:#374151; }
+    .pesoStatus.ok{ color:#0a7a3b; }
+    .pesoStatus.bad{ color:#b91c1c; background:#fff1f2; }
 
-    /* ====== NUEVO: pill realtime ====== */
-    .rt-pill{
-      display:inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-weight: 900;
-      font-size: 12px;
-      background:#eef7ef;
-      color:#1f6f26;
-      border:1px solid rgba(0,0,0,.08);
-      margin-left: 10px;
+    /* ✅ Edición inline */
+    .miniBtn{
+      margin-top:0;
+      width:auto;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#1f6f26;
+      font-weight:900;
     }
-    .rt-pill.off{
-      background:#fff1f2;
-      color:#b91c1c;
+    .miniBtn.gray{ background:#374151; }
+    .miniBtn.red{ background:#b91c1c; }
+    .miniBtnRow{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+    .cellInput{
+      width:100%;
+      padding:8px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+      font-weight:700;
     }
-
-    /* ===== Báscula box ===== */
-    .bascula-box{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      flex-wrap:wrap;
-      padding:12px;
-      border-radius:12px;
-      border:1px solid rgba(0,0,0,.10);
-      background:#f7faf7;
+    .cellSelect{
+      width:100%;
+      padding:8px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+      font-weight:800;
+      background:#fff;
     }
-    .peso-big{
-      font-size: 34px;
-      font-weight: 1000;
-      letter-spacing:.5px;
-    }
-    .peso-status{
-      display:inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-weight: 1000;
-      font-size: 12px;
-      background:#eef7ef;
-      color:#1f6f26;
-      border:1px solid rgba(0,0,0,.08);
-    }
-    .peso-status.off{
-      background:#fff1f2;
-      color:#b91c1c;
-    }
-
-    /* ===== NUEVO: Barra flotante “Usar peso” ===== */
-    .peso-floatbar{
-      position: fixed;
-      left: 16px;
-      right: 16px;
-      bottom: 14px;
-      z-index: 99999;
-      background: #ffffff;
-      border: 1px solid rgba(0,0,0,.12);
-      border-radius: 14px;
-      box-shadow: 0 12px 28px rgba(0,0,0,.18);
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-    .peso-float-left{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .peso-mini{
-      font-weight: 1000;
-      font-size: 18px;
-    }
-    .peso-help{
-      font-size: 12px;
-      color: #555;
-    }
-
-    /* Para que el contenido no quede tapado por la barra */
-    body{ padding-bottom: 120px; }
   </style>
 </head>
 
 <body>
   <a href="https://marcianoper.github.io/vdc-central/"
-     style="
-       position:fixed;
-       top:12px;
-       left:12px;
-       background:#0a7a3b;
-       color:#fff;
-       padding:10px 14px;
-       border-radius:12px;
-       text-decoration:none;
-       font-weight:900;
-       z-index:9999;
-       box-shadow:0 10px 20px rgba(0,0,0,.15);
-     ">
-    ← VDC Central
-  </a>
+   style="
+     position:fixed;
+     top:12px;
+     left:12px;
+     background:#0a7a3b;
+     color:#fff;
+     padding:10px 14px;
+     border-radius:12px;
+     text-decoration:none;
+     font-weight:900;
+     z-index:9999;
+     box-shadow:0 10px 20px rgba(0,0,0,.15);
+   ">
+  ← VDC Central
+</a>
 
-  <h1>
-    Hoja de Viaje - VDC360°
-    <span id="rt" class="rt-pill">REAL TIME</span>
-  </h1>
+  <div class="container">
+    <h1>
+      Registro Mostrador VDC 360° matrix
+      <span id="rt" class="pill">REAL TIME</span>
+    </h1>
+    <div class="hint">Todo lo que agregues/eliminés se sincroniza en vivo en otros dispositivos abiertos en la misma fecha.</div>
 
-  <div class="row2" style="margin: 10px 0 16px 0;">
-    <label><strong>Fecha del viaje:</strong> <input type="date" id="fechaViaje"></label>
-  </div>
+    <label>Fecha:
+      <input type="date" id="fecha" value="">
+    </label>
 
-  <!-- ===== BÁSCULA EN VIVO ===== -->
-  <div class="section">
-    <h2>Báscula en vivo</h2>
+    <label>Producto:
+      <select id="producto">
+        <option value="">Seleccionar</option>
+        <option value="Caja menudo vísceras">Caja menudo vísceras</option>
+        <option value="Caja Menudo National">Caja Menudo National</option>
+        <option value="Panza">Panza</option>
+        <option value="Libro">Libro</option>
+        <option value="Tripa">Tripa</option>
+        <option value="Tripa de rastro">Tripa de rastro</option>
+        <option value="Corazon">Corazon</option>
+        <option value="Higado">Higado</option>
+        <option value="Sebo">Sebo</option>
+        <option value="Pata Blanca">Pata Blanca</option>
+        <option value="Pata Morena">Pata Morena</option>
+        <option value="Cabeza sin lengua">Cabeza sin lengua</option>
+        <option value="Bofe">Bofe</option>
+        <option value="Tripa Gorda">Tripa gorda</option>
+        <option value="Caja Excel">Caja Excel</option>
+        <option value="Menudo Canadian">Menudo Canadian</option>
+        <option value="Caja Washington">Caja Washington</option>
+        <option value="Cabeza de res">Cabeza de res</option>
+        <option value="Teleco">Teleco</option>
+        <option value="Nana">Nana</option>
+        <option value="Cabeza de Rastro">Cabeza de Rastro</option>
+        <option value="Tripa de Rastro">Tripa de Rastro</option>
+        <option value="Cabeza Congelada">Cabeza Congelada</option>
+        <option value="Quajo">Quajo</option>
+        <option value="Producto Libre">Producto Libre</option>
+        <option value="Lengua">Lengua</option>
+        <option value="Caja de tripa">Caja de tripa</option>
+        <option value="Caja Menudo Swift">Caja Menudo Swift</option>
+        <option value="Menudo sucio">Menudo sucio</option>
+      </select>
+    </label>
 
-    <div class="bascula-box">
-      <div>
-        <strong>Peso actual:</strong>
-        <span id="pesoLive" class="peso-big">--</span> kg
+    <div class="row2">
+      <label>Kilos:
+        <input type="number" id="kilos" step="0.01" />
+
+        <div class="pesoBox">
+          <button id="btnPeso" type="button" class="pesoBtn">📥 Tomar peso</button>
+
+          <span class="pesoToggle">
+            <input type="checkbox" id="rtPesoToggle" />
+            <span>Peso Real-time</span>
+          </span>
+
+          <span id="pesoStatus" class="pesoStatus">Báscula: esperando…</span>
+        </div>
+      </label>
+
+      <label>Piezas (opcional):
+        <input type="number" id="piezas" />
+      </label>
+    </div>
+
+    <label>Origen:
+      <input type="text" id="origen" placeholder="Ej: rastro / limpieza / congelado" />
+    </label>
+
+    <label>¿Es congelado?
+      <select id="congelado">
+        <option value="No">No</option>
+        <option value="Sí">Sí</option>
+      </select>
+    </label>
+
+    <button id="btnAgregar">Agregar producto</button>
+
+    <h2 class="subtitulo">Productos enviados (lo más nuevo arriba)</h2>
+    <table id="tablaEnviados">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Kilos</th>
+          <th>Piezas</th>
+          <th>Origen</th>
+          <th>Congelado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2 class="subtitulo">Productos devueltos (lo más nuevo arriba)</h2>
+
+    <label>Producto devuelto:
+      <input type="text" id="productoDevuelto" />
+    </label>
+
+    <label>Kilos devueltos:
+      <input type="number" id="kilosDevuelto" step="0.01" />
+
+      <!-- ✅ BASCULA TAMBIÉN PARA DEVUELTOS -->
+      <div class="pesoBox">
+        <button id="btnPesoDev" type="button" class="pesoBtn">📥 Tomar peso</button>
+
+        <span class="pesoToggle">
+          <input type="checkbox" id="rtPesoToggleDev" />
+          <span>Peso Real-time</span>
+        </span>
+
+        <span id="pesoStatusDev" class="pesoStatus">Báscula: esperando…</span>
       </div>
-      <span id="pesoStatus" class="peso-status">CONECTANDO</span>
+    </label>
 
-      <button class="btn secondary" type="button" onclick="leerPesoManual()">Actualizar ahora</button>
+    <button id="btnAgregarDev">Agregar producto devuelto</button>
+
+    <table id="tablaDevueltos">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Kilos</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h2 class="subtitulo">Resumen del día (kilos y piezas)</h2>
+    <table id="tablaResumen">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Kilos</th>
+          <th>Piezas</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div style="height:260px; margin-top:16px;">
+      <canvas id="chartResumen"></canvas>
     </div>
 
-    <p class="muted" style="margin-top:8px;">
-      Tip: haz click dentro de un input de <b>Kg</b> (una pesada) y luego presiona “Usar este peso”.
-    </p>
+    <button onclick="enviarWhatsApp()">Enviar resumen a WhatsApp</button>
   </div>
 
-  <!-- ===== CONTENEDOR PRODUCTOS ===== -->
-  <div id="contenedorProductos"></div>
-
-  <button class="btn" onclick="guardarViaje()">Guardar Viaje</button>
-  <button class="btn secondary" onclick="mostrarHistorial()">Ver Historial</button>
-  <button class="btn secondary" onclick="generarResumenTotales()">Generar Documento de Totales</button>
-
-  <div id="historialContainer" style="margin-top: 30px;"></div>
-
-  <!-- ===== NUEVO: Barra flotante siempre visible ===== -->
-  <div class="peso-floatbar">
-    <div class="peso-float-left">
-      <span class="peso-mini">Peso: <span id="pesoLiveMini">--</span> kg</span>
-      <span id="pesoStatusMini" class="peso-status">CONECTANDO</span>
-      <span class="peso-help">Selecciona un input de Kg y presiona el botón</span>
-    </div>
-
-    <button class="btn" type="button" onclick="tomarPesoEnInputActivo()">
-      Usar este peso
-    </button>
-  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <script>
-    /* ========= CLIENTE SUPABASE ========= */
-    const supabase = window.supabase.createClient(
-      'https://rcegikeiaxptolrduguc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8'
-    );
+    /* ===== CONFIG SUPABASE ===== */
+    const SUPABASE_URL = "https://eqynjddcosvdqjzztznn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxeW5qZGRjb3N2ZHFqenp0em5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzYwMzIsImV4cCI6MjA3MTcxMjAzMn0.Q51wsGelUvxRfqsMYRY5JduCGyZ7s6AzOhqsRf3kOhk";
 
-    /* ========= TABLA LIVE DE BÁSCULA ========= */
-    // Debe existir en esta misma supabase (igual que tu bascula_live de otros proyectos)
-    // Estructura típica:
-    // id (text pk) | peso (numeric) | updated_at (timestamptz)
-    const BASCULA_TABLE = 'bascula_live';
-    const BASCULA_ID = 'torrey_1';
+    const sb = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
 
-    /* ========= REALTIME LIVE TABLE (estado hoja) ========= */
-    const LIVE_TABLE = 'hoja_viaje_live';
+    const T_ENVIADOS = "mostrador_enviados";
+    const T_DEVUELTOS = "mostrador_devueltos";
 
-    /* ========= DEVICE ID ========= */
-    const DEVICE_ID = (() => {
-      const k = 'vdc_device_id';
-      let v = localStorage.getItem(k);
-      if(!v){
-        v = 'dev_' + Math.random().toString(16).slice(2) + '_' + Date.now();
-        localStorage.setItem(k, v);
-      }
-      return v;
-    })();
+    const T_BASCULA = "bascula_live";
+    const BASCULA_ID = "torrey_1";
 
-    /* ========= LISTA DE PRODUCTOS ========= */
-    const productos = ['Cabeza de res', 'Tripa de res', 'Menudo sucio', 'Cuajo de res', 'Pata sucia', 'Hígado', 'Libro de res', 'Teleco', 'Corazón'];
+    let enviados = [];
+    let devueltos = [];
+    let rtChannel = null;
+    let chBascula = null;
 
-    function $(s){ return document.querySelector(s); }
+    const $ = (s)=>document.querySelector(s);
 
-    function todayISO(){
+    function todayISODate(){
       const d = new Date();
-      const z = d.getTimezoneOffset() * 60000;
-      return new Date(d - z).toISOString().slice(0,10);
+      const off = d.getTimezoneOffset();
+      const local = new Date(d.getTime() - off*60000);
+      return local.toISOString().slice(0,10);
+    }
+    function fechaSeleccionada(){ return $('#fecha')?.value || todayISODate(); }
+    function num(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+    function escapeHtml(str){
+      return String(str ?? '')
+        .replaceAll('&','&amp;').replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
     }
 
-    function getID(producto) {
-      return producto.toLowerCase().replace(/\s+/g, '-').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    /* ======= Báscula ======= */
+    function setPesoStatus(msg, ok=true){
+      const el = $('#pesoStatus');
+      if(!el) return;
+      el.textContent = msg || '';
+      el.classList.remove('ok','bad');
+      el.classList.add(ok ? 'ok' : 'bad');
+    }
+    function setPesoStatusDev(msg, ok=true){
+      const el = $('#pesoStatusDev');
+      if(!el) return;
+      el.textContent = msg || '';
+      el.classList.remove('ok','bad');
+      el.classList.add(ok ? 'ok' : 'bad');
     }
 
-    /* ========= marcador por fila ========= */
-    const MARKS = [
-      { key: 'none',   label: 'Sin marca',   cls: 'row-mark-none' },
-      { key: 'yellow', label: 'Cliente A',   cls: 'row-mark-yellow' },
-      { key: 'blue',   label: 'Cliente B',   cls: 'row-mark-blue' },
-      { key: 'green',  label: 'Cliente C',   cls: 'row-mark-green' },
-      { key: 'red',    label: 'Urgente',     cls: 'row-mark-red' },
-      { key: 'purple', label: 'Especial',    cls: 'row-mark-purple' },
-    ];
-
-    function markToClass(markKey){
-      const f = MARKS.find(m => m.key === markKey);
-      return (f ? f.cls : 'row-mark-none');
+    function setKilosFromBasculaToInput(inputId, peso){
+      const k = document.getElementById(inputId);
+      if(!k) return;
+      const next = Number(peso || 0);
+      if(!Number.isFinite(next)) return;
+      const cur = Number(k.value || 0);
+      if(Math.abs(cur - next) < 0.001) return;
+      k.value = next.toFixed(2);
+      k.dispatchEvent(new Event('input', { bubbles:true }));
+      k.dispatchEvent(new Event('change', { bubbles:true }));
     }
 
-    function buildMarkSelect(selectedKey = 'none'){
-      const sel = document.createElement('select');
-      sel.className = 'mark-select';
-      sel.innerHTML = MARKS.map(m => `<option value="${m.key}" ${m.key===selectedKey?'selected':''}>${m.label}</option>`).join('');
-      return sel;
+    async function leerBasculaOnce(targetInputId='kilos', isDev=false){
+      if(!sb){ alert("No cargó Supabase. Revisa el CDN o internet."); return; }
+      (isDev ? setPesoStatusDev : setPesoStatus)("Báscula: leyendo…", true);
+
+      const { data, error } = await sb
+        .from(T_BASCULA)
+        .select("id,peso,updated_at")
+        .eq("id", BASCULA_ID)
+        .maybeSingle();
+
+      if(error){
+        console.error(error);
+        (isDev ? setPesoStatusDev : setPesoStatus)("Báscula: error lectura", false);
+        alert("Error leyendo báscula (bascula_live). Revisa RLS / tabla / internet.");
+        return;
+      }
+      if(!data){
+        (isDev ? setPesoStatusDev : setPesoStatus)("Báscula: sin fila torrey_1", false);
+        alert("No existe la fila bascula_live.id='torrey_1'.");
+        return;
+      }
+      const peso = Number(data.peso);
+      if(!Number.isFinite(peso)){
+        (isDev ? setPesoStatusDev : setPesoStatus)("Báscula: peso inválido", false);
+        return;
+      }
+
+      const abs = Math.abs(peso);
+      setKilosFromBasculaToInput(targetInputId, abs);
+      (isDev ? setPesoStatusDev : setPesoStatus)(`Báscula: OK ${abs.toFixed(2)} kg`, true);
     }
 
-    function applyRowMark(row, markKey){
-      MARKS.forEach(m => row.classList.remove(m.cls));
-      row.classList.add(markToClass(markKey));
-      row.dataset.mark = markKey || 'none';
-    }
+    // Un solo canal realtime para la bascula; actualiza el/los inputs según toggles activos
+    async function conectarBasculaRealtime(){
+      if(!sb) return;
+      if(chBascula){
+        try { await sb.removeChannel(chBascula); } catch(e){}
+        chBascula = null;
+      }
 
-    function crearTabla(producto) {
-      const id = getID(producto);
-      const section = document.createElement('div');
-      section.className = 'section';
-      section.innerHTML = `
-        <h2>${producto}</h2>
-        <table id="tabla-${id}">
-          <thead>
-            <tr>
-              <th>Kg</th>
-              <th>Piezas</th>
-              <th>Marcador</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-        <button class="btn agregar-btn" data-producto="${producto}">Agregar Pesada</button>
-        <p><strong>Total Kg:</strong> <span id="totalKg-${id}">0</span> |
-           <strong>Total Pzas:</strong> <span id="totalPzas-${id}">0</span></p>`;
-      document.getElementById('contenedorProductos').appendChild(section);
-    }
+      chBascula = sb
+        .channel(`bascula-live-${BASCULA_ID}`)
+        .on(
+          "postgres_changes",
+          { event:"UPDATE", schema:"public", table:T_BASCULA, filter:`id=eq.${BASCULA_ID}` },
+          (payload)=>{
+            const peso = payload.new?.peso;
+            if(typeof peso !== 'number') return;
+            const abs = Math.abs(peso);
 
-    /* ========= FILAS Y TOTALES ========= */
-    function agregarFila(producto, kgValue = '', pzasValue = '', markKey = 'none') {
-      const id = getID(producto);
-      const tabla = document.querySelector(`#tabla-${id} tbody`);
-      const fila = document.createElement('tr');
+            const rtEnv = document.getElementById('rtPesoToggle')?.checked;
+            const rtDev = document.getElementById('rtPesoToggleDev')?.checked;
 
-      const markSelect = buildMarkSelect(markKey);
-      markSelect.addEventListener('change', () => {
-        applyRowMark(fila, markSelect.value);
-        actualizarTotales(producto);
-        scheduleSaves();
-      });
+            if(rtEnv){
+              setKilosFromBasculaToInput('kilos', abs);
+              setPesoStatus(`Báscula: ${abs.toFixed(2)} kg (RT)`, true);
+            }
+            if(rtDev){
+              setKilosFromBasculaToInput('kilosDevuelto', abs);
+              setPesoStatusDev(`Báscula: ${abs.toFixed(2)} kg (RT)`, true);
+            }
 
-      fila.innerHTML = `
-        <td><input class="kg-input" type="number" step="0.1" value="${kgValue}"
-              onchange="actualizarTotales('${producto}'); scheduleSaves();"></td>
-        <td><input type="number" value="${pzasValue}"
-              onchange="actualizarTotales('${producto}'); scheduleSaves();"></td>
-        <td class="mark-cell"></td>
-        <td><button class="btn danger" onclick="eliminarFila(this)">Eliminar</button></td>`;
-
-      fila.querySelector('.mark-cell').appendChild(markSelect);
-      tabla.appendChild(fila);
-
-      applyRowMark(fila, markKey || 'none');
-
-      actualizarTotales(producto);
-      scheduleSaves();
-    }
-
-    function eliminarFila(btn) {
-      const row = btn.parentNode.parentNode;
-      const producto = row.closest('.section').querySelector('h2').textContent;
-      row.remove();
-      actualizarTotales(producto);
-      scheduleSaves();
-    }
-
-    function actualizarTotales(producto) {
-      const id = getID(producto);
-      const filas = document.querySelectorAll(`#tabla-${id} tbody tr`);
-      let totalKg = 0;
-      let totalPzas = 0;
-      filas.forEach(row => {
-        const kg = parseFloat(row.children[0].children[0].value) || 0;
-        const pzas = parseFloat(row.children[1].children[0].value) || 0;
-        totalKg += kg;
-        totalPzas += pzas;
-      });
-      document.getElementById(`totalKg-${id}`).textContent = totalKg.toFixed(1);
-      document.getElementById(`totalPzas-${id}`).textContent = totalPzas;
-    }
-
-    /* ========= GUARDAR / HISTORIAL / RESUMEN ========= */
-    function recolectarResultados(){
-      const resultados = {};
-      productos.forEach(producto => {
-        const id = getID(producto);
-        const filas = document.querySelectorAll(`#tabla-${id} tbody tr`);
-        resultados[producto] = [];
-        filas.forEach(row => {
-          const kg = parseFloat(row.children[0].children[0].value) || 0;
-          const pzas = parseFloat(row.children[1].children[0].value) || 0;
-          const mark = row.dataset.mark || 'none';
-          if (kg || pzas) resultados[producto].push({ kg, pzas, mark });
+            // si ninguno está activo, no hace nada
+          }
+        )
+        .subscribe((s)=>{
+          // Solo mensajes “listo” cuando cualquiera esté activo
+          if(s === 'SUBSCRIBED'){
+            const rtEnv = document.getElementById('rtPesoToggle')?.checked;
+            const rtDev = document.getElementById('rtPesoToggleDev')?.checked;
+            if(rtEnv) setPesoStatus("Báscula: RT listo ✅", true);
+            if(rtDev) setPesoStatusDev("Báscula: RT listo ✅", true);
+          } else if(s === 'CHANNEL_ERROR' || s === 'TIMED_OUT'){
+            setPesoStatus("Báscula: RT error", false);
+            setPesoStatusDev("Báscula: RT error", false);
+          }
         });
-      });
-      return resultados;
     }
 
-    async function guardarViaje() {
-      const fecha = document.getElementById('fechaViaje').value;
-      if (!fecha) return alert("⚠️ Por favor selecciona una fecha.");
+    async function apagarBasculaRealtimeSiNadieLaUsa(){
+      const rtEnv = document.getElementById('rtPesoToggle')?.checked;
+      const rtDev = document.getElementById('rtPesoToggleDev')?.checked;
 
-      const resultados = recolectarResultados();
+      if(rtEnv || rtDev){
+        // alguien la sigue usando -> no apagar
+        return;
+      }
 
-      const { data, error } = await supabase
-        .from('hoja_viaje')
-        .insert([{ fecha, resultados }])
-        .select()
-        .single();
+      if(!sb) return;
+      if(chBascula){
+        try { await sb.removeChannel(chBascula); } catch(e){}
+        chBascula = null;
+      }
+      setPesoStatus("Báscula: esperando…", true);
+      setPesoStatusDev("Báscula: esperando…", true);
+    }
 
-      if (error) {
-        alert("❌ Error al guardar: " + error.message);
-      } else {
-        alert("✅ Viaje guardado correctamente.");
-        if (data && data.id) {
-          window.viaje_id = data.id;
-          await saveLive();
-          saveLocal();
+    /* ===== Orden A-Z ===== */
+    function ordenarSelectAlfabeticamente(selectId){
+      const select = document.getElementById(selectId);
+      if(!select) return;
+      const options = Array.from(select.options);
+      if(options.length <= 2) return;
+      const first = options.shift();
+      options.sort((a, b) => a.text.localeCompare(b.text, 'es', { sensitivity: 'base' }));
+      select.innerHTML = '';
+      select.appendChild(first);
+      options.forEach(opt => select.appendChild(opt));
+    }
+
+    /* ===== Autofill (igual) ===== */
+    const PESO_CAJA_2722 = 27.22;
+    function norm(s){
+      return String(s||'').trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    }
+    const PRODUCTOS_VIAJE = new Set([
+      "bofe","cabeza de res","cabeza de rastro","cabeza sin lengua","corazon",
+      "higado","libro","nana","panza","pata blanca","pata morena","cuajo",
+      "quajo","sebo","teleco","tripa","tripa de rastro","tripa gorda"
+    ].map(norm));
+    const REGLAS_PRODUCTO = new Map([
+      [norm("Menudo Canadian"),     { origen: "Promerca",  congelado: "Sí" }],
+      [norm("Caja Menudo National"),{ origen: "Congelado", congelado: "Sí" }],
+      [norm("Caja Washington"),     { origen: "Daniel",    congelado: "Sí" }],
+      [norm("Lengua"),             { origen: "Anglo",     congelado: "Sí" }]
+    ]);
+    const PRODUCTOS_PESO_FIJO_2722 = new Set([ norm("Menudo Canadian"), norm("Caja Menudo National") ]);
+
+    const touched = { origen:false, congelado:false, kilos:false };
+    function markTouched(){
+      const o = $('#origen'), c = $('#congelado'), k = $('#kilos');
+      if(o) o.addEventListener('input', ()=> touched.origen = true);
+      if(c) c.addEventListener('change', ()=> touched.congelado = true);
+      if(k) k.addEventListener('input', ()=> touched.kilos = true);
+    }
+    function setIfNotTouched(field, value){
+      if(field === 'origen' && !touched.origen) $('#origen').value = value;
+      if(field === 'congelado' && !touched.congelado) $('#congelado').value = value;
+      if(field === 'kilos' && !touched.kilos) $('#kilos').value = value;
+    }
+    function aplicarAutofillPorProducto(){
+      const p = norm($('#producto')?.value || '');
+      touched.origen = touched.congelado = touched.kilos = false;
+
+      if(REGLAS_PRODUCTO.has(p)){
+        const r = REGLAS_PRODUCTO.get(p);
+        setIfNotTouched('origen', r.origen);
+        setIfNotTouched('congelado', r.congelado);
+      } else if(PRODUCTOS_VIAJE.has(p)){
+        setIfNotTouched('origen', 'Viaje');
+        setIfNotTouched('congelado', 'No');
+      }
+      recalcularKilosSiAplica();
+    }
+    function recalcularKilosSiAplica(){
+      const p = norm($('#producto')?.value || '');
+      if(!PRODUCTOS_PESO_FIJO_2722.has(p)) return;
+      const piezas = num($('#piezas')?.value);
+      if(!piezas) return;
+      setIfNotTouched('kilos', (piezas * PESO_CAJA_2722).toFixed(2));
+    }
+
+    /* ===========================
+       ✅ EDICIÓN INLINE
+    =========================== */
+    const editState = {
+      envi: new Map(),
+      dev:  new Map()
+    };
+
+    function startEdit(kind, id){
+      const list = (kind === 'envi') ? enviados : devueltos;
+      const row = list.find(x=>x.id===id);
+      if(!row) return;
+
+      for(const [k,v] of (kind==='envi'?editState.envi:editState.dev).entries()){
+        if(v.editing && k !== id){
+          cancelEdit(kind, k);
         }
       }
+
+      const stMap = (kind==='envi') ? editState.envi : editState.dev;
+      stMap.set(id, {
+        editing:true,
+        backup: JSON.parse(JSON.stringify(row)),
+        draft:  JSON.parse(JSON.stringify(row))
+      });
+      renderAll();
     }
 
-    async function mostrarHistorial() {
-      const { data, error } = await supabase.from('hoja_viaje').select('*').order('fecha', { ascending: false });
-      const contenedor = document.getElementById('historialContainer');
-      contenedor.innerHTML = '';
+    function cancelEdit(kind, id){
+      const stMap = (kind==='envi') ? editState.envi : editState.dev;
+      const s = stMap.get(id);
+      if(!s) return;
 
-      if (error) {
-        contenedor.innerHTML = '<p style="color:red;">❌ Error al cargar historial: ' + error.message + '</p>';
+      const list = (kind === 'envi') ? enviados : devueltos;
+      const idx = list.findIndex(x=>x.id===id);
+      if(idx >= 0) list[idx] = s.backup;
+
+      stMap.delete(id);
+      renderAll();
+    }
+
+    function setDraft(kind, id, field, value){
+      const stMap = (kind==='envi') ? editState.envi : editState.dev;
+      const s = stMap.get(id);
+      if(!s) return;
+      s.draft[field] = value;
+    }
+
+    async function saveEdit(kind, id){
+      const stMap = (kind==='envi') ? editState.envi : editState.dev;
+      const s = stMap.get(id);
+      if(!s) return;
+
+      const d = s.draft;
+
+      if(kind === 'envi'){
+        const payload = {
+          producto: String(d.producto || '').trim(),
+          kilos: Number(parseFloat(d.kilos).toFixed(2)),
+          piezas: parseInt(d.piezas || 0, 10) || 0,
+          origen: String(d.origen || '').trim(),
+          congelado: (d.congelado === 'Sí' ? 'Sí' : 'No')
+        };
+
+        if(!payload.producto || !Number.isFinite(payload.kilos) || !payload.origen){
+          alert("En edición: producto, kilos y origen son obligatorios.");
+          return;
+        }
+
+        const { data, error } = await sb
+          .from(T_ENVIADOS)
+          .update(payload)
+          .eq('id', id)
+          .select("id, producto, kilos, piezas, origen, congelado, created_at")
+          .single();
+
+        if(error){
+          console.error(error);
+          alert("No se pudo guardar cambios (UPDATE). Revisa RLS / permisos.");
+          cancelEdit(kind, id);
+          return;
+        }
+
+        const idx = enviados.findIndex(x=>x.id===id);
+        if(idx>=0){
+          enviados[idx] = {
+            id:data.id,
+            producto:data.producto,
+            kilos:+data.kilos,
+            piezas:+(data.piezas||0),
+            origen:data.origen,
+            congelado:data.congelado,
+            created_at:data.created_at
+          };
+        }
+
+      } else {
+        const payload = {
+          producto: String(d.producto || '').trim(),
+          kilos: Number(parseFloat(d.kilos).toFixed(2))
+        };
+        if(!payload.producto || !Number.isFinite(payload.kilos)){
+          alert("En devueltos: producto y kilos son obligatorios.");
+          return;
+        }
+
+        const { data, error } = await sb
+          .from(T_DEVUELTOS)
+          .update(payload)
+          .eq('id', id)
+          .select("id, producto, kilos, created_at")
+          .single();
+
+        if(error){
+          console.error(error);
+          alert("No se pudo guardar cambios (UPDATE) en devueltos. Revisa RLS.");
+          cancelEdit(kind, id);
+          return;
+        }
+
+        const idx = devueltos.findIndex(x=>x.id===id);
+        if(idx>=0){
+          devueltos[idx] = { id:data.id, producto:data.producto, kilos:+data.kilos, created_at:data.created_at };
+        }
+      }
+
+      stMap.delete(id);
+      renderAll();
+    }
+
+    /* ===== Render tablas ===== */
+    function renderTablaEnviados() {
+      const tbody = document.querySelector("#tablaEnviados tbody");
+      tbody.innerHTML = enviados.map((item) => {
+        const st = editState.envi.get(item.id);
+        const editing = !!st?.editing;
+        const d = editing ? st.draft : item;
+
+        return `
+        <tr>
+          <td>${
+            editing
+              ? `<input class="cellInput" value="${escapeHtml(d.producto)}"
+                   oninput="setDraft('envi','${item.id}','producto', this.value)">`
+              : `${escapeHtml(item.producto)}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<input class="cellInput" type="number" step="0.01" value="${Number(d.kilos||0).toFixed(2)}"
+                   oninput="setDraft('envi','${item.id}','kilos', this.value)">`
+              : `${(+item.kilos).toFixed(2)}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<input class="cellInput" type="number" value="${parseInt(d.piezas||0,10)}"
+                   oninput="setDraft('envi','${item.id}','piezas', this.value)">`
+              : `${item.piezas || 0}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<input class="cellInput" value="${escapeHtml(d.origen||'')}"
+                   oninput="setDraft('envi','${item.id}','origen', this.value)">`
+              : `${escapeHtml(item.origen || '')}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<select class="cellSelect"
+                   onchange="setDraft('envi','${item.id}','congelado', this.value)">
+                   <option value="No" ${d.congelado==='No'?'selected':''}>No</option>
+                   <option value="Sí" ${d.congelado==='Sí'?'selected':''}>Sí</option>
+                 </select>`
+              : `${escapeHtml(item.congelado || 'No')}`
+          }</td>
+
+          <td>
+            <div class="miniBtnRow">
+              ${
+                editing
+                  ? `
+                    <button class="miniBtn" onclick="saveEdit('envi','${item.id}')">Guardar</button>
+                    <button class="miniBtn gray" onclick="cancelEdit('envi','${item.id}')">Cancelar</button>
+                  `
+                  : `
+                    <button class="miniBtn" onclick="startEdit('envi','${item.id}')">Editar</button>
+                    <button class="miniBtn red" onclick="eliminarProducto('${item.id}')">Eliminar</button>
+                  `
+              }
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderTablaDevueltos() {
+      const tbody = document.querySelector("#tablaDevueltos tbody");
+      tbody.innerHTML = devueltos.map((item) => {
+        const st = editState.dev.get(item.id);
+        const editing = !!st?.editing;
+        const d = editing ? st.draft : item;
+
+        return `
+        <tr>
+          <td>${
+            editing
+              ? `<input class="cellInput" value="${escapeHtml(d.producto)}"
+                   oninput="setDraft('dev','${item.id}','producto', this.value)">`
+              : `${escapeHtml(item.producto)}`
+          }</td>
+
+          <td>${
+            editing
+              ? `<input class="cellInput" type="number" step="0.01" value="${Number(d.kilos||0).toFixed(2)}"
+                   oninput="setDraft('dev','${item.id}','kilos', this.value)">`
+              : `${(+item.kilos).toFixed(2)}`
+          }</td>
+
+          <td>
+            <div class="miniBtnRow">
+              ${
+                editing
+                  ? `
+                    <button class="miniBtn" onclick="saveEdit('dev','${item.id}')">Guardar</button>
+                    <button class="miniBtn gray" onclick="cancelEdit('dev','${item.id}')">Cancelar</button>
+                  `
+                  : `
+                    <button class="miniBtn" onclick="startEdit('dev','${item.id}')">Editar</button>
+                    <button class="miniBtn red" onclick="eliminarDevuelto('${item.id}')">Eliminar</button>
+                  `
+              }
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    /* ===== Resumen + chart ===== */
+    function buildResumen(){
+      const map = new Map();
+      for(const r of enviados){
+        const k = r.producto;
+        if(!map.has(k)) map.set(k, { producto:k, kilos:0, piezas:0 });
+        const o = map.get(k);
+        o.kilos += num(r.kilos);
+        o.piezas += parseInt(r.piezas||0,10);
+      }
+      return Array.from(map.values()).sort((a,b)=>b.kilos-a.kilos);
+    }
+    function renderResumen(){
+      const rows = buildResumen();
+      const tbody = document.querySelector("#tablaResumen tbody");
+      tbody.innerHTML = rows.map(r=>`
+        <tr>
+          <td>${escapeHtml(r.producto)}</td>
+          <td>${r.kilos.toFixed(2)}</td>
+          <td>${r.piezas}</td>
+        </tr>
+      `).join('');
+    }
+    let chartResumen = null;
+    function renderChart(){
+      const rows = buildResumen();
+      const labels = rows.map(r=>r.producto);
+      const kilos = rows.map(r=>Number(r.kilos.toFixed(2)));
+      const piezas = rows.map(r=>r.piezas);
+      const canvas = document.getElementById('chartResumen');
+      if(!canvas) return;
+
+      if(chartResumen){
+        chartResumen.data.labels = labels;
+        chartResumen.data.datasets[0].data = kilos;
+        chartResumen.data.datasets[1].data = piezas;
+        chartResumen.update();
         return;
       }
 
-      if (!data || data.length === 0) {
-        contenedor.innerHTML = '<p>No hay viajes registrados.</p>';
+      chartResumen = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Kilos', data: kilos },
+            { label: 'Piezas', data: piezas }
+          ]
+        },
+        options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+      });
+    }
+    function renderAll(){
+      renderTablaEnviados();
+      renderTablaDevueltos();
+      renderResumen();
+      renderChart();
+    }
+
+    /* ===== Cargar día ===== */
+    async function cargarDia(fecha){
+      if(!sb){ alert("No cargó Supabase. Revisa el CDN o internet."); return; }
+
+      const { data: env, error: e1 } = await sb
+        .from(T_ENVIADOS)
+        .select("id, producto, kilos, piezas, origen, congelado, created_at")
+        .eq("fecha", fecha)
+        .order("created_at", { ascending: false });
+
+      if(e1) console.error(e1);
+
+      const { data: dev, error: e2 } = await sb
+        .from(T_DEVUELTOS)
+        .select("id, producto, kilos, created_at")
+        .eq("fecha", fecha)
+        .order("created_at", { ascending: false });
+
+      if(e2) console.error(e2);
+
+      enviados = (env || []).map(x=>({
+        id:x.id,
+        producto:x.producto,
+        kilos:+x.kilos,
+        piezas:+(x.piezas||0),
+        origen:x.origen,
+        congelado:x.congelado,
+        created_at:x.created_at
+      }));
+      devueltos = (dev || []).map(x=>({
+        id:x.id,
+        producto:x.producto,
+        kilos:+x.kilos,
+        created_at:x.created_at
+      }));
+
+      editState.envi.clear();
+      editState.dev.clear();
+
+      renderAll();
+    }
+
+    /* ===== Realtime ===== */
+    async function conectarRealtime(fecha){
+      if(!sb) return;
+
+      if(rtChannel){
+        try { await sb.removeChannel(rtChannel); } catch(e){}
+        rtChannel = null;
+      }
+
+      rtChannel = sb.channel(`mostrador-rt-${fecha}`);
+
+      rtChannel
+        .on('postgres_changes',
+          { event:'INSERT', schema:'public', table:T_ENVIADOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const r = payload.new;
+            if(enviados.some(x=>x.id===r.id)) return;
+            enviados.unshift({
+              id:r.id,
+              producto:r.producto,
+              kilos:+r.kilos,
+              piezas:+(r.piezas||0),
+              origen:r.origen,
+              congelado:r.congelado,
+              created_at:r.created_at
+            });
+            renderAll();
+          }
+        )
+        .on('postgres_changes',
+          { event:'DELETE', schema:'public', table:T_ENVIADOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const id = payload.old?.id;
+            if(!id) return;
+            enviados = enviados.filter(x=>x.id!==id);
+            editState.envi.delete(id);
+            renderAll();
+          }
+        )
+        .on('postgres_changes',
+          { event:'UPDATE', schema:'public', table:T_ENVIADOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const r = payload.new;
+            const idx = enviados.findIndex(x=>x.id===r.id);
+            if(idx>=0 && !editState.envi.get(r.id)?.editing){
+              enviados[idx] = {
+                id:r.id,
+                producto:r.producto,
+                kilos:+r.kilos,
+                piezas:+(r.piezas||0),
+                origen:r.origen,
+                congelado:r.congelado,
+                created_at:r.created_at
+              };
+              renderAll();
+            }
+          }
+        )
+        .on('postgres_changes',
+          { event:'INSERT', schema:'public', table:T_DEVUELTOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const r = payload.new;
+            if(devueltos.some(x=>x.id===r.id)) return;
+            devueltos.unshift({ id:r.id, producto:r.producto, kilos:+r.kilos, created_at:r.created_at });
+            renderAll();
+          }
+        )
+        .on('postgres_changes',
+          { event:'DELETE', schema:'public', table:T_DEVUELTOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const id = payload.old?.id;
+            if(!id) return;
+            devueltos = devueltos.filter(x=>x.id!==id);
+            editState.dev.delete(id);
+            renderAll();
+          }
+        )
+        .on('postgres_changes',
+          { event:'UPDATE', schema:'public', table:T_DEVUELTOS, filter:`fecha=eq.${fecha}` },
+          (payload)=>{
+            const r = payload.new;
+            const idx = devueltos.findIndex(x=>x.id===r.id);
+            if(idx>=0 && !editState.dev.get(r.id)?.editing){
+              devueltos[idx] = { id:r.id, producto:r.producto, kilos:+r.kilos, created_at:r.created_at };
+              renderAll();
+            }
+          }
+        );
+
+      await rtChannel.subscribe((s)=>{
+        const pill = $('#rt');
+        if(!pill) return;
+        if(s === 'SUBSCRIBED'){ pill.textContent = 'REAL TIME'; pill.classList.remove('off'); }
+        else if(s === 'CHANNEL_ERROR' || s === 'TIMED_OUT'){ pill.textContent = 'RT: ' + s; pill.classList.add('off'); }
+        else pill.textContent = 'RT: ' + s;
+      });
+    }
+
+    /* ===== Inserts ===== */
+    async function agregarProducto(){
+      const fecha = fechaSeleccionada();
+      const producto = $('#producto').value;
+      const kilos = $('#kilos').value;
+      const piezas = $('#piezas').value || 0;
+      const origen = $('#origen').value;
+      const congelado = $('#congelado').value;
+
+      if(!producto || !kilos || !origen){
+        alert("Por favor completa los campos obligatorios.");
         return;
       }
 
-      const tabla = document.createElement('table');
-      tabla.style.width = '100%';
-      tabla.border = 1;
-      tabla.innerHTML = '<thead><tr><th>Fecha</th><th>Resumen</th></tr></thead><tbody>' +
-        data.map(row => `<tr><td>${row.fecha}</td><td><pre>${JSON.stringify(row.resultados, null, 2)}</pre></td></tr>`).join('') +
-        '</tbody>';
-      contenedor.appendChild(tabla);
-    }
-
-    async function generarResumenTotales() {
-      const { data, error } = await supabase.from('hoja_viaje').select('*');
-      if (error || !data) return alert('❌ Error al obtener datos: ' + error.message);
-
-      const totales = {};
-      data.forEach(row => {
-        const prods = row.resultados || {};
-        Object.keys(prods).forEach(nombre => {
-          prods[nombre].forEach(r => {
-            if (!totales[nombre]) totales[nombre] = { kg: 0, pzas: 0 };
-            totales[nombre].kg += r.kg || 0;
-            totales[nombre].pzas += r.pzas || 0;
-          });
-        });
-      });
-
-      let html = '<h1>Resumen Total de Kilos y Piezas</h1>';
-      html += '<table border="1" cellpadding="6"><tr><th>Producto</th><th>Total Kg</th><th>Total Pzas</th></tr>';
-      Object.entries(totales).forEach(([nombre, valores]) => {
-        html += `<tr><td>${nombre}</td><td>${valores.kg.toFixed(1)}</td><td>${valores.pzas}</td></tr>`;
-      });
-      html += '</table>';
-
-      const blob = new Blob([`<html><body>${html}</body></html>`], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    }
-
-    /* ========= LIVE (estado hoja) ========= */
-    const MODULE = 'hoja_viaje';
-    let dirty=false, tLocal=null, tLive=null;
-    let rtSub = null;
-    let applyingRemote = false;
-
-    function getFechaISO(){ return document.getElementById('fechaViaje')?.value || todayISO(); }
-    function liveKey(){ return `viaje-${getFechaISO()}`; }
-    function collectState(){ return { fecha: getFechaISO(), resultados: recolectarResultados() }; }
-
-    function aplicarResultados(resultados){
-      if(!resultados) return;
-      productos.forEach(producto => {
-        const id = getID(producto);
-        const tbody = document.querySelector(`#tabla-${id} tbody`);
-        tbody.innerHTML = '';
-        const rows = resultados[producto] || [];
-        rows.forEach(r => agregarFila(producto, r.kg || '', r.pzas || '', r.mark || 'none'));
-        if(rows.length === 0) { actualizarTotales(producto); }
-      });
-    }
-
-    function applyState(state){
-      if(!state) return;
-      if(state.fecha){ document.getElementById('fechaViaje').value = state.fecha; }
-      aplicarResultados(state.resultados || {});
-    }
-
-    // LocalStorage
-    function lkey(){ return `draft:${MODULE}:${liveKey()}`; }
-    function saveLocal(){
-      localStorage.setItem(lkey(), JSON.stringify({ts:Date.now(), data:collectState()}));
-      dirty=true;
-    }
-    function loadLocal(){
-      const raw=localStorage.getItem(lkey());
-      if(!raw) return;
-      try{ applyState(JSON.parse(raw).data); }catch{}
-    }
-
-    async function saveLive(){
-      if(applyingRemote) return;
-
-      const state = collectState();
       const row = {
-        id: liveKey(),
-        fecha: state.fecha,
-        data: state,
-        updated_at: new Date().toISOString(),
-        updated_by: DEVICE_ID
+        fecha,
+        producto,
+        kilos: Number(parseFloat(kilos).toFixed(2)),
+        piezas: parseInt(piezas || 0, 10) || 0,
+        origen,
+        congelado
       };
 
-      const { error } = await supabase
-        .from(LIVE_TABLE)
-        .upsert([row], { onConflict: 'id' });
-
-      if(error){
-        console.log("LIVE UPSERT ERROR:", error);
-        setRtPill(false, 'RT OFF');
-      }else{
-        setRtPill(true, 'REAL TIME');
-      }
-    }
-
-    async function loadLive(){
-      const { data, error } = await supabase
-        .from(LIVE_TABLE)
-        .select('data, updated_by, updated_at')
-        .eq('id', liveKey())
-        .single();
-      if(error) return;
-      if(data && data.data){
-        applyingRemote = true;
-        applyState(data.data);
-        applyingRemote = false;
-      }
-    }
-
-    function setRtPill(on, text){
-      const pill = $('#rt');
-      if(!pill) return;
-      pill.textContent = text || (on ? 'REAL TIME' : 'RT OFF');
-      pill.classList.toggle('off', !on);
-    }
-
-    function subscribeLive(){
-      if(rtSub){
-        try{ supabase.removeSubscription(rtSub); }catch(e){}
-        rtSub = null;
-      }
-
-      rtSub = supabase
-        .from(`${LIVE_TABLE}:id=eq.${liveKey()}`)
-        .on('INSERT', payload => onLivePayload(payload))
-        .on('UPDATE', payload => onLivePayload(payload))
-        .subscribe((status)=>{
-          if(status === 'SUBSCRIBED') setRtPill(true, 'REAL TIME');
-        });
-    }
-
-    function onLivePayload(payload){
-      try{
-        const row = payload.new || payload.record || null;
-        if(!row) return;
-        if(row.updated_by && row.updated_by === DEVICE_ID) return;
-
-        if(row.data){
-          applyingRemote = true;
-          applyState(row.data);
-          applyingRemote = false;
-          dirty = true;
-        }
-      }catch(e){
-        console.log("LIVE PAYLOAD ERROR:", e);
-      }
-    }
-
-    function scheduleSaves(){
-      clearTimeout(tLocal);
-      tLocal=setTimeout(saveLocal, 400);
-
-      clearTimeout(tLive);
-      tLive=setTimeout(saveLive, 700);
-    }
-
-    document.addEventListener('input', (e)=>{
-      if (e.target.matches('input,select,textarea')) scheduleSaves();
-    });
-
-    window.addEventListener('beforeunload', (e)=>{
-      if(!dirty) return;
-      e.preventDefault();
-      e.returnValue='';
-    });
-
-    document.getElementById('fechaViaje')?.addEventListener('change', async ()=>{
-      applyingRemote = true;
-      await loadLive();
-      loadLocal();
-      applyingRemote = false;
-      subscribeLive();
-    });
-
-    /* ========= BÁSCULA EN VIVO (como tus otros proyectos) ========= */
-    let pesoActual = null;
-    let pesoSub = null;
-    let lastFocusedKgInput = null;
-
-    // Detectar el último input de kg seleccionado (focus)
-    document.addEventListener('focusin', (e)=>{
-      const el = e.target;
-      if(el && el.classList && el.classList.contains('kg-input')){
-        lastFocusedKgInput = el;
-      }
-    });
-
-    function setPesoUI(p){
-      const v = (Number(p)||0);
-      const el = $('#pesoLive');
-      if(el) el.textContent = v.toFixed(2);
-      const mini = $('#pesoLiveMini');
-      if(mini) mini.textContent = v.toFixed(2);
-      pesoActual = v;
-    }
-
-    function setPesoStatus(on, text){
-      const t = text || (on ? 'OK' : 'OFF');
-
-      const pill = $('#pesoStatus');
-      if(pill){
-        pill.textContent = t;
-        pill.classList.toggle('off', !on);
-      }
-
-      const pill2 = $('#pesoStatusMini');
-      if(pill2){
-        pill2.textContent = t;
-        pill2.classList.toggle('off', !on);
-      }
-    }
-
-    async function leerPesoManual(){
-      const { data, error } = await supabase
-        .from(BASCULA_TABLE)
-        .select('peso, updated_at')
-        .eq('id', BASCULA_ID)
+      const { data, error } = await sb
+        .from(T_ENVIADOS)
+        .insert(row)
+        .select("id, producto, kilos, piezas, origen, congelado, created_at")
         .single();
 
       if(error){
-        console.log("BASCULA READ ERROR:", error);
-        setPesoStatus(false, 'OFF');
-        alert("Error leyendo Supabase (bascula_live). Revisa internet / RLS / tabla.");
+        console.error(error);
+        alert("No se pudo guardar. Revisa internet o políticas RLS / Realtime.");
         return;
       }
 
-      setPesoUI(data?.peso ?? 0);
-      setPesoStatus(true, 'OK');
-    }
-
-    function tomarPesoEnInputActivo(){
-      if(pesoActual == null){
-        alert("Aún no hay peso. Presiona 'Actualizar ahora' o espera el realtime.");
-        return;
-      }
-
-      const target = lastFocusedKgInput || document.querySelector('.kg-input:focus');
-      if(!target){
-        alert("Primero haz click en un input de Kg (una pesada) y luego presiona 'Usar este peso'.");
-        return;
-      }
-
-      target.value = Number(pesoActual).toFixed(2);
-      target.dispatchEvent(new Event('input', { bubbles:true }));
-      target.dispatchEvent(new Event('change', { bubbles:true }));
-      // Totales y guardado
-      const producto = target.closest('.section')?.querySelector('h2')?.textContent;
-      if(producto) actualizarTotales(producto);
-      scheduleSaves();
-    }
-
-    function subscribeBascula(){
-      // v1 realtime
-      if(pesoSub){
-        try{ supabase.removeSubscription(pesoSub); }catch(e){}
-        pesoSub = null;
-      }
-
-      pesoSub = supabase
-        .from(`${BASCULA_TABLE}:id=eq.${BASCULA_ID}`)
-        .on('UPDATE', payload => {
-          const row = payload.new || payload.record;
-          if(row && row.peso != null){
-            setPesoUI(row.peso);
-            setPesoStatus(true, 'OK');
-          }
-        })
-        .on('INSERT', payload => {
-          const row = payload.new || payload.record;
-          if(row && row.peso != null){
-            setPesoUI(row.peso);
-            setPesoStatus(true, 'OK');
-          }
-        })
-        .subscribe((status)=>{
-          if(status === 'SUBSCRIBED'){
-            setPesoStatus(true, 'OK');
-          }
+      if(!enviados.some(x=>x.id===data.id)){
+        enviados.unshift({
+          id:data.id,
+          producto:data.producto,
+          kilos:+data.kilos,
+          piezas:+(data.piezas||0),
+          origen:data.origen,
+          congelado:data.congelado,
+          created_at:data.created_at
         });
+        renderAll();
+      }
+
+      $('#kilos').value = '';
+      $('#piezas').value = '';
     }
 
-    /* ========= ARRANQUE ========= */
-    document.addEventListener('DOMContentLoaded', async () => {
-      // tablas productos
-      productos.forEach(crearTabla);
+    async function agregarDevuelto(){
+      const fecha = fechaSeleccionada();
+      const producto = $('#productoDevuelto').value;
+      const kilos = $('#kilosDevuelto').value;
 
-      document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('agregar-btn')) {
-          const producto = e.target.getAttribute('data-producto');
-          agregarFila(producto);
-        }
+      if(!producto || !kilos){
+        alert("Completa ambos campos del producto devuelto.");
+        return;
+      }
+
+      const row = { fecha, producto, kilos: Number(parseFloat(kilos).toFixed(2)) };
+
+      const { data, error } = await sb
+        .from(T_DEVUELTOS)
+        .insert(row)
+        .select("id, producto, kilos, created_at")
+        .single();
+
+      if(error){
+        console.error(error);
+        alert("No se pudo guardar devuelto. Revisa internet o RLS / Realtime.");
+        return;
+      }
+
+      if(!devueltos.some(x=>x.id===data.id)){
+        devueltos.unshift({ id:data.id, producto:data.producto, kilos:+data.kilos, created_at:data.created_at });
+        renderAll();
+      }
+
+      $('#productoDevuelto').value = '';
+      $('#kilosDevuelto').value = '';
+    }
+
+    async function eliminarProducto(id){
+      if(!id) return;
+      const { error } = await sb.from(T_ENVIADOS).delete().eq('id', id);
+      if(error){ console.error(error); alert("No se pudo eliminar. Revisa internet o RLS."); }
+    }
+
+    async function eliminarDevuelto(id){
+      if(!id) return;
+      const { error } = await sb.from(T_DEVUELTOS).delete().eq('id', id);
+      if(error){ console.error(error); alert("No se pudo eliminar devuelto. Revisa internet o RLS."); }
+    }
+
+    /* ===== WhatsApp ===== */
+    function enviarWhatsApp(){
+      const fecha = fechaSeleccionada();
+      const agrupadoEnviados = {};
+      const agrupadoDevueltos = {};
+      let totalKilosEnviados = 0;
+      let totalKilosDevueltos = 0;
+
+      enviados.forEach(p => {
+        if(!agrupadoEnviados[p.producto]) agrupadoEnviados[p.producto] = { kilos:0, piezas:0 };
+        agrupadoEnviados[p.producto].kilos += num(p.kilos);
+        agrupadoEnviados[p.producto].piezas += parseInt(p.piezas||0,10);
+        totalKilosEnviados += num(p.kilos);
       });
 
-      // Fecha hoy por defecto
-      document.getElementById('fechaViaje').value = todayISO();
+      devueltos.forEach(p => {
+        if(!agrupadoDevueltos[p.producto]) agrupadoDevueltos[p.producto] = 0;
+        agrupadoDevueltos[p.producto] += num(p.kilos);
+        totalKilosDevueltos += num(p.kilos);
+      });
 
-      // 1) cargar LIVE primero, 2) luego local
-      await loadLive();
-      loadLocal();
+      let mensaje = `*Resumen VDC 360° - ${fecha}*\n\n`;
+      mensaje += `🟢 *Productos enviados:*\n`;
+      for(const [producto, datos] of Object.entries(agrupadoEnviados)){
+        mensaje += `• ${producto}: ${datos.kilos.toFixed(2)} kg / ${datos.piezas} pzas\n`;
+      }
+      mensaje += `\n📦 *Total kilos enviados:* ${totalKilosEnviados.toFixed(2)} kg\n`;
 
-      // 3) suscribir realtime hoja
-      subscribeLive();
+      if(devueltos.length > 0){
+        mensaje += `\n🔴 *Productos devueltos:*\n`;
+        for(const [producto, kilos] of Object.entries(agrupadoDevueltos)){
+          mensaje += `• ${producto}: ${kilos.toFixed(2)} kg\n`;
+        }
+        mensaje += `\n📦 *Total kilos devueltos:* ${totalKilosDevueltos.toFixed(2)} kg\n`;
+      }
 
-      // 4) crear sala si no existe
-      await saveLive();
+      const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+      window.open(url, "_blank");
+    }
 
-      // 5) bascula: leer una vez y suscribir realtime
-      setPesoStatus(true, 'CONECTANDO');
-      await leerPesoManual();
-      subscribeBascula();
+    /* ===== Arranque ===== */
+    document.getElementById("fecha").value = todayISODate();
+    ordenarSelectAlfabeticamente('producto');
+    markTouched();
+
+    $('#producto').addEventListener('change', aplicarAutofillPorProducto);
+    $('#piezas').addEventListener('input', ()=>{ touched.kilos = false; recalcularKilosSiAplica(); });
+
+    $('#btnAgregar').addEventListener('click', agregarProducto);
+    $('#btnAgregarDev').addEventListener('click', agregarDevuelto);
+
+    // ENVIADOS
+    $('#btnPeso').addEventListener('click', ()=> leerBasculaOnce('kilos', false));
+    $('#rtPesoToggle').addEventListener('change', async (e)=>{
+      if(e.target.checked){
+        await conectarBasculaRealtime();
+        await leerBasculaOnce('kilos', false);
+      }else{
+        setPesoStatus("Báscula: esperando…", true);
+        await apagarBasculaRealtimeSiNadieLaUsa();
+      }
     });
+
+    // DEVUELTOS
+    $('#btnPesoDev').addEventListener('click', ()=> leerBasculaOnce('kilosDevuelto', true));
+    $('#rtPesoToggleDev').addEventListener('change', async (e)=>{
+      if(e.target.checked){
+        await conectarBasculaRealtime();
+        await leerBasculaOnce('kilosDevuelto', true);
+      }else{
+        setPesoStatusDev("Báscula: esperando…", true);
+        await apagarBasculaRealtimeSiNadieLaUsa();
+      }
+    });
+
+    async function iniciar(){
+      const f = fechaSeleccionada();
+      await cargarDia(f);
+      await conectarRealtime(f);
+      aplicarAutofillPorProducto();
+      setPesoStatus("Báscula: esperando…", true);
+      setPesoStatusDev("Báscula: esperando…", true);
+    }
+
+    $('#fecha').addEventListener('change', async ()=>{
+      const f = fechaSeleccionada();
+      await cargarDia(f);
+      await conectarRealtime(f);
+    });
+
+    iniciar();
+
+    /* ✅ Exponer funciones para onclick inline */
+    window.startEdit = startEdit;
+    window.cancelEdit = cancelEdit;
+    window.saveEdit = saveEdit;
+    window.setDraft = setDraft;
+    window.eliminarProducto = eliminarProducto;
+    window.eliminarDevuelto = eliminarDevuelto;
+    window.enviarWhatsApp = enviarWhatsApp;
   </script>
 </body>
 </html>
