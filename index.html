@@ -37,6 +37,7 @@
     .btn-sm{padding:4px 8px;font-size:12px}
     .cell-editing input{width:100%;padding:6px;font-size:14px}
 
+    /* ====== IMPRESIÓN GENERAL (nota individual / ticket80 usando #printArea) ====== */
     @media print{
       body *{visibility:hidden}
       #printArea, #printArea *{visibility:visible}
@@ -52,6 +53,7 @@
       #printArea:not(.ticket80) th,
       #printArea:not(.ticket80) td{ border:1px solid #aaa; padding:3px 4px; font-size:11px; }
 
+      /* Ticket 80mm */
       #printArea.ticket80{width:80mm; padding:2mm}
       #printArea.ticket80 .tk-header{ text-align:center; font-size:12px; line-height:1.2; margin-bottom:6px }
       #printArea.ticket80 .tk-header .store{ font-weight:700; font-size:14px }
@@ -68,6 +70,9 @@
       #printArea.ticket80 .thanks{ text-align:center; margin-top:8px; font-size:11px }
     }
 
+    /* ===========================
+       ✅ BANDEJA COMPACTA (SIN SCROLL INFINITO)
+    =========================== */
     .bandejaWrap{
       max-height: 55vh;
       overflow:auto;
@@ -133,6 +138,101 @@
     }
     .menuPanel button:hover{ background:#f6f7f8; }
     .menuPanel button.danger{ border-color:#fee2e2; color:#b91c1c; }
+
+    /* ===========================
+       ✅ VDC IA (NUEVO) — FAB + PANEL
+       Conecta a tu server Express:
+       - POST /api/command  (texto)
+       - POST /api/voice    (audio: transcribe + tools)
+    =========================== */
+    .vdcAiFab{
+      position:fixed;
+      right:14px;
+      bottom:14px;
+      width:58px;
+      height:58px;
+      border-radius:18px;
+      background:var(--brand);
+      color:#fff;
+      border:none;
+      font-weight:900;
+      cursor:pointer;
+      z-index:9999;
+      box-shadow:0 14px 30px rgba(0,0,0,.25);
+    }
+    .vdcAiPanel{
+      position:fixed;
+      right:14px;
+      bottom:82px;
+      width:min(430px, calc(100vw - 28px));
+      background:#fff;
+      border-radius:16px;
+      border:1px solid #e5e7eb;
+      box-shadow:0 18px 50px rgba(0,0,0,.2);
+      z-index:9999;
+      display:none;
+      overflow:hidden;
+    }
+    .vdcAiHeader{
+      background:var(--brand);
+      color:#fff;
+      padding:12px;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .vdcAiHeader .tag{
+      margin-left:auto;
+      font-size:12px;
+      background:rgba(255,255,255,.2);
+      padding:4px 8px;
+      border-radius:999px;
+      font-weight:800;
+    }
+    .vdcAiBody{padding:12px}
+    .vdcAiChat{
+      background:#fafafa;
+      border:1px solid #eef0f2;
+      border-radius:12px;
+      padding:10px;
+      max-height:230px;
+      overflow:auto;
+    }
+    .vdcMsg{font-size:13px; margin-bottom:8px}
+    .vdcMsg b{font-weight:900}
+    .vdcAiInput{
+      margin-top:10px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .vdcAiInput input{margin-top:0}
+    .vdcAiBtns{
+      margin-top:8px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+    .vdcAiBtn{
+      padding:10px;
+      border-radius:12px;
+      font-weight:900;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      cursor:pointer;
+    }
+    .vdcAiBtn.primary{
+      background:var(--brand);
+      color:#fff;
+      border-color:var(--brand);
+    }
+    .vdcAiSmall{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.25;
+    }
   </style>
 </head>
 
@@ -235,26 +335,6 @@
       </div>
     </section>
 
-    <!-- ✅ MODO VOZ -->
-    <section class="card">
-      <h2>🎤 Modo Voz (Notas a Crédito)</h2>
-      <div class="flex" style="gap:10px;align-items:center;flex-wrap:wrap">
-        <button id="btnVoz" class="btn btn-primary" type="button">🎤 Dictar</button>
-        <span id="vozEstado" class="pill">Listo</span>
-        <span class="muted">Comandos: “abrir cliente X”, “agregar 12.5 kilos de hígado”, “quitar 2 kg de sebo”, “agregar 3 cajas de caja menudo national”, “slot A”, “slot B”.</span>
-      </div>
-
-      <div style="margin-top:10px">
-        <div class="muted" style="margin-bottom:6px">Lo que entendí:</div>
-        <div id="vozTexto" style="padding:10px;border-radius:12px;border:1px dashed #cbd5e1;background:#fff;min-height:44px"></div>
-      </div>
-
-      <div style="margin-top:10px">
-        <div class="muted" style="margin-bottom:6px">Acción detectada:</div>
-        <pre id="vozAccion" style="white-space:pre-wrap;margin:0;padding:10px;border-radius:12px;border:1px solid #e5e7eb;background:#f8fafc;max-height:220px;overflow:auto"></pre>
-      </div>
-    </section>
-
     <div class="grid-2">
       <!-- CAPTURA -->
       <section class="card">
@@ -272,6 +352,7 @@
               <label>Kilos</label>
               <input id="pKg" type="number" min="0" step="0.01" value="1" />
 
+              <!-- ✅ BÁSCULA (Realtime entre dispositivos vía Supabase) -->
               <div class="flex" style="margin-top:8px; gap:8px">
                 <button type="button" class="btn btn-ghost" id="btnPeso">📥 Tomar peso</button>
 
@@ -316,10 +397,20 @@
 
         <!-- ===== MODO Pieles y Grasas (solo ese cliente) ===== -->
         <div id="capPG" style="display:none">
+          <!-- SEBO -->
           <div class="row-3">
-            <div><label>Producto</label><input value="Sebo" disabled /></div>
-            <div><label>Kilos</label><input id="seboKg" type="number" min="0" step="0.01" value="0" /></div>
-            <div><label>Piezas (opcional)</label><input id="seboPzas" type="number" min="0" step="1" /></div>
+            <div>
+              <label>Producto</label>
+              <input value="Sebo" disabled />
+            </div>
+            <div>
+              <label>Kilos</label>
+              <input id="seboKg" type="number" min="0" step="0.01" value="0" />
+            </div>
+            <div>
+              <label>Piezas (opcional)</label>
+              <input id="seboPzas" type="number" min="0" step="1" />
+            </div>
           </div>
 
           <div class="flex" style="margin-top:10px">
@@ -329,10 +420,20 @@
 
           <hr style="border:none;border-top:1px solid #eef0f2;margin:14px 0" />
 
+          <!-- HUESO -->
           <div class="row-3">
-            <div><label>Producto</label><input value="Hueso" disabled /></div>
-            <div><label>Kilos</label><input id="huesoKg" type="number" min="0" step="0.01" value="0" /></div>
-            <div><label>Piezas (opcional)</label><input id="huesoPzas" type="number" min="0" step="1" /></div>
+            <div>
+              <label>Producto</label>
+              <input value="Hueso" disabled />
+            </div>
+            <div>
+              <label>Kilos</label>
+              <input id="huesoKg" type="number" min="0" step="0.01" value="0" />
+            </div>
+            <div>
+              <label>Piezas (opcional)</label>
+              <input id="huesoPzas" type="number" min="0" step="1" />
+            </div>
           </div>
 
           <div class="flex" style="margin-top:10px">
@@ -377,6 +478,7 @@
       </section>
     </div>
 
+    <!-- ✅ BANDEJA -->
     <section class="card">
       <h2>📥 Notas abiertas hoy (todas)</h2>
 
@@ -415,6 +517,7 @@
       </div>
     </section>
 
+    <!-- REPORTE DIARIO GENERAL -->
     <section class="card">
       <h2>📄 Reporte diario GENERAL (todos los clientes)</h2>
 
@@ -435,6 +538,7 @@
       </div>
     </section>
 
+    <!-- ACCIONES NOTA -->
     <section class="card">
       <div class="flex">
         <button class="btn btn-ghost" id="btnWA" type="button">WhatsApp Cuenta</button>
@@ -449,6 +553,41 @@
   <div id="printArea" style="display:none"></div>
   <datalist id="catProductos"></datalist>
 
+  <!-- ✅ VDC IA (NUEVO) -->
+  <button class="vdcAiFab" id="vdcAiFab" type="button">IA</button>
+  <div class="vdcAiPanel" id="vdcAiPanel">
+    <div class="vdcAiHeader">
+      🤖 VDC IA
+      <span class="tag" id="vdcAiTag">Slot A</span>
+    </div>
+    <div class="vdcAiBody">
+      <div class="vdcAiChat" id="vdcAiChat"></div>
+
+      <div class="vdcAiInput">
+        <input id="vdcAiText" placeholder='Ej: "abre nota de Taquería Lupita" o "agrega 12.5 kg de tripa"' />
+      </div>
+
+      <div class="vdcAiBtns">
+        <button class="vdcAiBtn primary" id="vdcAiSend" type="button">Enviar</button>
+        <button class="vdcAiBtn" id="vdcAiMic" type="button">🎙️ Voz</button>
+      </div>
+
+      <div class="vdcAiBtns">
+        <button class="vdcAiBtn" id="vdcAiClose" type="button">Cerrar</button>
+        <button class="vdcAiBtn" id="vdcAiClear" type="button">Limpiar</button>
+      </div>
+
+      <div class="vdcAiSmall">
+        Tips: <br/>
+        • “Busca cliente Menudería Zaragoza”<br/>
+        • “Continúa nota de Taquería Lupita”<br/>
+        • “Agrega 8 kg de menudo”<br/>
+        • “Cierra la nota”
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ UNA sola carga UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
@@ -456,13 +595,192 @@
     const SUPABASE_URL = "https://bjebybdqcqscouxlinfd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWJ5YmRxY3FzY291eGxpbmZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMjQ3MTksImV4cCI6MjA3MTkwMDcxOX0.mQgWtiYEyJTiF04pdcLv63SqPNrU1Iehws0vKqr82O0";
 
+    // ✅ URL de tu server (donde está el código Node/Express)
+    // - Si lo corres en tu compu: http://localhost:8787
+    // - Si lo publicas en algún hosting: cambia esto
+    const VDC_API_BASE = "http://localhost:8787";
+
+    // ✅ Cliente Supabase “blindado”
     const sb = window.__sb || (window.__sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
 
     const STORE_NAME = "Carnes y Vísceras del Centro";
+
+    // ✅ Pesos fijos por caja
     const CAJA_KG = 27.22;
+
+    /* ========================= BÁSCULA — REALTIME ENTRE DISPOSITIVOS (SUPABASE) =========================
+      Requiere tabla: bascula_live(id PK text, peso numeric, updated_at timestamptz)
+      Windows (python) hace UPSERT a id='torrey_1'
+    =============================================================================================== */
+    const BASCULA_ID = "torrey_1";
+    const BASCULA_TABLE = "bascula_live";
+
+    const btnPeso = document.getElementById("btnPeso");
+    const rtBascula = document.getElementById("rtBascula");
+    const rtModo = document.getElementById("rtModo");
+    const rtMs = document.getElementById("rtMs");
+    const pesoStatus = document.getElementById("pesoStatus");
+
+    let basculaChannel = null;
+    let basculaPollTimer = null;
+    let basculaInFlight = false;
+
+    const bascStable = { last:null, okCount:0, needed:2, tol:0.03 };
+
+    function setPesoStatus(txt, ok=true){
+      if(!pesoStatus) return;
+      pesoStatus.textContent = txt || "Báscula: —";
+      pesoStatus.style.background = ok ? "#eef7f0" : "#fee2e2";
+      pesoStatus.style.color = ok ? "#0a7a3b" : "#b91c1c";
+    }
+
+    function setKgValue(kg){
+      const el = document.getElementById("pKg");
+      if(!el) return;
+      const next = Number(kg || 0);
+      if(!isFinite(next)) return;
+      const current = Number(el.value || 0);
+      if (Math.abs(current - next) < 0.001) return;
+      el.value = next.toFixed(2);
+      el.dispatchEvent(new Event("input", { bubbles:true }));
+      el.dispatchEvent(new Event("change", { bubbles:true }));
+    }
+
+    function updateStability(kg){
+      if (bascStable.last == null){
+        bascStable.last = kg;
+        bascStable.okCount = 1;
+        return { accept:false, okCount:bascStable.okCount };
+      }
+      if (Math.abs(kg - bascStable.last) <= bascStable.tol){
+        bascStable.okCount += 1;
+      } else {
+        bascStable.last = kg;
+        bascStable.okCount = 1;
+      }
+      return { accept: bascStable.okCount >= bascStable.needed, okCount:bascStable.okCount };
+    }
+
+    async function readPesoFromSupabase(){
+      const { data, error } = await sb
+        .from(BASCULA_TABLE)
+        .select("peso, updated_at")
+        .eq("id", BASCULA_ID)
+        .maybeSingle();
+      if(error) throw error;
+      const peso = data?.peso;
+      return { peso: (peso==null ? null : Math.abs(Number(peso))), updated_at: data?.updated_at || null };
+    }
+
+    async function tomarPesoManual(){
+      if(!btnPeso) return;
+      btnPeso.disabled = true;
+      setPesoStatus("Báscula: leyendo…", true);
+      try{
+        const { peso } = await readPesoFromSupabase();
+        if(peso == null){
+          setPesoStatus("Báscula: sin lectura", false);
+          alert("No hay peso en Supabase. Revisa que el Windows esté subiendo bascula_live.");
+          return;
+        }
+        setKgValue(peso);
+        setPesoStatus(`Báscula OK: ${peso.toFixed(2)} kg`, true);
+      }catch(e){
+        console.error(e);
+        setPesoStatus("Báscula: error", false);
+        alert("Error leyendo Supabase (bascula_live). Revisa internet / RLS / tabla.");
+      }finally{
+        btnPeso.disabled = false;
+      }
+    }
+
+    function stopBasculaRealtime(){
+      if(basculaPollTimer){ clearInterval(basculaPollTimer); basculaPollTimer = null; }
+      if(basculaChannel){ sb.removeChannel(basculaChannel); basculaChannel = null; }
+      bascStable.last = null; bascStable.okCount = 0;
+      setPesoStatus("Báscula: —", true);
+    }
+
+    function startBasculaRealtime(){
+      stopBasculaRealtime();
+
+      const modo = (rtModo?.value || "auto");
+      const interval = Number(rtMs?.value || 500);
+
+      setPesoStatus("Báscula: real-time ON…", true);
+
+      if(modo === "poll"){
+        basculaPollTimer = setInterval(async ()=>{
+          if(basculaInFlight) return;
+          basculaInFlight = true;
+          try{
+            const { peso } = await readPesoFromSupabase();
+            if(peso == null){
+              setPesoStatus("Báscula: sin lectura", false);
+              return;
+            }
+            const st = updateStability(peso);
+            if(st.accept){
+              setKgValue(peso);
+              setPesoStatus(`Báscula: ${peso.toFixed(2)} kg ✅`, true);
+            } else {
+              setPesoStatus(`Báscula: ${peso.toFixed(2)} kg (est ${st.okCount}/${bascStable.needed})`, true);
+            }
+          }catch(e){
+            console.error(e);
+            setPesoStatus("Báscula: error (poll)", false);
+          }finally{
+            basculaInFlight = false;
+          }
+        }, interval);
+        return;
+      }
+
+      basculaChannel = sb
+        .channel(`bascula-${BASCULA_ID}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: BASCULA_TABLE, filter: `id=eq.${BASCULA_ID}` },
+          async (payload)=>{
+            const row = payload.new || payload.old;
+            const peso = row?.peso;
+            const kg = (peso==null ? null : Math.abs(Number(peso)));
+
+            if(kg == null){
+              setPesoStatus("Báscula: sin lectura", false);
+              return;
+            }
+
+            const st = updateStability(kg);
+            if(st.accept){
+              setKgValue(kg);
+              setPesoStatus(`Báscula: ${kg.toFixed(2)} kg ✅`, true);
+            } else {
+              setPesoStatus(`Báscula: ${kg.toFixed(2)} kg (est ${st.okCount}/${bascStable.needed})`, true);
+            }
+          }
+        )
+        .subscribe(async (status)=>{
+          if(status === "SUBSCRIBED"){
+            try{
+              const { peso } = await readPesoFromSupabase();
+              if(peso != null){
+                setKgValue(peso);
+                setPesoStatus(`Báscula: ${peso.toFixed(2)} kg (init)`, true);
+              }
+            }catch{}
+          }
+        });
+    }
+
+    btnPeso?.addEventListener("click", tomarPesoManual);
+    rtBascula?.addEventListener("change", ()=> rtBascula.checked ? startBasculaRealtime() : stopBasculaRealtime());
+    rtModo?.addEventListener("change", ()=> { if(rtBascula?.checked) startBasculaRealtime(); });
+    rtMs?.addEventListener("change", ()=> { if(rtBascula?.checked) startBasculaRealtime(); });
 
     /* ========================= UTILS ========================= */
     const $ = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
     const to2 = n => Number(n || 0).toFixed(2);
 
     function todayISO(){
@@ -482,7 +800,10 @@
       return `CVC-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
     }
     function csvEscape(s){ return '"' + String(s).replaceAll('"','""') + '"'; }
-    function normalizeName(s){ return (s || '').toString().trim().toLowerCase(); }
+
+    function normalizeName(s){
+      return (s || '').toString().trim().toLowerCase();
+    }
 
     /* === Observaciones automáticas por producto (suma kg/pzas) === */
     function buildAutoObsFromDetalle(det){
@@ -522,7 +843,8 @@
       B:{cliente_id:null, telefono:null}
     };
 
-    let exitGuardEnabled = true;
+    /* ===== Protector de salida ===== */
+    let exitGuardEnabled = JSON.parse(localStorage.getItem('exitGuardEnabled') || 'true');
     let isDirty = false;
     function markDirty(){ if(exitGuardEnabled) isDirty = true; }
     function clearDirty(){ isDirty = false; }
@@ -541,6 +863,7 @@
     const notaVence = $('#notaVence');
     const notaInfo = $('#notaInfo');
 
+    // CAPTURA NORMAL
     const capNormal = $('#capNormal');
     const pProducto = $('#pProducto');
     const pKg = $('#pKg');
@@ -548,6 +871,7 @@
     const pPrecio = $('#pPrecio');
     const subtotalBox = $('#subtotalBox');
 
+    // CAPTURA Pieles y Grasas
     const capPG = $('#capPG');
     const seboKg = $('#seboKg');
     const seboPzas = $('#seboPzas');
@@ -577,10 +901,23 @@
     diaFecha.value = todayISO();
 
     exitGuardToggle.checked = exitGuardEnabled;
+    exitGuardToggle.addEventListener('change', ()=>{
+      exitGuardEnabled = exitGuardToggle.checked;
+      localStorage.setItem('exitGuardEnabled', JSON.stringify(exitGuardEnabled));
+      if(!exitGuardEnabled) clearDirty();
+    });
+
+    window.addEventListener('beforeunload', (e)=>{
+      if(exitGuardEnabled && isDirty){
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
 
     notaDias.addEventListener('change', ()=>{ notaVence.value = addDays(notaFecha.value, notaDias.value); });
     notaFecha.addEventListener('change', ()=>{ notaVence.value = addDays(notaFecha.value, notaDias.value); });
 
+    // ===== Auto precio + Auto kilos para cajas =====
     ['keyup','change'].forEach(ev=> pProducto.addEventListener(ev, ()=>{
       prefPrecio();
       autoKgFromCaja();
@@ -597,6 +934,7 @@
 
     notaObs.addEventListener('blur', saveNotaObs);
 
+    // Botones
     $('#btnContinuar').addEventListener('click', continuarNota);
     $('#btnAgregar').addEventListener('click', addPartida);
 
@@ -613,8 +951,16 @@
     $('#btnDiaA4').addEventListener('click', imprimirDiaA4);
     $('#btnDiaCSV').addEventListener('click', exportDiaCSV);
 
+    // ✅ buscador en vivo
     bandejaBuscar?.addEventListener('input', ()=> loadBandeja());
 
+    // ✅ cerrar dropdown si click fuera
+    document.addEventListener('click', (e)=>{
+      const inside = e.target.closest?.('details.actionMenu');
+      if(!inside) cerrarTodosLosMenus();
+    });
+
+    // Cambios de cliente/teléfono ligados al slot activo
     cliSelect.addEventListener('change', ()=>{
       slotState[slotActive].cliente_id = cliSelect.value || null;
       const c = getClient(slotState[slotActive].cliente_id);
@@ -628,10 +974,11 @@
     slotABtn.onclick = ()=> setActiveSlot('A');
     slotBBtn.onclick = ()=> setActiveSlot('B');
 
+    // ✅ Enter inteligente
     document.addEventListener('keydown', (e)=>{
       if(e.key !== 'Enter') return;
-
       const id = document.activeElement?.id || '';
+
       if(isPielesYGrasasSelected()){
         if(['seboKg','seboPzas'].includes(id)){
           e.preventDefault();
@@ -664,6 +1011,7 @@
       }
 
       updateCaptureMode();
+      initVdcAi(); // ✅ NUEVO
     });
 
     /* ========================= HELPERS ========================= */
@@ -680,6 +1028,7 @@
       renderVista();
       refreshNotaInfo();
       updateCaptureMode();
+      vdcAiUpdateTag();
     }
 
     function setSlotNota(s, nota){
@@ -696,6 +1045,7 @@
       }
       refreshNotaInfo();
       updateCaptureMode();
+      vdcAiUpdateTag();
     }
 
     function refreshNotaInfo(){
@@ -724,10 +1074,8 @@
 
     function updateCaptureMode(){
       const pg = isPielesYGrasasSelected();
-
       capPG.style.display = pg ? 'block' : 'none';
       capNormal.style.display = pg ? 'none' : 'block';
-
       if(pg){
         setTimeout(()=>{ seboKg?.focus(); seboKg?.select(); }, 0);
       }else{
@@ -792,13 +1140,10 @@
 
     function autoKgFromCaja(){
       if(capNormal.style.display === 'none') return;
-
       const prod = (pProducto.value||'').trim();
       if(!isCajaMenudoTarget(prod)) return;
-
       const pz = Number(pPzas.value || 0);
       if(!pz || pz <= 0) return;
-
       const kg = pz * CAJA_KG;
       pKg.value = to2(kg);
     }
@@ -807,7 +1152,6 @@
     async function saveClientPhone(){
       const cid = slotState[slotActive].cliente_id || activeNota()?.cliente_id;
       if(!cid) return;
-
       const val = (cliTelefono.value||'').trim() || null;
       try{
         await sb.from('clientes').update({ telefono: val }).eq('id', cid);
@@ -832,11 +1176,10 @@
       }
     }
 
-    /* ========================= CREAR/CONTINUAR NOTA ========================= */
+    /* ========================= CREAR/CONTINUAR NOTA (manual) ========================= */
     async function continuarNota(){
       const cliente_id = slotState[slotActive].cliente_id || cliSelect.value;
       if(!cliente_id) return alert('Selecciona cliente');
-
       const fecha = notaFecha.value || todayISO();
 
       let { data: nota } = await sb
@@ -858,6 +1201,7 @@
           cliente_id,
           total: 0,
           saldo: 0,
+          estado: 'abierta',
           observaciones: (notaObs.value || null)
         };
 
@@ -872,7 +1216,6 @@
       setSlotNota(slotActive, nota);
       notaFolio.value = nota.folio;
       notaObs.value = nota.observaciones || '';
-
       updateCaptureMode();
     }
 
@@ -936,7 +1279,7 @@
       }
 
       pProducto.value = '';
-      pKg.value = '1';
+      if(!rtBascula?.checked) pKg.value = '1';
       pPzas.value = '';
       prefPrecio();
       clearDirty();
@@ -989,7 +1332,6 @@
 
     async function recalcNota(nota_id){
       let total = 0;
-
       try{
         const { data } = await sb.rpc('sum_importe_nota', { p_nota_id: nota_id });
         total = Number(data?.total || 0);
@@ -1073,8 +1415,91 @@
         b.onclick = ()=> deleteDetalle(b.dataset.del);
       });
 
+      vistaBody.querySelectorAll('.editable').forEach(td=>{
+        td.addEventListener('click', ()=> makeCellEditable(td, n.id));
+      });
+
       refreshNotaInfo();
       updateCaptureMode();
+    }
+
+    function makeCellEditable(td, nota_id){
+      if(td.classList.contains('cell-editing')) return;
+
+      const field = td.dataset.field;
+      const row = td.closest('tr');
+      const detId = row.dataset.id;
+      const raw = td.textContent.replace('$','').trim();
+
+      let oldV = raw ? Number(raw.replace(',', '.')) : null;
+
+      td.classList.add('cell-editing');
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = (field==='piezas') ? '1' : '0.01';
+      input.min = '0';
+      input.value = (oldV != null ? oldV : 0);
+
+      td.innerHTML = '';
+      td.appendChild(input);
+      input.focus();
+      input.select();
+
+      markDirty();
+
+      const commit = async(save)=>{
+        const newV = Number(input.value||'');
+
+        let displayV;
+        if(field==='precio'){
+          const val = save ? newV : (oldV ?? 0);
+          displayV = `$${to2(val)}`;
+        } else if(field==='cantidad'){
+          const val = save ? newV : (oldV ?? 0);
+          displayV = to2(val);
+        } else if(field==='piezas'){
+          const val = save ? newV : (oldV ?? null);
+          displayV = (val == null || isNaN(val) || val === 0) ? '' : String(Math.round(val));
+        } else {
+          displayV = input.value;
+        }
+
+        td.classList.remove('cell-editing');
+        td.innerHTML = displayV;
+
+        if(!save){
+          clearDirty();
+          return;
+        }
+
+        if(field === 'piezas'){
+          const newVal = (isNaN(newV) || newV <= 0) ? null : Math.round(newV);
+          await sb.from('notas_detalle').update({ piezas: newVal }).eq('id', detId);
+          clearDirty();
+          await renderVista();
+          return;
+        }
+
+        const { data: cur } = await sb
+          .from('notas_detalle')
+          .select('cantidad, precio')
+          .eq('id', detId)
+          .single();
+
+        const cantidad = field==='cantidad' ? newV : Number(cur?.cantidad||0);
+        const precio = field==='precio' ? newV : Number(cur?.precio||0);
+        const importe = cantidad * precio;
+
+        await sb.from('notas_detalle').update({ cantidad, precio, importe }).eq('id', detId);
+        clearDirty();
+        await recalcNota(nota_id);
+      };
+
+      input.addEventListener('keydown', e=>{
+        if(e.key==='Enter') commit(true);
+        if(e.key==='Escape') commit(false);
+      });
+      input.addEventListener('blur', ()=> commit(true));
     }
 
     async function deleteDetalle(detId){
@@ -1108,7 +1533,11 @@
       if(slot==='A') chA=ch; else chB=ch;
     }
 
-    /* ========================= BANDEJA (COMPACTA) ========================= */
+    /* ========================= BANDEJA ========================= */
+    function cerrarTodosLosMenus(){
+      document.querySelectorAll('details.actionMenu[open]').forEach(d=> d.open = false);
+    }
+
     async function loadBandeja(){
       const f = bandejaFecha.value || todayISO();
       const q = (bandejaBuscar?.value || '').trim().toLowerCase();
@@ -1141,13 +1570,46 @@
           <td>${r.clientes?.nombre||''}</td>
           <td>$${to2(r.saldo||0)}</td>
           <td>${r.estado||'abierta'}</td>
-          <td style="text-align:right"><button class="btn btn-ghost btn-sm" data-usea="${r.id}" data-cid="${r.cliente_id}">Usar en A</button>
-              <button class="btn btn-ghost btn-sm" data-useb="${r.id}" data-cid="${r.cliente_id}">Usar en B</button></td>
+          <td style="text-align:right">
+            <details class="actionMenu">
+              <summary>Acciones ▾</summary>
+              <div class="menuPanel">
+                <button type="button" data-usea="${r.id}" data-cid="${r.cliente_id}">Usar en A</button>
+                <button type="button" data-useb="${r.id}" data-cid="${r.cliente_id}">Usar en B</button>
+                <button type="button" data-a4="${r.id}">Imprimir A4</button>
+                <button type="button" data-id80="${r.id}">Imprimir 80mm</button>
+                <button type="button" data-wa="${r.id}">Enviar WA</button>
+                <button type="button" class="danger" data-close="${r.id}">Cerrar</button>
+              </div>
+            </details>
+          </td>
         </tr>
       `).join('');
 
-      bandejaBody.querySelectorAll('[data-usea]').forEach(b=> b.onclick = ()=> cargarEnSlot('A', b.dataset.usea, b.dataset.cid));
-      bandejaBody.querySelectorAll('[data-useb]').forEach(b=> b.onclick = ()=> cargarEnSlot('B', b.dataset.useb, b.dataset.cid));
+      bandejaBody.querySelectorAll('[data-usea]').forEach(b=> b.onclick = ()=>{
+        cerrarTodosLosMenus();
+        cargarEnSlot('A', b.dataset.usea, b.dataset.cid);
+      });
+      bandejaBody.querySelectorAll('[data-useb]').forEach(b=> b.onclick = ()=>{
+        cerrarTodosLosMenus();
+        cargarEnSlot('B', b.dataset.useb, b.dataset.cid);
+      });
+      bandejaBody.querySelectorAll('[data-a4]').forEach(b=> b.onclick = ()=>{
+        cerrarTodosLosMenus();
+        imprimirNotaA4(b.dataset.a4);
+      });
+      bandejaBody.querySelectorAll('[data-id80]').forEach(b=> b.onclick = ()=>{
+        cerrarTodosLosMenus();
+        imprimirNota80mm(b.dataset.id80);
+      });
+      bandejaBody.querySelectorAll('[data-wa]').forEach(b=> b.onclick = ()=>{
+        cerrarTodosLosMenus();
+        waNota(b.dataset.wa);
+      });
+      bandejaBody.querySelectorAll('[data-close]').forEach(b=> b.onclick = ()=>{
+        cerrarTodosLosMenus();
+        cerrarNotaById(b.dataset.close);
+      });
     }
 
     async function cargarEnSlot(slot, nota_id, cliente_id){
@@ -1168,264 +1630,614 @@
       setActiveSlot(slot);
     }
 
-    /* ========================= PLACEHOLDERS (tus funciones existentes) ========================= */
-    async function waNota(){ alert("WA aquí (pega tu función completa)"); }
-    async function imprimirNotaA4(){ alert("A4 aquí (pega tu función completa)"); }
-    async function imprimirNota80mm(){ alert("80mm aquí (pega tu función completa)"); }
-    async function exportNotaCSV(){ alert("CSV aquí (pega tu función completa)"); }
-    async function imprimirDiaA4(){ alert("Reporte A4 aquí (pega tu función completa)"); }
-    async function exportDiaCSV(){ alert("Reporte CSV aquí (pega tu función completa)"); }
-    async function cerrarNota(){ alert("Cerrar nota aquí (pega tu función completa)"); }
+    /* ========================= WHATSAPP / A4 / CSV / 80mm ========================= */
+    function plantillaWA(nota, det, clienteNombre){
+      const items = (det||[]).map(d=>{
+        const piezasTxt = d.piezas ? ` (${d.piezas} pzas)` : '';
+        return `• ${d.producto} ${to2(d.cantidad)}kg${piezasTxt}`;
+      }).join('\n');
 
-    /* ========================= MODO VOZ — IMPLEMENTACIÓN ========================= */
-    function vozNormalize(s){
-      return (s||"")
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-        .replace(/[^\w\s\.,]/g," ")
-        .replace(/\s+/g," ")
-        .trim();
+      return [
+        `Hola *${clienteNombre}*,`,
+        `te compartimos el detalle de tu cuenta del día:\n`,
+        `*Folio:* ${nota.folio}`,
+        `*Fecha:* ${nota.fecha}`,
+        '',
+        items,
+        '',
+        (nota.observaciones ? `*Notas:* ${nota.observaciones}` : ''),
+        '',
+        `¡Gracias por tu preferencia! — ${STORE_NAME}`
+      ].join('\n');
     }
-    function vozParseNumber(text){
-      const t = vozNormalize(text);
-      const m = t.match(/(\d+(?:[.,]\d+)?)/);
-      if(!m) return null;
-      return parseFloat(m[1].replace(",", "."));
+
+    function normalizeMxPhoneToWhatsAppDigits(phoneRaw){
+      const digits = (phoneRaw || '').replace(/[^\d]/g,'');
+      if(!digits) return '';
+      if(digits.length === 10) return '52' + digits;
+      return digits;
     }
-    function vozFindClientByNameSpoken(spoken){
-      const s = vozNormalize(spoken);
-      if(!s) return null;
 
-      let hit = (CLIENTES||[]).find(c => vozNormalize(c.nombre) === s);
-      if(hit) return hit;
+    async function waNota(nota_id){
+      const { data: nota } = await sb.from('notas_credito').select('*').eq('id', nota_id).single();
+      const { data: det } = await sb.from('notas_detalle').select('*').eq('nota_id', nota_id).order('created_at');
 
-      hit = (CLIENTES||[]).find(c => vozNormalize(c.nombre).includes(s) || s.includes(vozNormalize(c.nombre)));
-      if(hit) return hit;
+      const nombre = getClientName(nota.cliente_id);
 
-      const toks = s.split(" ").filter(Boolean);
-      let best = null, bestScore = 0;
-      (CLIENTES||[]).forEach(c=>{
-        const cn = vozNormalize(c.nombre);
-        let score = 0;
-        toks.forEach(tk=>{ if(cn.includes(tk)) score++; });
-        if(score > bestScore){ bestScore = score; best = c; }
+      let phone = slotState[slotActive].telefono;
+      if(!phone || (activeNota()?.cliente_id !== nota.cliente_id)){
+        const c = getClient(nota.cliente_id);
+        phone = c ? (c.telefono||'') : '';
+      }
+
+      const phoneRaw = (phone || '').trim();
+      if(!phoneRaw){
+        alert('El cliente no tiene teléfono guardado. Captura el número en "Teléfono (WhatsApp)" y vuelve a intentar.');
+        return;
+      }
+
+      const digits = normalizeMxPhoneToWhatsAppDigits(phoneRaw);
+      if(!digits){
+        alert('El teléfono del cliente no es válido.');
+        return;
+      }
+
+      const msg = plantillaWA(nota, det||[], nombre);
+      const u = `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
+      const u2 = `https://api.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(msg)}`;
+
+      const w = window.open(u,"_blank");
+      setTimeout(()=>{
+        if(!w || w.closed) window.open(u2,"_blank");
+      }, 600);
+    }
+
+    async function imprimirNotaA4(nota_id){
+      const { data: nota } = await sb
+        .from('notas_credito')
+        .select('*, clientes(nombre)')
+        .eq('id', nota_id)
+        .single();
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('*')
+        .eq('nota_id', nota_id)
+        .order('created_at');
+
+      const el = $('#printArea');
+      el.style.display='block';
+      el.classList.remove('ticket80');
+
+      el.innerHTML = `
+        <h3>Nota — ${nota.clientes?.nombre||''}</h3>
+        <div><b>Folio:</b> ${nota.folio} &nbsp; <b>Fecha:</b> ${nota.fecha} &nbsp; <b>Vence:</b> ${nota.vence||''}</div>
+        <div><b>Total:</b> $${to2(nota.total)} &nbsp; <b>Saldo:</b> $${to2(nota.saldo)}</div>
+
+        ${nota.observaciones ? `
+          <div style="margin-top:6mm">
+            <b>Notas del cliente:</b><br>${(nota.observaciones||'').replace(/\n/g,'<br>')}
+          </div>
+        ` : ''}
+
+        <br/>
+
+        <table>
+          <thead><tr><th>Fecha/Hora</th><th>Producto</th><th>Kg</th><th>Pzas</th><th>P.Unit</th><th>Importe</th></tr></thead>
+          <tbody>
+            ${(det||[]).map(d=>`
+              <tr>
+                <td>${new Date(d.created_at).toLocaleString()}</td>
+                <td>${d.producto}</td>
+                <td>${to2(d.cantidad)}</td>
+                <td>${d.piezas != null ? d.piezas : ''}</td>
+                <td>$${to2(d.precio)}</td>
+                <td>$${to2(d.importe)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      window.print();
+      setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 500);
+    }
+
+    async function imprimirNota80mm(nota_id){
+      await saveNotaObs();
+
+      const { data: nota } = await sb
+        .from('notas_credito')
+        .select('*, clientes(nombre)')
+        .eq('id', nota_id)
+        .single();
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('*')
+        .eq('nota_id', nota_id)
+        .order('created_at');
+
+      const cliente = nota.clientes?.nombre || '(sin nombre)';
+      const obs = nota.observaciones || '—';
+
+      const filas = (det || []).map(d=>{
+        const cantidadTexto = d.piezas ? `${to2(d.cantidad)} (${d.piezas}pz)` : to2(d.cantidad);
+        return `
+          <tr>
+            <td>${d.producto}</td>
+            <td class="right">${cantidadTexto}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const html = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <title>Ticket 80mm</title>
+          <style>
+            :root{--ink:#111}
+            *{box-sizing:border-box}
+            body{
+              margin:0;background:#fff;color:var(--ink);
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            }
+            #ticket{
+              background:#fff;border:1px dashed #999;border-radius:10px;
+              padding:6px;max-width:80mm;margin:0 auto;
+            }
+            #ticket h3{margin:0 0 4px;text-align:center;font-size:14px}
+            #ticket .meta{font-size:11px;margin-bottom:4px}
+            #ticket .obs-block{margin-top:2px;white-space:pre-wrap}
+            #ticket table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+            #ticket th,#ticket td{padding:2px 1px;border-bottom:1px dashed #ddd;word-wrap:break-word}
+            .right{text-align:right}
+            @media print{
+              @page{ size: 80mm auto; margin: 0mm; }
+              body{background:#fff}
+              #ticket{ width:80mm;max-width:80mm;margin:0;padding:2mm;border:none; }
+              tr, td, th, table{ page-break-inside: avoid; break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div id="ticket">
+            <h3>${STORE_NAME}</h3>
+            <div class="meta">
+              Nota a crédito<br/>
+              Cliente: ${cliente}<br/>
+              Folio: ${nota.folio}<br/>
+              Fecha: ${nota.fecha}<br/>
+              <div class="obs-block">Obs: ${obs}</div>
+            </div>
+
+            <table>
+              <thead><tr><th>Prod</th><th class="right">Kg/Pzas</th></tr></thead>
+              <tbody>${filas}</tbody>
+            </table>
+
+            <div style="margin-top:6px;text-align:center;font-size:11px">
+              ¡Gracias por su preferencia! ¡Carnes y Vísceras del Centro tu mejor aliado!
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank', 'width=420,height=700');
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(()=>{ win.print(); }, 300);
+    }
+
+    /* ========================= REPORTE DIARIO GENERAL ========================= */
+    async function imprimirDiaA4(){
+      const f = diaFecha.value || todayISO();
+
+      const { data: notas } = await sb
+        .from('notas_credito')
+        .select('id, folio, fecha, clientes(nombre)')
+        .eq('fecha', f)
+        .order('created_at');
+
+      const ids = (notas || []).map(n => n.id);
+      if(!ids.length){ alert('No hay notas ese día'); return; }
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('nota_id, producto, cantidad, piezas, precio, importe, created_at')
+        .in('nota_id', ids)
+        .order('created_at');
+
+      const byClient = {};
+      (notas || []).forEach(n=>{
+        const c = n.clientes?.nombre || '—';
+        if(!byClient[c]) byClient[c] = { items: [], totalImporte: 0 };
       });
-      return bestScore >= 1 ? best : null;
-    }
-    function vozFindProducto(spoken){
-      const s = vozNormalize(spoken);
 
-      const SYN = {
-        "menudo": "Panza fresca o menudo fresco",
-        "panza": "Panza fresca o menudo fresco",
-        "higado": "Hígado",
-        "corazon": "Corazón",
-        "lengua": "Lengua de res",
-        "tripa gorda": "Tripa Gorda",
-        "teleco": "Teleco",
-        "sebo": "Sebo",
-        "hueso": "Hueso",
-        "menudo national": "Menudo National",
-        "menudo canadian": "Menudo Canadian",
-        "caja menudo national": "Caja Menudo National",
-        "caja menudo canadian": "Caja Menudo Canadian",
-        "caja de menudo national": "Caja Menudo National",
-        "caja de menudo canadian": "Caja Menudo Canadian"
-      };
-      for(const k of Object.keys(SYN)){
-        if(s.includes(k)) return SYN[k];
-      }
-
-      let best = null;
-      (PRODUCTOS||[]).forEach(p=>{
-        const pn = vozNormalize(p.nombre);
-        if(pn && s.includes(pn)){
-          if(!best || pn.length > best.pn.length) best = {raw:p.nombre, pn};
-        }
+      (det || []).forEach(d=>{
+        const nota = (notas || []).find(x => x.id === d.nota_id);
+        const cliente = nota?.clientes?.nombre || '—';
+        if(!byClient[cliente]) byClient[cliente] = { items: [], totalImporte: 0 };
+        byClient[cliente].items.push({
+          folio: nota?.folio || '',
+          created_at: d.created_at,
+          producto: d.producto,
+          cantidad: d.cantidad,
+          piezas: d.piezas,
+          importe: d.importe
+        });
+        byClient[cliente].totalImporte += Number(d.importe || 0);
       });
-      return best ? best.raw : null;
-    }
-    function vozParseCommand(transcript){
-      const raw = (transcript||"").trim();
-      const t = vozNormalize(raw);
 
-      if(t === "slot a" || t.includes("cambiar a slot a")) return { action:"slot", slot:"A" };
-      if(t === "slot b" || t.includes("cambiar a slot b")) return { action:"slot", slot:"B" };
+      const totalDia = (det || []).reduce((a, b) => a + Number(b.importe || 0), 0);
+      diaResumen.textContent = `Clientes: ${Object.keys(byClient).length} · Total día: $${to2(totalDia)}`;
 
-      if(t.startsWith("abrir cliente ") || t.includes("abrir cliente")){
-        const parts = raw.split(/abrir cliente/i);
-        const name = (parts[1]||"").trim();
-        return { action:"abrir_cliente", cliente:name };
-      }
+      let html = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <title>Reporte diario</title>
+          <style>
+            @page { size: letter landscape; margin: 8mm; }
+            body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 11px; margin: 0; }
+            h3 { margin: 0 0 4mm 0; font-size: 14px; }
+            h4 { margin: 2mm 0 1mm 0; font-size: 11px; }
+            .subinfo { font-size: 10px; margin-bottom: 3mm; }
+            #columns { column-count: 2; column-gap: 5mm; }
+            .client-group { break-inside: avoid; page-break-inside: avoid; margin-bottom: 3mm; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 2px 3px; font-size: 9.5px; text-align: left; }
+            th { background: #f3f3f3; }
+          </style>
+        </head>
+        <body>
+          <h3>Reporte diario — ${f}</h3>
+          <div class="subinfo">Clientes: ${Object.keys(byClient).length} · Total día: $${to2(totalDia)}</div>
+          <div id="columns">
+      `;
 
-      if(t === "guardar" || t.includes("guardar observaciones") || t.includes("guardar notas")){
-        return { action:"guardar_obs" };
-      }
-
-      const isAdd = t.startsWith("agregar") || t.startsWith("agrega");
-      const isRemove = t.startsWith("quitar") || t.startsWith("quita") || t.startsWith("restar");
-
-      if(isAdd || isRemove){
-        const qty = vozParseNumber(t);
-        const isBoxes = t.includes("caja") || t.includes("cajas");
-        const producto = vozFindProducto(t);
-        return { action: isRemove ? "quitar" : "agregar", producto, qty, unidad: isBoxes ? "cajas" : "kg" };
-      }
-
-      return { action:"desconocido", raw };
-    }
-    function vozUI(status, texto, obj){
-      const st = document.getElementById("vozEstado");
-      const tx = document.getElementById("vozTexto");
-      const ac = document.getElementById("vozAccion");
-      if(st) st.textContent = status || "—";
-      if(tx) tx.textContent = texto || "";
-      if(ac) ac.textContent = obj ? JSON.stringify(obj, null, 2) : "";
-    }
-
-    async function vozAbrirCliente(nombre){
-      const c = vozFindClientByNameSpoken(nombre);
-      if(!c){
-        vozUI("No encontré ese cliente", document.getElementById("vozTexto")?.textContent, {cliente:nombre});
-        return;
-      }
-      cliSelect.value = c.id;
-      cliSelect.dispatchEvent(new Event("change", {bubbles:true}));
-      await continuarNota();
-      vozUI("✅ Cliente abierto", document.getElementById("vozTexto")?.textContent, {cliente: c.nombre, slot: slotActive, nota: activeNota()?.folio || null});
-    }
-
-    async function vozInsertPartida({producto, qty, unidad, sign}){
-      const nota = activeNota();
-      if(!nota){
-        vozUI("Primero crea/continúa una nota", document.getElementById("vozTexto")?.textContent, {error:"sin_nota"});
-        return;
-      }
-      if(!producto){
-        vozUI("No detecté el producto", document.getElementById("vozTexto")?.textContent, {error:"sin_producto"});
-        return;
-      }
-      if(qty == null || isNaN(qty) || qty <= 0){
-        vozUI("No detecté la cantidad", document.getElementById("vozTexto")?.textContent, {error:"sin_cantidad"});
-        return;
-      }
-
-      if(isPielesYGrasasSelected()){
-        const pNorm = normalizeName(producto);
-        if(pNorm === normalizeName("sebo")){
-          await addFixedPartidaPG("Sebo", String(qty), "");
-          vozUI("✅ Agregado (PG)", document.getElementById("vozTexto")?.textContent, {producto:"Sebo", qty, unidad:"kg"});
-          return;
-        }
-        if(pNorm === normalizeName("hueso")){
-          await addFixedPartidaPG("Hueso", String(qty), "");
-          vozUI("✅ Agregado (PG)", document.getElementById("vozTexto")?.textContent, {producto:"Hueso", qty, unidad:"kg"});
-          return;
-        }
-      }
-
-      let cantidadKg = qty;
-      let piezas = null;
-
-      if(unidad === "cajas"){
-        piezas = Math.round(qty);
-        cantidadKg = piezas * CAJA_KG;
-      }
-
-      const precio = Number(PRECIOS[producto] || 0);
-      const signedKg = sign * Math.abs(Number(cantidadKg));
-      const signedImporte = signedKg * precio;
-
-      const { error } = await sb.from('notas_detalle').insert({
-        id: crypto.randomUUID(),
-        nota_id: nota.id,
-        producto,
-        cantidad: signedKg,
-        piezas: (piezas != null && piezas > 0 ? piezas : null),
-        precio,
-        importe: signedImporte
+      Object.entries(byClient).forEach(([cliente, pack])=>{
+        html += `
+          <div class="client-group">
+            <h4>${cliente} — Total: $${to2(pack.totalImporte)}</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Hora</th>
+                  <th>Producto</th>
+                  <th>Kg</th>
+                  <th>Pzas</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(pack.items || []).map(d => `
+                  <tr>
+                    <td>${d.folio}</td>
+                    <td>${new Date(d.created_at).toLocaleTimeString()}</td>
+                    <td>${d.producto}</td>
+                    <td>${to2(d.cantidad)}</td>
+                    <td>${d.piezas != null ? d.piezas : ''}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
       });
+
+      html += `
+          </div>
+        </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank', 'width=1200,height=800');
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => { win.print(); }, 400);
+    }
+
+    async function exportDiaCSV(){
+      const f = diaFecha.value || todayISO();
+
+      const { data: notas } = await sb
+        .from('notas_credito')
+        .select('id, folio, fecha, clientes(nombre)')
+        .eq('fecha', f);
+
+      const ids = (notas||[]).map(n=>n.id);
+      if(!ids.length) return alert('No hay notas ese día');
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('nota_id, producto, cantidad, piezas, precio, importe, created_at')
+        .in('nota_id', ids);
+
+      const head = ['Cliente','Folio','Fecha','Hora','Producto','Kg','Piezas','Precio','Importe'];
+
+      const rows = (det||[]).map(d=>{
+        const n = (notas||[]).find(x=>x.id===d.nota_id) || {};
+        return [
+          (n.clientes?.nombre||''),
+          n.folio,
+          f,
+          new Date(d.created_at).toLocaleTimeString(),
+          d.producto,
+          to2(d.cantidad),
+          (d.piezas != null ? d.piezas : ''),
+          to2(d.precio),
+          to2(d.importe)
+        ];
+      });
+
+      const csv = [head, ...rows].map(r=> r.map(csvEscape).join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte_${f}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function exportNotaCSV(nota_id){
+      const { data: nota } = await sb
+        .from('notas_credito')
+        .select('folio, fecha, clientes(nombre), cliente_id')
+        .eq('id', nota_id)
+        .single();
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('*')
+        .eq('nota_id', nota_id)
+        .order('created_at');
+
+      const head = ['Cliente','Folio','Fecha','Hora','Producto','Kg','Piezas','Precio','Importe'];
+      const rows = (det||[]).map(d => ([
+        (nota?.clientes?.nombre || ''),
+        nota?.folio || '',
+        nota?.fecha || '',
+        new Date(d.created_at).toLocaleTimeString(),
+        d.producto,
+        to2(d.cantidad),
+        (d.piezas != null ? d.piezas : ''),
+        to2(d.precio),
+        to2(d.importe)
+      ]));
+
+      const csv = [head, ...rows].map(r=> r.map(csvEscape).join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nota_${nota?.folio || 'sin_folio'}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function cerrarNotaById(nota_id){
+      if(!nota_id) return;
+      if(!confirm('¿Cerrar esta nota?')) return;
+
+      const { error } = await sb
+        .from('notas_credito')
+        .update({estado:'cerrada'})
+        .eq('id', nota_id);
 
       if(error){
         console.error(error);
-        vozUI("❌ No se pudo insertar", document.getElementById("vozTexto")?.textContent, {error: error.message || error});
+        alert('No se pudo cerrar la nota');
         return;
       }
 
-      await recalcNota(nota.id);
+      if(notaA?.id === nota_id) notaA = null;
+      if(notaB?.id === nota_id) notaB = null;
 
-      vozUI("✅ Partida capturada", document.getElementById("vozTexto")?.textContent, {
-        action: sign === -1 ? "quitar" : "agregar",
-        producto, qty, unidad,
-        kg_final: Number(cantidadKg).toFixed(2),
-        precio: Number(precio).toFixed(2)
-      });
+      await renderVista();
+      await loadBandeja();
+      alert('✅ Nota cerrada');
     }
 
-    (function initModoVoz(){
-      const btn = document.getElementById("btnVoz");
-      if(!btn) return;
+    async function cerrarNota(){
+      const n = activeNota();
+      if(!n) return alert('Sin nota');
+      await sb.from('notas_credito').update({estado:'cerrada'}).eq('id', n.id);
+      await renderVista();
+      await loadBandeja();
+      alert('✅ Nota cerrada');
+    }
 
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!SpeechRecognition){
-        btn.disabled = true;
-        vozUI("Tu navegador no soporta voz (usa Chrome/Edge)", "", null);
+    /* =========================================================
+       ✅ VDC IA (NUEVO) — Conecta a tu server Express
+       - /api/command (texto)
+       - /api/voice   (audio)
+    ========================================================= */
+    const vdcAiFab = document.getElementById('vdcAiFab');
+    const vdcAiPanel = document.getElementById('vdcAiPanel');
+    const vdcAiTag = document.getElementById('vdcAiTag');
+    const vdcAiChat = document.getElementById('vdcAiChat');
+    const vdcAiText = document.getElementById('vdcAiText');
+    const vdcAiSend = document.getElementById('vdcAiSend');
+    const vdcAiMic = document.getElementById('vdcAiMic');
+    const vdcAiClose = document.getElementById('vdcAiClose');
+    const vdcAiClear = document.getElementById('vdcAiClear');
+
+    let vdcRec = null;
+    let vdcChunks = [];
+    let vdcRecording = false;
+
+    function vdcAiUpdateTag(){
+      if(!vdcAiTag) return;
+      const n = activeNota();
+      const folio = n?.folio ? ` · ${n.folio}` : '';
+      vdcAiTag.textContent = `Slot ${slotActive}${folio}`;
+    }
+
+    function vdcAiAddMsg(who, text){
+      const d = document.createElement('div');
+      d.className = 'vdcMsg';
+      d.innerHTML = `<b>${who}:</b> ${String(text || '').replaceAll('<','&lt;')}`;
+      vdcAiChat.appendChild(d);
+      vdcAiChat.scrollTop = vdcAiChat.scrollHeight;
+    }
+
+    function buildVdcContext(){
+      return {
+        page: "notas_credito",
+        store: STORE_NAME,
+        slotActive,
+        fecha: (notaFecha?.value || todayISO()),
+        slots: {
+          A: { nota_id: notaA?.id || null, cliente_id: notaA?.cliente_id || slotState.A.cliente_id || null },
+          B: { nota_id: notaB?.id || null, cliente_id: notaB?.cliente_id || slotState.B.cliente_id || null }
+        },
+        active: {
+          nota_id: activeNota()?.id || null,
+          cliente_id: activeNota()?.cliente_id || slotState[slotActive].cliente_id || null
+        }
+      };
+    }
+
+    // Interpreta el log del server para actualizar UI
+    async function applyAssistantLog(log){
+      if(!Array.isArray(log)) return;
+
+      for(const entry of log){
+        const tool = entry?.tool;
+        const out = entry?.out;
+
+        // Si creó/recuperó nota
+        if(tool === "continuar_nota" && out?.nota){
+          setSlotNota(slotActive, out.nota);
+        }
+      }
+
+      // refresco general
+      await renderVista();
+      await loadBandeja();
+    }
+
+    async function sendAssistantText(text){
+      vdcAiAddMsg("Tú", text);
+
+      const payload = {
+        text,
+        context: buildVdcContext()
+      };
+
+      const res = await fetch(`${VDC_API_BASE}/api/command`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const j = await res.json().catch(()=> ({}));
+      if(!res.ok){
+        vdcAiAddMsg("VDC IA", j?.error || "Error llamando /api/command");
         return;
       }
 
-      const rec = new SpeechRecognition();
-      rec.lang = "es-MX";
-      rec.interimResults = false;
-      rec.maxAlternatives = 1;
+      vdcAiAddMsg("VDC IA", j.final || "—");
+      await applyAssistantLog(j.log);
+    }
 
-      let listening = false;
+    async function sendAssistantVoice(blob){
+      vdcAiAddMsg("Sistema", "Procesando voz…");
 
-      btn.addEventListener("click", ()=>{
-        if(listening) return;
-        listening = true;
-        vozUI("Escuchando…", "", null);
-        rec.start();
+      const fd = new FormData();
+      fd.append("audio", blob, "audio.webm");
+      fd.append("context", JSON.stringify(buildVdcContext()));
+
+      const res = await fetch(`${VDC_API_BASE}/api/voice`,{
+        method:"POST",
+        body: fd
       });
 
-      rec.onresult = async (e)=>{
-        const transcript = e.results?.[0]?.[0]?.transcript || "";
-        vozUI("Procesando…", transcript, null);
+      const j = await res.json().catch(()=> ({}));
+      if(!res.ok){
+        vdcAiAddMsg("VDC IA", j?.error || "Error llamando /api/voice");
+        return;
+      }
 
-        const cmd = vozParseCommand(transcript);
-        vozUI("Comando detectado", transcript, cmd);
+      if(j.text) vdcAiAddMsg("Tú (voz)", j.text);
+      vdcAiAddMsg("VDC IA", j.final || "—");
+      await applyAssistantLog(j.log);
+    }
 
-        try{
-          if(cmd.action === "slot"){
-            setActiveSlot(cmd.slot);
-            vozUI(`✅ Cambié a Slot ${cmd.slot}`, transcript, cmd);
-          } else if(cmd.action === "abrir_cliente"){
-            await vozAbrirCliente(cmd.cliente);
-          } else if(cmd.action === "agregar"){
-            await vozInsertPartida({producto: cmd.producto, qty: cmd.qty, unidad: cmd.unidad, sign:+1});
-          } else if(cmd.action === "quitar"){
-            await vozInsertPartida({producto: cmd.producto, qty: cmd.qty, unidad: cmd.unidad, sign:-1});
-          } else if(cmd.action === "guardar_obs"){
-            await saveNotaObs();
-            vozUI("✅ Observaciones guardadas", transcript, cmd);
-          } else {
-            vozUI("No entendí. Prueba: 'abrir cliente X' o 'agregar 5 kg de Y'", transcript, cmd);
-          }
-        } finally {
-          listening = false;
+    async function startVdcRec(){
+      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      vdcChunks = [];
+      vdcRec = new MediaRecorder(stream, { mimeType:"audio/webm" });
+
+      vdcRec.ondataavailable = e => { if(e.data?.size) vdcChunks.push(e.data); };
+      vdcRec.onstop = async ()=>{
+        stream.getTracks().forEach(t=>t.stop());
+        const blob = new Blob(vdcChunks, { type:"audio/webm" });
+        await sendAssistantVoice(blob);
+      };
+
+      vdcRec.start();
+    }
+
+    function initVdcAi(){
+      vdcAiUpdateTag();
+
+      vdcAiFab?.addEventListener('click', ()=>{
+        vdcAiPanel.style.display = (vdcAiPanel.style.display === "block") ? "none" : "block";
+        vdcAiUpdateTag();
+        if(vdcAiPanel.style.display === "block"){
+          setTimeout(()=> vdcAiText?.focus(), 50);
         }
-      };
+      });
 
-      rec.onerror = (e)=>{
-        listening = false;
-        vozUI(`Error de voz: ${e.error}`, "", null);
-      };
+      vdcAiClose?.addEventListener('click', ()=> vdcAiPanel.style.display = "none");
+      vdcAiClear?.addEventListener('click', ()=> vdcAiChat.innerHTML = "");
 
-      rec.onend = ()=>{
-        listening = false;
-        const st = document.getElementById("vozEstado")?.textContent || "";
-        if(st.includes("Escuchando")) vozUI("Listo", document.getElementById("vozTexto")?.textContent, null);
-      };
-    })();
+      vdcAiSend?.addEventListener('click', async ()=>{
+        const t = (vdcAiText.value || '').trim();
+        if(!t) return;
+        vdcAiText.value = "";
+        await sendAssistantText(t);
+      });
+
+      vdcAiText?.addEventListener('keydown', async (e)=>{
+        if(e.key === "Enter"){
+          e.preventDefault();
+          vdcAiSend.click();
+        }
+      });
+
+      vdcAiMic?.addEventListener('click', async ()=>{
+        try{
+          if(!vdcRecording){
+            vdcRecording = true;
+            vdcAiMic.textContent = "⏹️ Stop";
+            await startVdcRec();
+          }else{
+            vdcRecording = false;
+            vdcAiMic.textContent = "🎙️ Voz";
+            vdcRec?.stop();
+          }
+        }catch(err){
+          console.error(err);
+          vdcRecording = false;
+          vdcAiMic.textContent = "🎙️ Voz";
+          vdcAiAddMsg("Sistema", "No pude acceder al micrófono. Revisa permisos.");
+        }
+      });
+
+      vdcAiAddMsg("VDC IA", "Listo. Dime qué hacemos en Notas a Crédito 💪");
+    }
   </script>
 </body>
 </html>
