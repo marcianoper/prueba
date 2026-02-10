@@ -233,6 +233,7 @@
       color:var(--muted);
       line-height:1.25;
     }
+    
   </style>
 </head>
 
@@ -576,6 +577,13 @@
         <button class="vdcAiBtn" id="vdcAiClose" type="button">Cerrar</button>
         <button class="vdcAiBtn" id="vdcAiClear" type="button">Limpiar</button>
       </div>
+      
+      <div class="vdcAiBtns">
+  <button class="vdcAiBtn" id="wakeStartBtn" type="button">🎙️ Activar “VDC”</button>
+  <button class="vdcAiBtn" id="wakeStopBtn" type="button" disabled>🛑 Parar escucha</button>
+</div>
+<div id="wakeStatus" class="vdcAiSmall">Estado: apagado</div>
+
 
       <div class="vdcAiSmall">
         Tips: <br/>
@@ -1014,6 +1022,7 @@
 
       updateCaptureMode();
       initVdcAi(); // ✅ NUEVO
+      
     });
 
     /* ========================= HELPERS ========================= */
@@ -2255,6 +2264,166 @@
 
       vdcAiAddMsg("VDC IA", "Listo. Dime qué hacemos en Notas a Crédito 💪");
     }
+    /* =========================
+   WAKE WORD + AUTO RECORD (VDC IA)
+========================= */
+
+const wakeStartBtn = document.getElementById("wakeStartBtn");
+const wakeStopBtn  = document.getElementById("wakeStopBtn");
+const wakeStatus   = document.getElementById("wakeStatus");
+
+const WAKE_WORDS = ["vdc", "oye vdc", "ok vdc", "luz"];
+const STOP_WORDS = ["listo", "termina", "corta", "ya"];
+
+let rec = null;
+let isWakeOn = false;
+let isRecording = false;
+let mediaRecorder = null;
+let audioChunks = [];
+let micStream = null;
+
+let lastWakeTs = 0;
+const WAKE_COOLDOWN_MS = 2000;
+
+function setWakeStatus(txt){
+  if(wakeStatus) wakeStatus.textContent = `Estado: ${txt}`;
+}
+
+function normTxt(s){
+  return (s||"").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function includesAny(text, arr){
+  const t = normTxt(text);
+  return arr.some(w => t.includes(normTxt(w)));
+}
+
+async function startAudioRecordingWake(){
+  if (isRecording) return;
+  isRecording = true;
+  audioChunks = [];
+  setWakeStatus("🎧 Grabando… di “listo”");
+
+  micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+    ? "audio/webm;codecs=opus"
+    : "audio/webm";
+
+  mediaRecorder = new MediaRecorder(micStream, { mimeType });
+
+  mediaRecorder.ondataavailable = e => {
+    if (e.data && e.data.size > 0) audioChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = async () => {
+    try {
+      const blob = new Blob(audioChunks, { type: mimeType });
+      audioChunks = [];
+      await sendAssistantVoice(blob); // 🔥 conecta con VDC IA
+    } finally {
+      micStream?.getTracks()?.forEach(t => t.stop());
+      micStream = null;
+      mediaRecorder = null;
+      isRecording = false;
+      setWakeStatus(isWakeOn ? "🟢 escuchando… di “VDC”" : "apagado");
+    }
+  };
+
+  mediaRecorder.start();
+}
+
+function stopAudioRecordingWake(){
+  if (!isRecording || !mediaRecorder) return;
+  setWakeStatus("📤 Enviando…");
+  mediaRecorder.stop();
+}
+
+function createRecognizer(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    setWakeStatus("⚠️ Wake Word no soportado (Chrome recomendado)");
+    return null;
+  }
+
+  const r = new SR();
+  r.lang = "es-MX";
+  r.interimResults = true;
+  r.continuous = true;
+
+  r.onresult = (event) => {
+    let text = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      text += " " + (event.results[i][0]?.transcript || "");
+    }
+    text = text.trim();
+    if (!text) return;
+
+    // 🎯 DESPIERTA
+    if (!isRecording) {
+      const now = Date.now();
+      if (now - lastWakeTs > WAKE_COOLDOWN_MS && includesAny(text, WAKE_WORDS)) {
+        lastWakeTs = now;
+        startAudioRecordingWake().catch(() => {
+          setWakeStatus("⚠️ Error micrófono");
+          isRecording = false;
+        });
+      }
+      return;
+    }
+
+    // 🛑 TERMINA
+    if (isRecording && includesAny(text, STOP_WORDS)) {
+      stopAudioRecordingWake();
+    }
+  };
+
+  r.onend = () => {
+    if (isWakeOn) {
+      try { r.start(); } catch {}
+    }
+  };
+
+  return r;
+}
+
+function startWakeListening(){
+  if (isWakeOn) return;
+  rec = rec || createRecognizer();
+  if (!rec) return;
+
+  isWakeOn = true;
+  wakeStartBtn && (wakeStartBtn.disabled = true);
+  wakeStopBtn && (wakeStopBtn.disabled = false);
+  setWakeStatus("🟢 escuchando… di “VDC”");
+  try { rec.start(); } catch {}
+}
+
+function stopWakeListening(){
+  isWakeOn = false;
+  wakeStartBtn && (wakeStartBtn.disabled = false);
+  wakeStopBtn && (wakeStopBtn.disabled = true);
+  try { rec?.stop(); } catch {}
+  if (isRecording) stopAudioRecordingWake();
+  setWakeStatus("apagado");
+}
+
+wakeStartBtn?.addEventListener("click", startWakeListening);
+wakeStopBtn?.addEventListener("click", stopWakeListening);
+
+/* =========================
+   🚀 AUTO-START (CLAVE)
+========================= */
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    startWakeListening(); // 🔥 VDC siempre atento
+  }, 800);
+});
+
   </script>
 </body>
 </html>
