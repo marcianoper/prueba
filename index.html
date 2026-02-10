@@ -2193,7 +2193,7 @@
 
 
 
-      const j = await res.json().catch(()=> ({}));
+      const j = res.json().catch(()=> ({}));
       if(!res.ok){
         vdcAiAddMsg("VDC IA", j?.error || "Error llamando /api/voice");
         return;
