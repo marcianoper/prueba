@@ -2135,11 +2135,12 @@
         context: buildVdcContext()
       };
 
-      const res = await fetch(`${VDC_API_BASE}/api/command`,{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch('/api/command', {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload)
+});
+
 
       const j = await res.json().catch(()=> ({}));
       if(!res.ok){
@@ -2158,10 +2159,12 @@
       fd.append("audio", blob, "audio.webm");
       fd.append("context", JSON.stringify(buildVdcContext()));
 
-      const res = await fetch(`${VDC_API_BASE}/api/voice`,{
-        method:"POST",
-        body: fd
-      });
+      const res = await fetch('/api/command', {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload)
+});
+
 
       const j = await res.json().catch(()=> ({}));
       if(!res.ok){
