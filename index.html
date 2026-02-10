@@ -2191,19 +2191,6 @@
 }
 
 
-
-
-      const j = res.json().catch(()=> ({}));
-      if(!res.ok){
-        vdcAiAddMsg("VDC IA", j?.error || "Error llamando /api/voice");
-        return;
-      }
-
-      if(j.text) vdcAiAddMsg("Tú (voz)", j.text);
-      vdcAiAddMsg("VDC IA", j.final || "—");
-      await applyAssistantLog(j.log);
-    }
-
     async function startVdcRec(){
       const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
       vdcChunks = [];
