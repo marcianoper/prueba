@@ -591,6 +591,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
+    const VDC_API_BASE = "http://localhost:8787";
+
     /* ========================= CONFIG ========================= */
     const SUPABASE_URL = "https://bjebybdqcqscouxlinfd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWJ5YmRxY3FzY291eGxpbmZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMjQ3MTksImV4cCI6MjA3MTkwMDcxOX0.mQgWtiYEyJTiF04pdcLv63SqPNrU1Iehws0vKqr82O0";
@@ -2135,9 +2137,11 @@
         context: buildVdcContext()
       };
 
-      const res = await fetch('/api/command', {
+      const res = await fetch(`${VDC_API_BASE}/api/command`, {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json"
+  },
   body: JSON.stringify(payload)
 });
 
@@ -2159,11 +2163,14 @@
       fd.append("audio", blob, "audio.webm");
       fd.append("context", JSON.stringify(buildVdcContext()));
 
-      const res = await fetch('/api/command', {
+     const res = await fetch(`${VDC_API_BASE}/api/command`, {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    "Content-Type": "application/json"
+  },
   body: JSON.stringify(payload)
 });
+
 
 
       const j = await res.json().catch(()=> ({}));
