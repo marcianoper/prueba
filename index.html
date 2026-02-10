@@ -2156,20 +2156,40 @@
       await applyAssistantLog(j.log);
     }
 
-    async function sendAssistantVoice(blob){
-      vdcAiAddMsg("Sistema", "Procesando voz…");
+ async function sendAssistantVoice(blob){
+  vdcAiAddMsg("Sistema", "Procesando voz...");
 
-      const fd = new FormData();
-      fd.append("audio", blob, "audio.webm");
-      fd.append("context", JSON.stringify(buildVdcContext()));
+  const fd = new FormData();
+  fd.append("audio", blob, "audio.webm");
+  fd.append("context", JSON.stringify(buildVdcContext()));
 
-     const res = await fetch(`${VDC_API_BASE}/api/command`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify(payload)
-});
+  // 👇 IMPORTANTE: VOZ pega a /api/voice y NO mandes headers JSON
+  const res = await fetch(`${VDC_API_BASE}/api/voice`, {
+    method: "POST",
+    body: fd
+  });
+
+  let data = null;
+  try { data = await res.json(); } catch { data = {}; }
+
+  if (!res.ok || !data?.ok){
+    console.error("VOICE FAIL", res.status, data);
+    vdcAiAddMsg("VDC IA", `Error llamando /api/voice (${res.status})`);
+    return;
+  }
+
+  // opcional: mostrar lo que entendió
+  if (data.text) vdcAiAddMsg("Tú", data.text);
+
+  // respuesta final
+  vdcAiAddMsg("VDC IA", data.final || "Listo.");
+
+  // si tu backend empieza a devolver contexto actualizado, guárdalo aquí
+  if (data.context) {
+    try { localStorage.setItem("vdc_ctx", JSON.stringify(data.context)); } catch {}
+  }
+}
+
 
 
 
