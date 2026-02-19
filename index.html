@@ -39,37 +39,112 @@
     .cell-editing input{width:100%;padding:6px;font-size:14px}
 
     /* ====== IMPRESIÓN GENERAL (nota individual / ticket80 usando #printArea) ====== */
-    @media print{
-      body *{visibility:hidden}
-      #printArea, #printArea *{visibility:visible}
-      #printArea{position:fixed; left:0; top:0}
-      @page{ size: 80mm auto; margin: 10mm; }
+   /* ====== IMPRESIÓN GENERAL (nota individual / ticket80 usando #printArea) ====== */
+@media print{
+  /* Oculta todo excepto printArea */
+  body *{ visibility:hidden !important; }
+  #printArea, #printArea *{ visibility:visible !important; }
 
-      #printArea:not(.ticket80){
-        width:297mm;
-        padding:8mm 10mm;
-      }
-      #printArea:not(.ticket80) h3{ margin:0 0 4mm 0; font-size:14px; }
-      #printArea:not(.ticket80) table{ width:100%; border-collapse:collapse; }
-      #printArea:not(.ticket80) th,
-      #printArea:not(.ticket80) td{ border:1px solid #aaa; padding:3px 4px; font-size:11px; }
+  /* Reset fuerte para evitar márgenes/scroll */
+  html, body{
+    margin:0 !important;
+    padding:0 !important;
+    height:auto !important;
+    background:#fff !important;
+  }
 
-      /* Ticket 80mm */
-      #printArea.ticket80{width:80mm; padding:2mm}
-      #printArea.ticket80 .tk-header{ text-align:center; font-size:12px; line-height:1.2; margin-bottom:6px }
-      #printArea.ticket80 .tk-header .store{ font-weight:700; font-size:14px }
-      #printArea.ticket80 .tk-meta{ font-size:11px; margin-bottom:6px }
-      #printArea.ticket80 .tk-line{ border-top:1px dashed #000; margin:6px 0 }
-      #printArea.ticket80 .tk-items{ width:100%; font-size:11px; border-collapse:collapse }
-      #printArea.ticket80 .tk-items th,
-      #printArea.ticket80 .tk-items td{ padding:2px 0; }
-      #printArea.ticket80 .right{ float:right }
-      #printArea.ticket80 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace }
-      #printArea.ticket80 .totals{ font-size:12px; font-weight:700; margin-top:4px }
-      #printArea.ticket80 .obs-title{ font-weight:700; font-size:11px; margin-top:6px }
-      #printArea.ticket80 .obs{ white-space:pre-wrap; font-size:11px; }
-      #printArea.ticket80 .thanks{ text-align:center; margin-top:8px; font-size:11px }
-    }
+  /* Por defecto: A4 (si NO es ticket80) */
+  #printArea{
+    position:fixed;
+    left:0;
+    top:0;
+    right:auto;
+    bottom:auto;
+    color:#000 !important;
+    background:#fff !important;
+  }
+
+  /* IMPORTANTE: Page setup */
+  @page{
+    margin: 0; /* <<< antes tenías 10mm (eso arruina ticket) */
+  }
+
+  /* =======================
+     MODO A4 (no ticket)
+     ======================= */
+  #printArea:not(.ticket80){
+    width:297mm;
+    padding:8mm 10mm;
+  }
+  #printArea:not(.ticket80) h3{ margin:0 0 4mm 0; font-size:14px; }
+  #printArea:not(.ticket80) table{ width:100%; border-collapse:collapse; }
+  #printArea:not(.ticket80) th,
+  #printArea:not(.ticket80) td{ border:1px solid #aaa; padding:3px 4px; font-size:11px; }
+
+  /* =======================
+     TICKET 80mm
+     ======================= */
+  #printArea.ticket80{
+    width:80mm;
+    padding:3mm 3mm;     /* poquito aire, como ticket real */
+  }
+
+  /* Forzar tipografía ticket */
+  #printArea.ticket80,
+  #printArea.ticket80 *{
+    font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, Monaco, monospace !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Header */
+  #printArea.ticket80 .tk-header{
+    text-align:center;
+    font-size:12px;
+    line-height:1.2;
+    margin-bottom:6px;
+  }
+  #printArea.ticket80 .tk-header .store{
+    font-weight:700;
+    font-size:14px;
+  }
+
+  /* Meta */
+  #printArea.ticket80 .tk-meta{
+    font-size:11px;
+    margin-bottom:6px;
+  }
+
+  /* Línea punteada */
+  #printArea.ticket80 .tk-line{
+    border-top:1px dashed #000;
+    margin:6px 0;
+  }
+
+  /* Items */
+  #printArea.ticket80 .tk-items{
+    width:100%;
+    font-size:11px;
+    border-collapse:collapse;
+  }
+  #printArea.ticket80 .tk-items th,
+  #printArea.ticket80 .tk-items td{
+    padding:2px 0;
+    vertical-align:top;
+  }
+  #printArea.ticket80 .tk-items th{
+    font-weight:700;
+  }
+
+  /* Alineación derecha SIN float (float a veces rompe en print) */
+  #printArea.ticket80 .right{
+    float:none !important;
+    text-align:right !important;
+  }
+
+  .no-print{ display:none !important; } /* por si tienes botones dentro */
+}
+
 
     /* ===========================
        ✅ BANDEJA COMPACTA (SIN SCROLL INFINITO)
