@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -42,7 +43,7 @@
       body *{visibility:hidden}
       #printArea, #printArea *{visibility:visible}
       #printArea{position:fixed; left:0; top:0}
-      @page{ size: A4 landscape; margin: 10mm; }
+      @page{ size: 80mm auto; margin: 10mm; }
 
       #printArea:not(.ticket80){
         width:297mm;
@@ -72,6 +73,10 @@
 
     /* ===========================
        ✅ BANDEJA COMPACTA (SIN SCROLL INFINITO)
+       - contenedor con scroll interno
+       - header sticky
+       - buscador
+       - menú de acciones dropdown
     =========================== */
     .bandejaWrap{
       max-height: 55vh;
@@ -138,102 +143,6 @@
     }
     .menuPanel button:hover{ background:#f6f7f8; }
     .menuPanel button.danger{ border-color:#fee2e2; color:#b91c1c; }
-
-    /* ===========================
-       ✅ VDC IA (NUEVO) — FAB + PANEL
-       Conecta a tu server Express:
-       - POST /api/command  (texto)
-       - POST /api/voice    (audio: transcribe + tools)
-    =========================== */
-    .vdcAiFab{
-      position:fixed;
-      right:14px;
-      bottom:14px;
-      width:58px;
-      height:58px;
-      border-radius:18px;
-      background:var(--brand);
-      color:#fff;
-      border:none;
-      font-weight:900;
-      cursor:pointer;
-      z-index:9999;
-      box-shadow:0 14px 30px rgba(0,0,0,.25);
-    }
-    .vdcAiPanel{
-      position:fixed;
-      right:14px;
-      bottom:82px;
-      width:min(430px, calc(100vw - 28px));
-      background:#fff;
-      border-radius:16px;
-      border:1px solid #e5e7eb;
-      box-shadow:0 18px 50px rgba(0,0,0,.2);
-      z-index:9999;
-      display:none;
-      overflow:hidden;
-    }
-    .vdcAiHeader{
-      background:var(--brand);
-      color:#fff;
-      padding:12px;
-      font-weight:900;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-    .vdcAiHeader .tag{
-      margin-left:auto;
-      font-size:12px;
-      background:rgba(255,255,255,.2);
-      padding:4px 8px;
-      border-radius:999px;
-      font-weight:800;
-    }
-    .vdcAiBody{padding:12px}
-    .vdcAiChat{
-      background:#fafafa;
-      border:1px solid #eef0f2;
-      border-radius:12px;
-      padding:10px;
-      max-height:230px;
-      overflow:auto;
-    }
-    .vdcMsg{font-size:13px; margin-bottom:8px}
-    .vdcMsg b{font-weight:900}
-    .vdcAiInput{
-      margin-top:10px;
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-    .vdcAiInput input{margin-top:0}
-    .vdcAiBtns{
-      margin-top:8px;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:8px;
-    }
-    .vdcAiBtn{
-      padding:10px;
-      border-radius:12px;
-      font-weight:900;
-      border:1px solid #e5e7eb;
-      background:#fff;
-      cursor:pointer;
-    }
-    .vdcAiBtn.primary{
-      background:var(--brand);
-      color:#fff;
-      border-color:var(--brand);
-    }
-    .vdcAiSmall{
-      margin-top:8px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.25;
-    }
-    
   </style>
 </head>
 
@@ -479,7 +388,7 @@
       </section>
     </div>
 
-    <!-- ✅ BANDEJA -->
+    <!-- ✅ BANDEJA (COMPACTA + BUSCADOR + ACCIONES DROPDOWN + SCROLL INTERNO) -->
     <section class="card">
       <h2>📥 Notas abiertas hoy (todas)</h2>
 
@@ -554,61 +463,13 @@
   <div id="printArea" style="display:none"></div>
   <datalist id="catProductos"></datalist>
 
-  <!-- ✅ VDC IA (NUEVO) -->
-  <button class="vdcAiFab" id="vdcAiFab" type="button">IA</button>
-  <div class="vdcAiPanel" id="vdcAiPanel">
-    <div class="vdcAiHeader">
-      🤖 VDC IA
-      <span class="tag" id="vdcAiTag">Slot A</span>
-    </div>
-    <div class="vdcAiBody">
-      <div class="vdcAiChat" id="vdcAiChat"></div>
-
-      <div class="vdcAiInput">
-        <input id="vdcAiText" placeholder='Ej: "abre nota de Taquería Lupita" o "agrega 12.5 kg de tripa"' />
-      </div>
-
-      <div class="vdcAiBtns">
-        <button class="vdcAiBtn primary" id="vdcAiSend" type="button">Enviar</button>
-        <button class="vdcAiBtn" id="vdcAiMic" type="button">🎙️ Voz</button>
-      </div>
-
-      <div class="vdcAiBtns">
-        <button class="vdcAiBtn" id="vdcAiClose" type="button">Cerrar</button>
-        <button class="vdcAiBtn" id="vdcAiClear" type="button">Limpiar</button>
-      </div>
-      
-      <div class="vdcAiBtns">
-  <button class="vdcAiBtn" id="wakeStartBtn" type="button">🎙️ Activar “VDC”</button>
-  <button class="vdcAiBtn" id="wakeStopBtn" type="button" disabled>🛑 Parar escucha</button>
-</div>
-<div id="wakeStatus" class="vdcAiSmall">Estado: apagado</div>
-
-
-      <div class="vdcAiSmall">
-        Tips: <br/>
-        • “Busca cliente Menudería Zaragoza”<br/>
-        • “Continúa nota de Taquería Lupita”<br/>
-        • “Agrega 8 kg de menudo”<br/>
-        • “Cierra la nota”
-      </div>
-    </div>
-  </div>
-
   <!-- ✅ UNA sola carga UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
-    const VDC_API_BASE = "https://doughtier-fanged-latasha.ngrok-free.dev";
-
     /* ========================= CONFIG ========================= */
     const SUPABASE_URL = "https://bjebybdqcqscouxlinfd.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWJ5YmRxY3FzY291eGxpbmZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMjQ3MTksImV4cCI6MjA3MTkwMDcxOX0.mQgWtiYEyJTiF04pdcLv63SqPNrU1Iehws0vKqr82O0";
-
-    // ✅ URL de tu server (donde está el código Node/Express)
-    // - Si lo corres en tu compu: http://localhost:8787
-    // - Si lo publicas en algún hosting: cambia esto
-   const API_BASE = "https://doughtier-fanged-latasha.ngrok-free.dev";
 
     // ✅ Cliente Supabase “blindado”
     const sb = window.__sb || (window.__sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
@@ -622,7 +483,7 @@
       Requiere tabla: bascula_live(id PK text, peso numeric, updated_at timestamptz)
       Windows (python) hace UPSERT a id='torrey_1'
     =============================================================================================== */
-    const BASCULA_ID = "torrey_1";
+    const BASCULA_ID = "torrey_1";     // ✅ tu única báscula
     const BASCULA_TABLE = "bascula_live";
 
     const btnPeso = document.getElementById("btnPeso");
@@ -647,10 +508,13 @@
     function setKgValue(kg){
       const el = document.getElementById("pKg");
       if(!el) return;
+
       const next = Number(kg || 0);
       if(!isFinite(next)) return;
+
       const current = Number(el.value || 0);
       if (Math.abs(current - next) < 0.001) return;
+
       el.value = next.toFixed(2);
       el.dispatchEvent(new Event("input", { bubbles:true }));
       el.dispatchEvent(new Event("change", { bubbles:true }));
@@ -677,6 +541,7 @@
         .select("peso, updated_at")
         .eq("id", BASCULA_ID)
         .maybeSingle();
+
       if(error) throw error;
       const peso = data?.peso;
       return { peso: (peso==null ? null : Math.abs(Number(peso))), updated_at: data?.updated_at || null };
@@ -686,6 +551,7 @@
       if(!btnPeso) return;
       btnPeso.disabled = true;
       setPesoStatus("Báscula: leyendo…", true);
+
       try{
         const { peso } = await readPesoFromSupabase();
         if(peso == null){
@@ -746,6 +612,7 @@
         return;
       }
 
+      // ✅ Realtime Supabase
       basculaChannel = sb
         .channel(`bascula-${BASCULA_ID}`)
         .on(
@@ -896,7 +763,7 @@
     const vistaTotal = $('#vistaTotal');
 
     const bandejaFecha = $('#bandejaFecha');
-    const bandejaBuscar = $('#bandejaBuscar');
+    const bandejaBuscar = $('#bandejaBuscar');   // ✅ NUEVO buscador
     const bandejaBody = $('#bandejaBody');
 
     const diaFecha = $('#diaFecha');
@@ -976,7 +843,8 @@
       const c = getClient(slotState[slotActive].cliente_id);
       cliTelefono.value = c ? (c.telefono || '') : '';
       slotState[slotActive].telefono = cliTelefono.value || null;
-      updateCaptureMode();
+
+      updateCaptureMode(); // ✅ activar modo PG si aplica
     });
 
     cliTelefono.addEventListener('blur', async ()=>{ await saveClientPhone(); });
@@ -984,11 +852,13 @@
     slotABtn.onclick = ()=> setActiveSlot('A');
     slotBBtn.onclick = ()=> setActiveSlot('B');
 
-    // ✅ Enter inteligente
+    // ✅ Enter inteligente: modo normal vs modo Pieles y Grasas
     document.addEventListener('keydown', (e)=>{
       if(e.key !== 'Enter') return;
+
       const id = document.activeElement?.id || '';
 
+      // Modo Pieles y Grasas
       if(isPielesYGrasasSelected()){
         if(['seboKg','seboPzas'].includes(id)){
           e.preventDefault();
@@ -1003,6 +873,7 @@
         return;
       }
 
+      // Modo normal
       if(['pProducto','pKg','pPzas','pPrecio'].includes(id)){
         e.preventDefault();
         addPartida();
@@ -1021,8 +892,6 @@
       }
 
       updateCaptureMode();
-      initVdcAi(); // ✅ NUEVO
-      
     });
 
     /* ========================= HELPERS ========================= */
@@ -1039,7 +908,6 @@
       renderVista();
       refreshNotaInfo();
       updateCaptureMode();
-      vdcAiUpdateTag();
     }
 
     function setSlotNota(s, nota){
@@ -1056,7 +924,6 @@
       }
       refreshNotaInfo();
       updateCaptureMode();
-      vdcAiUpdateTag();
     }
 
     function refreshNotaInfo(){
@@ -1085,8 +952,10 @@
 
     function updateCaptureMode(){
       const pg = isPielesYGrasasSelected();
+
       capPG.style.display = pg ? 'block' : 'none';
       capNormal.style.display = pg ? 'none' : 'block';
+
       if(pg){
         setTimeout(()=>{ seboKg?.focus(); seboKg?.select(); }, 0);
       }else{
@@ -1151,10 +1020,13 @@
 
     function autoKgFromCaja(){
       if(capNormal.style.display === 'none') return;
+
       const prod = (pProducto.value||'').trim();
       if(!isCajaMenudoTarget(prod)) return;
+
       const pz = Number(pPzas.value || 0);
       if(!pz || pz <= 0) return;
+
       const kg = pz * CAJA_KG;
       pKg.value = to2(kg);
     }
@@ -1163,6 +1035,7 @@
     async function saveClientPhone(){
       const cid = slotState[slotActive].cliente_id || activeNota()?.cliente_id;
       if(!cid) return;
+
       const val = (cliTelefono.value||'').trim() || null;
       try{
         await sb.from('clientes').update({ telefono: val }).eq('id', cid);
@@ -1187,10 +1060,11 @@
       }
     }
 
-    /* ========================= CREAR/CONTINUAR NOTA (manual) ========================= */
+    /* ========================= CREAR/CONTINUAR NOTA ========================= */
     async function continuarNota(){
       const cliente_id = slotState[slotActive].cliente_id || cliSelect.value;
       if(!cliente_id) return alert('Selecciona cliente');
+
       const fecha = notaFecha.value || todayISO();
 
       let { data: nota } = await sb
@@ -1212,7 +1086,6 @@
           cliente_id,
           total: 0,
           saldo: 0,
-          estado: 'abierta',
           observaciones: (notaObs.value || null)
         };
 
@@ -1227,6 +1100,7 @@
       setSlotNota(slotActive, nota);
       notaFolio.value = nota.folio;
       notaObs.value = nota.observaciones || '';
+
       updateCaptureMode();
     }
 
@@ -1343,6 +1217,7 @@
 
     async function recalcNota(nota_id){
       let total = 0;
+
       try{
         const { data } = await sb.rpc('sum_importe_nota', { p_nota_id: nota_id });
         total = Number(data?.total || 0);
@@ -1544,7 +1419,7 @@
       if(slot==='A') chA=ch; else chB=ch;
     }
 
-    /* ========================= BANDEJA ========================= */
+    /* ========================= BANDEJA (COMPACTA) ========================= */
     function cerrarTodosLosMenus(){
       document.querySelectorAll('details.actionMenu[open]').forEach(d=> d.open = false);
     }
@@ -1567,6 +1442,8 @@
       }
 
       let rows = data || [];
+
+      // ✅ filtro local por folio o cliente
       if(q){
         rows = rows.filter(r=>{
           const fol = (r.folio||'').toLowerCase();
@@ -1597,6 +1474,7 @@
         </tr>
       `).join('');
 
+      // handlers
       bandejaBody.querySelectorAll('[data-usea]').forEach(b=> b.onclick = ()=>{
         cerrarTodosLosMenus();
         cargarEnSlot('A', b.dataset.usea, b.dataset.cid);
@@ -2062,368 +1940,13 @@
     async function cerrarNota(){
       const n = activeNota();
       if(!n) return alert('Sin nota');
+
       await sb.from('notas_credito').update({estado:'cerrada'}).eq('id', n.id);
       await renderVista();
       await loadBandeja();
       alert('✅ Nota cerrada');
     }
-
-    /* =========================================================
-       ✅ VDC IA (NUEVO) — Conecta a tu server Express
-       - /api/command (texto)
-       - /api/voice   (audio)
-    ========================================================= */
-    const vdcAiFab = document.getElementById('vdcAiFab');
-    const vdcAiPanel = document.getElementById('vdcAiPanel');
-    const vdcAiTag = document.getElementById('vdcAiTag');
-    const vdcAiChat = document.getElementById('vdcAiChat');
-    const vdcAiText = document.getElementById('vdcAiText');
-    const vdcAiSend = document.getElementById('vdcAiSend');
-    const vdcAiMic = document.getElementById('vdcAiMic');
-    const vdcAiClose = document.getElementById('vdcAiClose');
-    const vdcAiClear = document.getElementById('vdcAiClear');
-
-    let vdcRec = null;
-    let vdcChunks = [];
-    let vdcRecording = false;
-
-    function vdcAiUpdateTag(){
-      if(!vdcAiTag) return;
-      const n = activeNota();
-      const folio = n?.folio ? ` · ${n.folio}` : '';
-      vdcAiTag.textContent = `Slot ${slotActive}${folio}`;
-    }
-
-    function vdcAiAddMsg(who, text){
-      const d = document.createElement('div');
-      d.className = 'vdcMsg';
-      d.innerHTML = `<b>${who}:</b> ${String(text || '').replaceAll('<','&lt;')}`;
-      vdcAiChat.appendChild(d);
-      vdcAiChat.scrollTop = vdcAiChat.scrollHeight;
-    }
-
-    function buildVdcContext(){
-      return {
-        page: "notas_credito",
-        store: STORE_NAME,
-        slotActive,
-        fecha: (notaFecha?.value || todayISO()),
-        slots: {
-          A: { nota_id: notaA?.id || null, cliente_id: notaA?.cliente_id || slotState.A.cliente_id || null },
-          B: { nota_id: notaB?.id || null, cliente_id: notaB?.cliente_id || slotState.B.cliente_id || null }
-        },
-        active: {
-          nota_id: activeNota()?.id || null,
-          cliente_id: activeNota()?.cliente_id || slotState[slotActive].cliente_id || null
-        }
-      };
-    }
-
-    // Interpreta el log del server para actualizar UI
-    async function applyAssistantLog(log){
-      if(!Array.isArray(log)) return;
-
-      for(const entry of log){
-        const tool = entry?.tool;
-        const out = entry?.out;
-
-        // Si creó/recuperó nota
-        if(tool === "continuar_nota" && out?.nota){
-          setSlotNota(slotActive, out.nota);
-        }
-      }
-
-      // refresco general
-      await renderVista();
-      await loadBandeja();
-    }
-
-    async function sendAssistantText(text){
-      vdcAiAddMsg("Tú", text);
-
-      const payload = {
-        text,
-        context: buildVdcContext()
-      };
-
-      const res = await fetch(`${VDC_API_BASE}/api/command`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify(payload)
-});
-
-
-      const j = await res.json().catch(()=> ({}));
-      if(!res.ok){
-        vdcAiAddMsg("VDC IA", j?.error || "Error llamando /api/command");
-        return;
-      }
-
-      vdcAiAddMsg("VDC IA", j.final || "—");
-      await applyAssistantLog(j.log);
-    }
-
- async function sendAssistantVoice(blob){
-  vdcAiAddMsg("Sistema", "Procesando voz...");
-
-  const fd = new FormData();
-  fd.append("audio", blob, "audio.webm");
-  fd.append("context", JSON.stringify(buildVdcContext()));
-
-  // 👇 IMPORTANTE: VOZ pega a /api/voice y NO mandes headers JSON
-  const res = await fetch(`${VDC_API_BASE}/api/voice`, {
-    method: "POST",
-    body: fd
-  });
-
-  let data = null;
-  try { data = await res.json(); } catch { data = {}; }
-
-  if (!res.ok || !data?.ok){
-    console.error("VOICE FAIL", res.status, data);
-    vdcAiAddMsg("VDC IA", `Error llamando /api/voice (${res.status})`);
-    return;
-  }
-
-  // opcional: mostrar lo que entendió
-  if (data.text) vdcAiAddMsg("Tú", data.text);
-
-  // respuesta final
-  vdcAiAddMsg("VDC IA", data.final || "Listo.");
-
-  // si tu backend empieza a devolver contexto actualizado, guárdalo aquí
-  if (data.context) {
-    try { localStorage.setItem("vdc_ctx", JSON.stringify(data.context)); } catch {}
-  }
-}
-
-
-    async function startVdcRec(){
-      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-      vdcChunks = [];
-      vdcRec = new MediaRecorder(stream, { mimeType:"audio/webm" });
-
-      vdcRec.ondataavailable = e => { if(e.data?.size) vdcChunks.push(e.data); };
-      vdcRec.onstop = async ()=>{
-        stream.getTracks().forEach(t=>t.stop());
-        const blob = new Blob(vdcChunks, { type:"audio/webm" });
-        await sendAssistantVoice(blob);
-      };
-
-      vdcRec.start();
-    }
-
-    function initVdcAi(){
-      vdcAiUpdateTag();
-
-      vdcAiFab?.addEventListener('click', ()=>{
-        vdcAiPanel.style.display = (vdcAiPanel.style.display === "block") ? "none" : "block";
-        vdcAiUpdateTag();
-        if(vdcAiPanel.style.display === "block"){
-          setTimeout(()=> vdcAiText?.focus(), 50);
-        }
-      });
-
-      vdcAiClose?.addEventListener('click', ()=> vdcAiPanel.style.display = "none");
-      vdcAiClear?.addEventListener('click', ()=> vdcAiChat.innerHTML = "");
-
-      vdcAiSend?.addEventListener('click', async ()=>{
-        const t = (vdcAiText.value || '').trim();
-        if(!t) return;
-        vdcAiText.value = "";
-        await sendAssistantText(t);
-      });
-
-      vdcAiText?.addEventListener('keydown', async (e)=>{
-        if(e.key === "Enter"){
-          e.preventDefault();
-          vdcAiSend.click();
-        }
-      });
-
-      vdcAiMic?.addEventListener('click', async ()=>{
-        try{
-          if(!vdcRecording){
-            vdcRecording = true;
-            vdcAiMic.textContent = "⏹️ Stop";
-            await startVdcRec();
-          }else{
-            vdcRecording = false;
-            vdcAiMic.textContent = "🎙️ Voz";
-            vdcRec?.stop();
-          }
-        }catch(err){
-          console.error(err);
-          vdcRecording = false;
-          vdcAiMic.textContent = "🎙️ Voz";
-          vdcAiAddMsg("Sistema", "No pude acceder al micrófono. Revisa permisos.");
-        }
-      });
-
-      vdcAiAddMsg("VDC IA", "Listo. Dime qué hacemos en Notas a Crédito 💪");
-    }
-    /* =========================
-   WAKE WORD + AUTO RECORD (VDC IA)
-========================= */
-
-const wakeStartBtn = document.getElementById("wakeStartBtn");
-const wakeStopBtn  = document.getElementById("wakeStopBtn");
-const wakeStatus   = document.getElementById("wakeStatus");
-
-const WAKE_WORDS = ["vdc", "oye vdc", "ok vdc", "luz"];
-const STOP_WORDS = ["listo", "termina", "corta", "ya"];
-
-let rec = null;
-let isWakeOn = false;
-let isRecording = false;
-let mediaRecorder = null;
-let audioChunks = [];
-let micStream = null;
-
-let lastWakeTs = 0;
-const WAKE_COOLDOWN_MS = 2000;
-
-function setWakeStatus(txt){
-  if(wakeStatus) wakeStatus.textContent = `Estado: ${txt}`;
-}
-
-function normTxt(s){
-  return (s||"").toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function includesAny(text, arr){
-  const t = normTxt(text);
-  return arr.some(w => t.includes(normTxt(w)));
-}
-
-async function startAudioRecordingWake(){
-  if (isRecording) return;
-  isRecording = true;
-  audioChunks = [];
-  setWakeStatus("🎧 Grabando… di “listo”");
-
-  micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-  const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-    ? "audio/webm;codecs=opus"
-    : "audio/webm";
-
-  mediaRecorder = new MediaRecorder(micStream, { mimeType });
-
-  mediaRecorder.ondataavailable = e => {
-    if (e.data && e.data.size > 0) audioChunks.push(e.data);
-  };
-
-  mediaRecorder.onstop = async () => {
-    try {
-      const blob = new Blob(audioChunks, { type: mimeType });
-      audioChunks = [];
-      await sendAssistantVoice(blob); // 🔥 conecta con VDC IA
-    } finally {
-      micStream?.getTracks()?.forEach(t => t.stop());
-      micStream = null;
-      mediaRecorder = null;
-      isRecording = false;
-      setWakeStatus(isWakeOn ? "🟢 escuchando… di “VDC”" : "apagado");
-    }
-  };
-
-  mediaRecorder.start();
-}
-
-function stopAudioRecordingWake(){
-  if (!isRecording || !mediaRecorder) return;
-  setWakeStatus("📤 Enviando…");
-  mediaRecorder.stop();
-}
-
-function createRecognizer(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    setWakeStatus("⚠️ Wake Word no soportado (Chrome recomendado)");
-    return null;
-  }
-
-  const r = new SR();
-  r.lang = "es-MX";
-  r.interimResults = true;
-  r.continuous = true;
-
-  r.onresult = (event) => {
-    let text = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      text += " " + (event.results[i][0]?.transcript || "");
-    }
-    text = text.trim();
-    if (!text) return;
-
-    // 🎯 DESPIERTA
-    if (!isRecording) {
-      const now = Date.now();
-      if (now - lastWakeTs > WAKE_COOLDOWN_MS && includesAny(text, WAKE_WORDS)) {
-        lastWakeTs = now;
-        startAudioRecordingWake().catch(() => {
-          setWakeStatus("⚠️ Error micrófono");
-          isRecording = false;
-        });
-      }
-      return;
-    }
-
-    // 🛑 TERMINA
-    if (isRecording && includesAny(text, STOP_WORDS)) {
-      stopAudioRecordingWake();
-    }
-  };
-
-  r.onend = () => {
-    if (isWakeOn) {
-      try { r.start(); } catch {}
-    }
-  };
-
-  return r;
-}
-
-function startWakeListening(){
-  if (isWakeOn) return;
-  rec = rec || createRecognizer();
-  if (!rec) return;
-
-  isWakeOn = true;
-  wakeStartBtn && (wakeStartBtn.disabled = true);
-  wakeStopBtn && (wakeStopBtn.disabled = false);
-  setWakeStatus("🟢 escuchando… di “VDC”");
-  try { rec.start(); } catch {}
-}
-
-function stopWakeListening(){
-  isWakeOn = false;
-  wakeStartBtn && (wakeStartBtn.disabled = false);
-  wakeStopBtn && (wakeStopBtn.disabled = true);
-  try { rec?.stop(); } catch {}
-  if (isRecording) stopAudioRecordingWake();
-  setWakeStatus("apagado");
-}
-
-wakeStartBtn?.addEventListener("click", startWakeListening);
-wakeStopBtn?.addEventListener("click", stopWakeListening);
-
-/* =========================
-   🚀 AUTO-START (CLAVE)
-========================= */
-window.addEventListener("load", () => {
-  setTimeout(() => {
-    startWakeListening(); // 🔥 VDC siempre atento
-  }, 800);
-});
-
   </script>
 </body>
 </html>
+```
