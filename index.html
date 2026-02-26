@@ -124,7 +124,7 @@
     }
 
     /* =========================
-       ✅ NUEVO: Combo sencillo clientes
+       ✅ Combo sencillo clientes
        ========================= */
     .comboWrap{position:relative}
     .comboInputRow{display:flex;gap:8px;align-items:stretch}
@@ -308,16 +308,16 @@
       <div>
         <label>Nombre</label>
 
-        <!-- ✅ CAMBIO ÚNICO: combo/selector sencillo (sigue permitiendo escribir) -->
+        <!-- ✅ Combo sencillo: tocar input => lista completa, escribir => filtra -->
         <div class="comboWrap" id="comboWrap">
           <div class="comboInputRow">
-            <input id="nombre" placeholder="Busca o escribe (Ej. Taquería Don Chuy)" autocomplete="off" />
+            <input id="nombre" placeholder="Toca para ver todos, o escribe para buscar..." autocomplete="off" />
             <button id="btnOpenCombo" class="comboBtn" type="button" aria-label="Abrir lista">▾</button>
           </div>
           <div id="comboList" class="comboList" role="listbox" aria-label="Lista de clientes"></div>
         </div>
 
-        <div class="muted">Tip: escribe para filtrar, o abre la lista y toca el cliente.</div>
+        <div class="muted">Tip: toca el nombre para ver todos; escribe para filtrar.</div>
       </div>
       <div>
         <label>Teléfono</label>
@@ -542,7 +542,7 @@
 
   const out = $("out"); // admin only
 
-  // ✅ NUEVO: refs combo clientes
+  // ✅ refs combo clientes
   const comboWrap = $("comboWrap");
   const comboList = $("comboList");
   const btnOpenCombo = $("btnOpenCombo");
@@ -1196,12 +1196,14 @@
   switchBtn.addEventListener('click', switchCamera);
 
   // =========================
-  // ✅ NUEVO: Combo clientes (lista bonita + filtro)
+  // ✅ COMBO CLIENTES (lo que pediste)
+  // - tocar/focus: abre lista COMPLETA aunque ya haya un cliente seleccionado
+  // - escribir: filtra sin tener que borrar todo
   // =========================
-  function openCombo(){
+  function openCombo(showAll=false){
     if(!comboList) return;
     comboList.classList.add("open");
-    renderComboList($("nombre").value || "");
+    renderComboList(showAll ? "" : ($("nombre").value || ""));
   }
   function closeCombo(){
     if(!comboList) return;
@@ -1220,7 +1222,7 @@
         const ph = String(c.telefono||"");
         return nm.includes(f) || ph.includes(f);
       })
-      .slice(0, 200); // ✅ rápido, no infinito
+      .slice(0, 250);
 
     if(!filtered.length){
       list.innerHTML = `<div class="comboEmpty">Sin resultados. Puedes crear este cliente con <b>Crear / Actualizar</b>.</div>`;
@@ -1254,53 +1256,21 @@
     });
   }
 
-  // Botón abrir/cerrar
+  // ✅ botón flechita: abre TODO
   if(btnOpenCombo){
     btnOpenCombo.addEventListener("click", ()=>{
       if(comboList.classList.contains("open")) closeCombo();
-      else openCombo();
+      else openCombo(true);
     });
   }
 
-  // Cierra combo al tocar fuera
-  document.addEventListener("click", (e)=>{
-    if(!comboWrap) return;
-    if(comboList?.classList.contains("open")){
-      if(!comboWrap.contains(e.target)) closeCombo();
-    }
-  });
+  // ✅ tocar/click/focus en el input: abre TODO (aunque ya haya texto)
+  $("nombre").addEventListener("click", ()=> openCombo(true));
+  $("nombre").addEventListener("focus", ()=> openCombo(true));
 
-  // =========================
-  // Clientes: CRUD + cargar por ?cid=
-  // =========================
-  async function loadNameDatalist(){
-    // (se mantiene el nombre de función para no tocar más cosas)
-    const { data, error } = await sb
-      .from(T_CLIENTES)
-      .select("id,telefono,nombre,puntos,saldo_kg")
-      .order("nombre", { ascending: true })
-      .limit(5000);
-
-    if(error){ console.error(error); return; }
-
-    clientsCache = (data || []).filter(c => (c.nombre || "").trim().length > 0);
-
-    // ✅ Rellena el combo bonito
-    renderComboList($("nombre").value || "");
-  }
-
-  function findClientByName(name){
-    const n = normalizeLine(name).toLowerCase();
-    return clientsCache.find(c => normalizeLine(c.nombre || "").toLowerCase() === n) || null;
-  }
-
-  // ✅ Al escribir: filtra combo y si coincide exacto, carga
+  // ✅ al escribir: filtra sin obligar borrar todo
   $("nombre").addEventListener("input", async ()=>{
-    renderComboList($("nombre").value || "");
-
-    // abre lista mientras escribe (más fácil)
-    if(($("nombre").value || "").length >= 0) openCombo();
-
+    openCombo(false); // mantiene abierto y filtra
     const c = findClientByName($("nombre").value);
     if(c){
       $("tel").value = c.telefono || "";
@@ -1312,11 +1282,36 @@
     }
   });
 
-  // ✅ al enfocar, abre el combo para seleccionar rápido
-  $("nombre").addEventListener("focus", ()=>{
-    openCombo();
-    renderComboList($("nombre").value || "");
+  // ✅ cerrar al tocar fuera
+  document.addEventListener("click", (e)=>{
+    if(!comboWrap) return;
+    if(comboList?.classList.contains("open") && !comboWrap.contains(e.target)){
+      closeCombo();
+    }
   });
+
+  // =========================
+  // Clientes: CRUD + cargar por ?cid=
+  // =========================
+  async function loadNameDatalist(){
+    const { data, error } = await sb
+      .from(T_CLIENTES)
+      .select("id,telefono,nombre,puntos,saldo_kg")
+      .order("nombre", { ascending: true })
+      .limit(5000);
+
+    if(error){ console.error(error); return; }
+
+    clientsCache = (data || []).filter(c => (c.nombre || "").trim().length > 0);
+
+    // refresca lista (si está abierto, muestra todo)
+    if(comboList?.classList.contains("open")) renderComboList("");
+  }
+
+  function findClientByName(name){
+    const n = normalizeLine(name).toLowerCase();
+    return clientsCache.find(c => normalizeLine(c.nombre || "").toLowerCase() === n) || null;
+  }
 
   async function buscarClientePorNombreOTel(){
     const nombre = normalizeLine($("nombre").value);
@@ -1454,7 +1449,7 @@
     applyRoleUI();
     renderStatus();
     renderDetalleEditable();
-    await loadNameDatalist();   // ✅ ahora carga el combo bonito
+    await loadNameDatalist();
     await cargarClientePorQuery();
     await refreshCameras();
 
