@@ -1,1392 +1,687 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>VDC360° — Clientes</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VDC360° — Notas a Crédito</title>
 
   <style>
-    :root{
-      /* ✅ UI familiar / cálida */
-      --bg:#f3f4f6;
-      --card:#ffffff;
-      --card2:#f9fafb;
-      --line:#e5e7eb;
-
-      --ink:#0f172a;
-      --muted:#64748b;
-
-      --brand:#16a34a;   /* verde VDC */
-      --brand2:#22c55e;
-      --warn:#f59e0b;
-      --bad:#ef4444;
-
-      --shadow:0 16px 44px rgba(2,6,23,.10);
-      --r:22px;
-    }
-
+    :root{--ink:#111;--brand:#0a7a3b;--muted:#6b7280;--bg:#f6f7f8;--card:#fff}
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      color:var(--ink);
-      background:
-        radial-gradient(1200px 520px at 10% -10%, rgba(34,197,94,.16), transparent 60%),
-        radial-gradient(1200px 520px at 90% 10%, rgba(245,158,11,.12), transparent 60%),
-        var(--bg);
+    body{margin:0;background:var(--bg);color:var(--ink);font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto}
+    header{background:var(--brand);color:#fff;padding:14px 18px}
+    header h1{margin:0;font-size:18px}
+    main{max-width:1240px;margin:0 auto;padding:16px;display:grid;gap:16px}
+    .card{background:var(--card);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:16px}
+    h2{margin:0 0 10px 0;font-size:18px}
+    label{display:block;margin-top:8px;font-size:14px;color:#111}
+    input,select,button,textarea{width:100%;padding:10px;margin-top:6px;font-size:14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:8px;border-bottom:1px solid #eef0f2;text-align:left;font-size:14px}
+    th{background:#fafafa}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+    .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .right{margin-left:auto}
+    .btn{cursor:pointer}
+    .btn-primary{background:var(--brand);color:#fff;border:none}
+    .btn-ghost{background:#fff;border:1px solid #e5e7eb;color:#111}
+    .btn-muted{background:#111;color:#fff;border:none}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef7f0;color:#0a7a3b;font-size:12px}
+    .muted{color:var(--muted);font-size:13px}
+    .danger{color:#b91c1c}
+    .slotbar{display:flex;gap:8px;align-items:center;margin-top:8px}
+    .slotbtn{border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer}
+    .slotbtn.active{background:#0a7a3b;color:#fff;border-color:#0a7a3b}
+    .btn-sm{padding:4px 8px;font-size:12px}
+    .cell-editing input{width:100%;padding:6px;font-size:14px}
+
+    /* ====== IMPRESIÓN GENERAL (nota individual / ticket80 usando #printArea) ====== */
+    @media print{
+      body *{visibility:hidden}
+      #printArea, #printArea *{visibility:visible}
+      #printArea{position:fixed; left:0; top:0}
+      @page{ size: A4 landscape; margin: 10mm; }
+
+      #printArea:not(.ticket80){
+        width:297mm;
+        padding:8mm 10mm;
+      }
+      #printArea:not(.ticket80) h3{ margin:0 0 4mm 0; font-size:14px; }
+      #printArea:not(.ticket80) table{ width:100%; border-collapse:collapse; }
+      #printArea:not(.ticket80) th,
+      #printArea:not(.ticket80) td{ border:1px solid #aaa; padding:3px 4px; font-size:11px; }
+
+      /* Ticket 80mm */
+      #printArea.ticket80{width:80mm; padding:2mm}
+      #printArea.ticket80 .tk-header{ text-align:center; font-size:12px; line-height:1.2; margin-bottom:6px }
+      #printArea.ticket80 .tk-header .store{ font-weight:700; font-size:14px }
+      #printArea.ticket80 .tk-meta{ font-size:11px; margin-bottom:6px }
+      #printArea.ticket80 .tk-line{ border-top:1px dashed #000; margin:6px 0 }
+      #printArea.ticket80 .tk-items{ width:100%; font-size:11px; border-collapse:collapse }
+      #printArea.ticket80 .tk-items th,
+      #printArea.ticket80 .tk-items td{ padding:2px 0; }
+      #printArea.ticket80 .right{ float:right }
+      #printArea.ticket80 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace }
+      #printArea.ticket80 .totals{ font-size:12px; font-weight:700; margin-top:4px }
+      #printArea.ticket80 .obs-title{ font-weight:700; font-size:11px; margin-top:6px }
+      #printArea.ticket80 .obs{ white-space:pre-wrap; font-size:11px; }
+      #printArea.ticket80 .thanks{ text-align:center; margin-top:8px; font-size:11px }
     }
 
-    /* ===== Topbar ===== */
-    header{
-      position:sticky; top:0; z-index:5;
-      background:linear-gradient(90deg, rgba(22,163,74,.96), rgba(34,197,94,.96));
-      color:#fff;
-      border-bottom:1px solid rgba(255,255,255,.18);
-      padding:12px 14px;
+    /* ===========================
+       ✅ BANDEJA COMPACTA (SIN SCROLL INFINITO)
+       - contenedor con scroll interno
+       - header sticky
+       - buscador
+       - menú de acciones dropdown
+    =========================== */
+    .bandejaWrap{
+      max-height: 55vh;
+      overflow:auto;
+      border:1px solid #eef0f2;
+      border-radius:12px;
+      margin-top:12px;
     }
-    .head{
-      max-width:1040px;margin:0 auto;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
+    .bandejaWrap table{ margin-top:0; }
+    .bandejaWrap thead th{
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background:#fafafa;
     }
-    .brand{
-      display:flex;flex-direction:column;gap:2px;
-      line-height:1.1;
-    }
-    .brand b{font-weight:1100;font-size:16px;letter-spacing:.2px}
-    .brand span{font-size:12px;opacity:.88}
-    .chip{
-      background:rgba(255,255,255,.16);
-      border:1px solid rgba(255,255,255,.22);
-      padding:6px 10px;border-radius:999px;
-      font-weight:900;font-size:12px;
-      white-space:nowrap;
-    }
-    .topActions{display:flex;gap:8px;align-items:center}
-    .topActions button{
-      background:rgba(255,255,255,.14);
-      border:1px solid rgba(255,255,255,.22);
-      color:#fff;
-      box-shadow:none;
-      padding:10px 12px;
-      border-radius:14px;
-      font-weight:1000;
-      cursor:pointer;
-    }
-
-    /* ===== Layout ===== */
-    .wrap{max-width:1040px;margin:0 auto;padding:14px;display:grid;gap:12px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media(max-width:860px){ .grid2{grid-template-columns:1fr} }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--r);
-      box-shadow:var(--shadow);
-      padding:14px;
-    }
-
-    /* ===== Section header ===== */
-    .secHead{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      margin-bottom:10px;
-    }
-    .secTitle{
-      display:flex;align-items:center;gap:10px;
-      font-weight:1100;
-    }
-    .step{
-      width:32px;height:32px;border-radius:12px;
-      display:grid;place-items:center;
-      background:rgba(34,197,94,.14);
-      border:1px solid rgba(34,197,94,.25);
-      color:#065f2c;
-      font-weight:1100;
-    }
-    .secTitle span{font-size:15px}
-    .hint{color:var(--muted);font-size:12px;margin-top:2px}
-
-    /* ===== Inputs ===== */
-    label{display:block;font-weight:1000;margin-top:10px;font-size:13px;color:#1f2937}
-    input,select,textarea,button{
-      width:100%;
-      font-size:16px;
-      border-radius:16px;
-      border:1px solid var(--line);
-      padding:12px 14px;
-      background:var(--card2);
-      outline:none;
-    }
-    textarea{min-height:110px;resize:vertical}
-    input:focus,select:focus,textarea:focus{
-      border-color:rgba(34,197,94,.55);
-      box-shadow:0 0 0 4px rgba(34,197,94,.14);
-      background:#fff;
-    }
-
-    /* ===== Buttons ===== */
-    .btnRow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    .btnRow > *{flex:1}
-    button{
-      border:0;
-      background:var(--brand);
-      color:#052e16;
-      font-weight:1100;
-      cursor:pointer;
-      box-shadow:0 12px 26px rgba(22,163,74,.18);
-    }
-    button.secondary{background:#0f172a;color:#fff;box-shadow:none}
-    button.ghost{
-      background:transparent;color:var(--ink);
-      border:1px solid var(--line);
-      box-shadow:none;
-    }
-    button.warn{background:var(--warn);color:#1f1300;box-shadow:none}
-    button:disabled{opacity:.55;cursor:not-allowed}
-
-    /* ===== Compact status pills ===== */
-    .pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-    .pill{
-      padding:6px 10px;border-radius:999px;
-      border:1px solid var(--line);
-      background:var(--card2);
-      font-weight:1000;
-      font-size:12px;
-      color:var(--ink);
-      white-space:nowrap;
-    }
-
-    /* ===== Friendly message bar ===== */
-    .bar{
-      margin-top:10px;
-      border-radius:18px;
-      border:1px solid var(--line);
-      background:#fff;
-      padding:12px 14px;
+    .bandejaTools{
       display:flex;
       gap:10px;
-      align-items:flex-start;
+      align-items:flex-end;
+      flex-wrap:wrap;
     }
-    .bar .ico{
-      width:28px;height:28px;border-radius:12px;
-      display:grid;place-items:center;
-      background:rgba(34,197,94,.14);
-      border:1px solid rgba(34,197,94,.25);
-      flex:0 0 auto;
-    }
-    .bar .txt{font-weight:1000}
-    .bar .sub{font-size:12px;color:var(--muted);margin-top:2px;white-space:pre-wrap}
-    .bar.ok .ico{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.28)}
-    .bar.warn .ico{background:rgba(245,158,11,.16);border-color:rgba(245,158,11,.28)}
-    .bar.bad .ico{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.22)}
+    .bandejaTools input, .bandejaTools select, .bandejaTools button{ margin-top:0; }
 
-    /* ===== Combo clientes (tipo WhatsApp) ===== */
-    .comboWrap{position:relative}
-    .comboInputRow{display:flex;gap:8px;align-items:stretch}
-    .comboInputRow input{flex:1;background:#fff}
-    .comboBtn{
-      width:auto;min-width:52px;
-      border-radius:16px;border:1px solid var(--line);
-      background:var(--card2);
-      font-weight:1100;
-      box-shadow:none;
-      padding:0 12px;
-    }
-    .comboList{
-      position:absolute;left:0;right:0;top:calc(100% + 8px);
+    details.actionMenu{ position:relative; display:inline-block; }
+    details.actionMenu summary{
+      list-style:none;
+      cursor:pointer;
+      user-select:none;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid #e5e7eb;
       background:#fff;
-      border:1px solid var(--line);
-      border-radius:18px;
-      box-shadow:0 24px 70px rgba(2,6,23,.14);
-      overflow:auto;
-      max-height:360px;
-      display:none;
+      font-weight:800;
+    }
+    details.actionMenu[open] summary{
+      background:#0a7a3b;
+      color:#fff;
+      border-color:#0a7a3b;
+    }
+    details.actionMenu summary::-webkit-details-marker{ display:none; }
+
+    .menuPanel{
+      position:absolute;
+      right:0;
+      margin-top:8px;
+      min-width:220px;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      box-shadow:0 12px 28px rgba(0,0,0,.12);
+      padding:8px;
       z-index:50;
     }
-    .comboList.open{display:block}
-    .comboItem{
-      display:flex;gap:12px;align-items:center;
-      padding:12px 12px;
-      border-bottom:1px solid rgba(15,23,42,.08);
+    .menuPanel button{
+      width:100%;
+      text-align:left;
+      padding:10px 10px;
+      border-radius:10px;
+      border:1px solid #eef0f2;
+      background:#fff;
+      margin:6px 0;
       cursor:pointer;
+      font-weight:800;
     }
-    .comboItem:last-child{border-bottom:0}
-    .comboItem:hover{background:rgba(34,197,94,.08)}
-    .avatar{
-      width:36px;height:36px;border-radius:14px;
-      display:grid;place-items:center;
-      background:linear-gradient(180deg, rgba(34,197,94,.22), rgba(34,197,94,.10));
-      border:1px solid rgba(34,197,94,.25);
-      color:#065f2c;font-weight:1100;
-      flex:0 0 auto;
-    }
-    .comboItem .nm{font-weight:1100;line-height:1.1}
-    .comboItem .ph{font-size:12px;color:var(--muted);margin-top:2px}
-    .comboEmpty{padding:12px;color:var(--muted);font-size:12px}
-
-    /* ===== QR box ===== */
-    #qrClienteBox{
-      display:grid;place-items:center;
-      border:1px dashed #cbd5e1;
-      border-radius:18px;
-      min-height:220px;
-      padding:12px;
-      background:linear-gradient(180deg, rgba(34,197,94,.08), transparent);
-    }
-    #qrClienteBox img{
-      width:210px;height:210px;border-radius:14px;background:#fff;
-      border:1px solid rgba(15,23,42,.08);
-    }
-
-    /* ===== Ticket totals ===== */
-    .totals{
-      display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px;
-    }
-    .bigTotal{
-      background:rgba(34,197,94,.10);
-      border:1px solid rgba(34,197,94,.22);
-      border-radius:20px;
-      padding:14px;
-      text-align:center;
-    }
-    .bigTotal .t1{opacity:.85;font-weight:1100;font-size:12px}
-    .bigTotal .t2{font-size:46px;line-height:1;margin-top:8px;font-weight:1200;color:var(--brand)}
-    .bigTotal .t3{opacity:.85;font-weight:1100;margin-top:6px;font-size:12px}
-
-    /* ===== Toast operador ===== */
-    .toast{
-      display:none;
-      margin-top:12px;
-      padding:12px 14px;
-      border-radius:18px;
-      border:1px solid var(--line);
-      background:#fff;
-      box-shadow:var(--shadow);
-    }
-    .toast.ok{border-color:rgba(34,197,94,.35); background:rgba(34,197,94,.08)}
-    .toast.bad{border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.06)}
-    .toast .t{font-weight:1200}
-    .toast .d{margin-top:6px;color:var(--muted);font-size:12px;white-space:pre-wrap}
-
-    /* ===== Admin/Op visibility ===== */
-    .adminOnly{display:block}
-    .opOnly{display:none}
-    body.role-op #roleChip,
-    body.role-op #btnCambiarUsuario{display:none !important;}
-
-    /* ===== Modal ===== */
-    .modalBg{
-      position:fixed; inset:0;
-      background:rgba(2,6,23,.55);
-      display:none;
-      place-items:center;
-      z-index:80;
-      padding:16px;
-    }
-    .modal{
-      width:min(520px,100%);
-      background:#fff;
-      border-radius:24px;
-      border:1px solid var(--line);
-      box-shadow:0 30px 90px rgba(0,0,0,.25);
-      padding:16px;
-    }
-    .modal h4{margin:0 0 6px}
-    .modal p{margin:0 0 10px;color:var(--muted);font-size:12px}
-    .seg{display:flex;gap:8px;flex-wrap:wrap}
-    .seg button{flex:1;min-width:140px}
-
-    /* Reader spacing */
-    #reader{margin-top:10px}
-    input[type="file"]{display:none}
+    .menuPanel button:hover{ background:#f6f7f8; }
+    .menuPanel button.danger{ border-color:#fee2e2; color:#b91c1c; }
   </style>
 </head>
 
 <body>
-<header>
-  <div class="head">
-    <div class="brand">
-      <b>VDC360°</b>
-      <span>Clientes + Ticket (modo operador)</span>
-    </div>
+  <a href="https://marcianoper.github.io/vdc-central/"
+   style="
+     position:fixed;
+     top:12px;
+     left:12px;
+     background:#0a7a3b;
+     color:#fff;
+     padding:10px 14px;
+     border-radius:12px;
+     text-decoration:none;
+     font-weight:900;
+     z-index:9999;
+     box-shadow:0 10px 20px rgba(0,0,0,.15);
+   ">
+  ← VDC Central
+</a>
 
-    <div class="topActions">
-      <span class="chip" id="roleChip">Modo: —</span>
-      <button id="btnCambiarUsuario" type="button">Cambiar usuario</button>
-    </div>
-  </div>
-</header>
+  <header>
+    <h1>VDC360° · Notas a Crédito (Slots A/B + Reporte Diario)</h1>
+  </header>
 
-<div class="wrap">
-
-  <div class="grid2">
-
-    <!-- PASO 1: Cliente -->
+  <main>
+    <!-- SLOTS A/B -->
     <section class="card">
-      <div class="secHead">
-        <div>
-          <div class="secTitle"><div class="step">1</div><span>Elegir cliente</span></div>
-          <div class="hint">Toca el nombre para ver la lista completa.</div>
-        </div>
-        <div class="pills">
-          <span class="pill" id="stCliente">Cliente: —</span>
-          <span class="pill" id="stPuntos">Puntos: —</span>
-          <span class="pill" id="stSaldo">Saldo kg: —</span>
-        </div>
-      </div>
+      <h2>🧭 Trabajo en paralelo (2 clientes)</h2>
+      <div class="slotbar">
+        <button class="slotbtn active" id="slotA" type="button">Slot A</button>
+        <span class="pill" id="slotALabel">—</span>
 
-      <label>Nombre del cliente</label>
-      <div class="comboWrap" id="comboWrap">
-        <div class="comboInputRow">
-          <input id="nombre" placeholder="Ej. Juan Pérez" autocomplete="off" />
-          <button id="btnOpenCombo" class="comboBtn" type="button" aria-label="Abrir lista">▾</button>
-        </div>
-        <div id="comboList" class="comboList" role="listbox" aria-label="Lista de clientes"></div>
-      </div>
+        <button class="slotbtn" id="slotB" type="button">Slot B</button>
+        <span class="pill" id="slotBLabel">—</span>
 
-      <label>Teléfono (opcional)</label>
-      <input id="tel" inputmode="numeric" placeholder="4621234567" />
-
-      <div class="btnRow">
-        <button id="btnBuscar" type="button">Buscar</button>
-        <button id="btnCrear" class="secondary" type="button">Crear / Actualizar</button>
-        <button id="btnReloadNames" class="ghost" type="button">↻ Recargar</button>
-      </div>
-
-      <div id="msgBar" class="bar ok" style="display:none">
-        <div class="ico" id="msgIco">✓</div>
-        <div>
-          <div class="txt" id="msgTitle">Listo</div>
-          <div class="sub" id="msgText">—</div>
-        </div>
-      </div>
-
-      <div class="grid2" style="margin-top:12px">
-        <div>
-          <div id="qrClienteBox"><span class="hint">Selecciona un cliente para ver su QR</span></div>
-
-          <div class="adminOnly">
-            <div class="hint" id="qrClienteText" style="margin-top:10px"></div>
-            <div class="btnRow" style="margin-top:10px">
-              <button id="btnCopiarUrl" class="ghost" type="button">Copiar URL</button>
-              <button id="btnAbrirUrl" class="ghost" type="button">Abrir URL</button>
-            </div>
-          </div>
-
-          <div class="opOnly">
-            <div class="hint" style="margin-top:10px">
-              Si ocupas el QR: toma captura o imprime.
-            </div>
-          </div>
-        </div>
-
-        <div class="hint">
-          ✅ Recomendación rápida:
-          <ul style="margin:8px 0 0 18px; padding:0; color:var(--muted)">
-            <li>Primero elige cliente</li>
-            <li>Luego escanea el ticket</li>
-          </ul>
-        </div>
+        <span class="right flex" style="gap:6px">
+          <input type="checkbox" id="exitGuardToggle" />
+          <label for="exitGuardToggle" class="muted" style="margin:0">Confirmar al salir</label>
+        </span>
       </div>
     </section>
 
-    <!-- PASO 2: Ticket -->
+    <!-- CONTROLES (slot activo) -->
     <section class="card">
-      <div class="secHead">
+      <h2>🧾 Nota (Slot activo)</h2>
+
+      <div class="row">
         <div>
-          <div class="secTitle"><div class="step">2</div><span>Escanear ticket</span></div>
-          <div class="hint">Si no lee en vivo, usa “Subir foto”.</div>
+          <label>Cliente</label>
+          <div class="flex" style="gap:6px; align-items:stretch">
+            <select id="cliSelect"></select>
+            <button class="btn btn-ghost" id="btnNuevoCliente" type="button">+ Cliente</button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;min-width:220px;max-width:360px;width:100%">
-          <button class="ghost" id="toggle" type="button">Iniciar cámara</button>
-          <button class="warn" id="switchCam" type="button" style="display:none">Cambiar</button>
+
+        <div>
+          <label>Teléfono (WhatsApp)</label>
+          <input id="cliTelefono" placeholder="10 dígitos" />
         </div>
       </div>
 
-      <div id="reader"></div>
-
-      <label class="ghost" for="filePick" style="display:block;text-align:center;cursor:pointer;margin-top:10px;padding:12px 14px;border-radius:16px">
-        📸 Subir foto del QR
-        <input id="filePick" type="file" accept="image/*" capture="environment">
-      </label>
-
-      <div class="totals">
-        <div class="bigTotal">
-          <div class="t1">TOTAL KG DEL TICKET</div>
-          <div class="t2" id="totalKg">0.00</div>
-          <div class="t3">kg</div>
-        </div>
-      </div>
-
-      <div class="grid2" style="margin-top:10px">
+      <div class="row-3">
         <div>
-          <label>Tipo</label>
-          <select id="tipo">
-            <option value="mostrador">Mostrador (da puntos)</option>
-            <option value="credito">Crédito (no da puntos)</option>
+          <label>Folio</label>
+          <input id="notaFolio" placeholder="Autogenerado" />
+        </div>
+
+        <div>
+          <label>Fecha</label>
+          <input id="notaFecha" type="date" />
+        </div>
+
+        <div>
+          <label>Días de crédito</label>
+          <select id="notaDias">
+            <option value="7">7</option>
+            <option value="15">15</option>
+            <option value="30" selected>30</option>
+            <option value="45">45</option>
           </select>
         </div>
-
-        <div class="adminOnly">
-          <label>Total kg (Admin)</label>
-          <input id="kgAuto" inputmode="decimal" placeholder="0.00" />
-        </div>
-        <div class="opOnly">
-          <label>Total kg</label>
-          <input id="kgAutoOp" disabled />
-        </div>
       </div>
 
-      <div id="opToast" class="toast" aria-live="polite"></div>
-
-      <!-- ADMIN: debug y detalle -->
-      <div class="adminOnly" style="margin-top:10px">
-        <label>Contenido del QR (debug)</label>
-        <textarea id="qrPayload" placeholder="Aquí aparece lo escaneado..."></textarea>
-        <div class="btnRow">
-          <button id="btnProcesarPegado" class="warn" type="button">Procesar pegado</button>
-          <button id="btnLimpiar" class="ghost" type="button">Limpiar</button>
+      <div class="row">
+        <div>
+          <label>Vence</label>
+          <input id="notaVence" type="date" />
         </div>
 
-        <div class="grid2" style="margin-top:10px">
-          <div class="card" style="box-shadow:none;border-radius:18px;background:var(--card2)">
-            <div class="hint"># líneas</div>
-            <div style="font-weight:1200;font-size:20px" id="countLines">0</div>
+        <div>
+          <label>&nbsp;</label>
+          <div class="flex">
+            <button class="btn btn-primary" id="btnContinuar" type="button">
+              Crear / Continuar Nota en Slot Activo
+            </button>
+            <span class="pill right" id="notaInfo">Sin nota en slot</span>
           </div>
-          <div class="card" style="box-shadow:none;border-radius:18px;background:var(--card2)">
-            <div class="hint">Ticket (fingerprint)</div>
-            <div style="font-weight:1200;font-size:20px" id="fpShort">—</div>
-          </div>
-        </div>
-
-        <div id="detalleBox" class="hint" style="margin-top:10px">—</div>
-
-        <div class="card" style="margin-top:10px">
-          <div class="hint">Resultado (técnico)</div>
-          <div id="out" class="hint" style="white-space:pre-wrap">Listo.</div>
         </div>
       </div>
-
     </section>
 
-  </div>
-</div>
+    <div class="grid-2">
+      <!-- CAPTURA -->
+      <section class="card">
+        <h2>🧺 Capturar partidas</h2>
 
-<!-- Modal cambiar usuario -->
-<div class="modalBg" id="modalBg">
-  <div class="modal">
-    <h4>Cambiar usuario</h4>
-    <p>Operador = solo mensajes simples. Admin = detalle completo.</p>
+        <!-- ===== MODO NORMAL (todos los clientes) ===== -->
+        <div id="capNormal">
+          <div class="row-3">
+            <div>
+              <label>Producto</label>
+              <input id="pProducto" list="catProductos" placeholder="Ej. Panza de Res" />
+            </div>
 
-    <div class="seg">
-      <button id="btnSetOp" class="ghost" type="button">Soy Operador</button>
-      <button id="btnSetAdmin" class="secondary" type="button">Soy Admin</button>
-    </div>
+            <div>
+              <label>Kilos</label>
+              <input id="pKg" type="number" min="0" step="0.01" value="1" />
 
-    <div id="pinBox" style="display:none;margin-top:12px">
-      <label>PIN Admin</label>
-      <input id="adminPin" inputmode="numeric" placeholder="••••" />
-      <div class="hint">Esto es solo UI (no seguridad real). Luego lo blindamos con Auth.</div>
-      <div class="btnRow" style="margin-top:10px">
-        <button id="btnOkPin" class="secondary" type="button">Entrar</button>
-        <button id="btnCancelPin" class="ghost" type="button">Cancelar</button>
-      </div>
-      <div id="pinMsg" class="hint" style="margin-top:10px"></div>
-    </div>
+              <!-- ✅ BÁSCULA (Realtime entre dispositivos vía Supabase) -->
+              <div class="flex" style="margin-top:8px; gap:8px">
+                <button type="button" class="btn btn-ghost" id="btnPeso">📥 Tomar peso</button>
 
-    <div class="btnRow" style="margin-top:10px">
-      <button id="btnCloseModal" class="ghost" type="button">Cerrar</button>
-    </div>
-  </div>
-</div>
+                <label class="muted" style="display:flex; align-items:center; gap:8px; margin:0">
+                  <input type="checkbox" id="rtBascula" />
+                  Real-time
+                </label>
 
-<script>
-  // =========================
-  // === Credenciales ===
-  // =========================
-  const SUPABASE_URL = "https://eqynjddcosvdqjzztznn.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxeW5qZGRjb3N2ZHFqenp0em5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzYwMzIsImV4cCI6MjA3MTcxMjAzMn0.Q51wsGelUvxRfqsMYRY5JduCGyZ7s6AzOhqsRf3kOhk";
-  const sb = window.sb || (window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
-  const T_CLIENTES = "clientes";
+                <select id="rtModo" style="max-width:220px">
+                  <option value="auto" selected>Auto (Realtime Supabase)</option>
+                  <option value="poll">Poll (consultar cada X ms)</option>
+                </select>
 
-  // =========================
-  // === Roles UI ===
-  // =========================
-  const ADMIN_PIN = "1234"; // 🔒 cámbialo
-  const ROLE_KEY = "vdc_role_ui";
-  let role = localStorage.getItem(ROLE_KEY) || "op";
+                <select id="rtMs" style="max-width:140px">
+                  <option value="250">0.25s</option>
+                  <option value="500" selected>0.50s</option>
+                  <option value="800">0.80s</option>
+                  <option value="1000">1.0s</option>
+                  <option value="1500">1.5s</option>
+                </select>
 
-  // =========================
-  // === Helpers ===
-  // =========================
-  const $ = (id)=>document.getElementById(id);
-  function normalizeLine(s){ return String(s||"").replace(/\s+/g," ").trim(); }
-  function toNum(s){
-    const v = Number(String(s ?? "").replace(",", ".").trim());
-    return Number.isFinite(v) ? v : NaN;
-  }
-  function cleanPhone(s){ return String(s||"").replace(/\D/g,"").slice(-10); }
-  function escapeHtml(s){
-    return String(s||"")
-      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-  }
+                <span id="pesoStatus" class="pill">Báscula: —</span>
+              </div>
+            </div>
 
-  // UI refs
-  const roleChip = $("roleChip");
-  const btnCambiarUsuario = $("btnCambiarUsuario");
-  const modalBg = $("modalBg");
-  const btnSetOp = $("btnSetOp");
-  const btnSetAdmin = $("btnSetAdmin");
-  const pinBox = $("pinBox");
-  const adminPin = $("adminPin");
-  const pinMsg = $("pinMsg");
-  const btnOkPin = $("btnOkPin");
-  const btnCancelPin = $("btnCancelPin");
-  const btnCloseModal = $("btnCloseModal");
+            <div>
+              <label>Piezas (opcional)</label>
+              <input id="pPzas" type="number" min="0" step="1" />
+            </div>
+          </div>
 
-  const toggleBtn = $("toggle");
-  const switchBtn = $("switchCam");
-  const filePick = $("filePick");
+          <div style="margin-top:8px">
+            <label>Precio/kg</label>
+            <input id="pPrecio" type="number" min="0" step="0.01" value="0" />
+          </div>
 
-  const totalKgEl = $("totalKg");
-  const countLinesEl = $("countLines");
-  const fpShortEl = $("fpShort");
+          <div class="flex" style="margin-top:10px">
+            <button class="btn btn-primary" id="btnAgregar" type="button">Agregar a nota (Enter)</button>
+            <span class="pill right" id="subtotalBox">Subtotal: $0.00</span>
+          </div>
+        </div>
 
-  const opToast = $("opToast");
-  const out = $("out"); // admin only
+        <!-- ===== MODO Pieles y Grasas (solo ese cliente) ===== -->
+        <div id="capPG" style="display:none">
+          <!-- SEBO -->
+          <div class="row-3">
+            <div>
+              <label>Producto</label>
+              <input value="Sebo" disabled />
+            </div>
+            <div>
+              <label>Kilos</label>
+              <input id="seboKg" type="number" min="0" step="0.01" value="0" />
+            </div>
+            <div>
+              <label>Piezas (opcional)</label>
+              <input id="seboPzas" type="number" min="0" step="1" />
+            </div>
+          </div>
 
-  // combo
-  const comboWrap = $("comboWrap");
-  const comboList = $("comboList");
-  const btnOpenCombo = $("btnOpenCombo");
+          <div class="flex" style="margin-top:10px">
+            <button class="btn btn-primary" id="btnAgregarSebo" type="button">Agregar Sebo</button>
+            <span class="pill right" id="subtotalBox2">Subtotal: $0.00</span>
+          </div>
 
-  // message bar
-  const msgBar = $("msgBar");
-  const msgIco = $("msgIco");
-  const msgTitle = $("msgTitle");
-  const msgText = $("msgText");
+          <hr style="border:none;border-top:1px solid #eef0f2;margin:14px 0" />
 
-  // =========================
-  // === Estado ===
-  // =========================
-  let currentClient = null;
-  let clientsCache = [];
+          <!-- HUESO -->
+          <div class="row-3">
+            <div>
+              <label>Producto</label>
+              <input value="Hueso" disabled />
+            </div>
+            <div>
+              <label>Kilos</label>
+              <input id="huesoKg" type="number" min="0" step="0.01" value="0" />
+            </div>
+            <div>
+              <label>Piezas (opcional)</label>
+              <input id="huesoPzas" type="number" min="0" step="1" />
+            </div>
+          </div>
 
-  let scanner = null;
-  let running = false;
-  let cameras = [];
-  let camIndex = 0;
+          <div class="flex" style="margin-top:10px">
+            <button class="btn btn-primary" id="btnAgregarHueso" type="button">Agregar Hueso</button>
+          </div>
+        </div>
 
-  let busy = false;
-  const BUSY_COOLDOWN_MS = 900;
+        <label style="margin-top:12px">Observaciones</label>
+        <textarea id="notaObs" rows="2" placeholder="Instrucciones, cortes, etc."></textarea>
+      </section>
 
-  let ticketItemsUi = [];
-  let ticketItemsInv = [];
-  let lastClientQrUrl = "";
+      <!-- VISTA EN VIVO -->
+      <section class="card">
+        <h2>👤 Vista del cliente (slot activo)</h2>
 
-  // =========================
-  // Mensajes amigables
-  // =========================
-  function showBar(type, title, text){
-    msgBar.style.display = "flex";
-    msgBar.className = "bar " + (type || "ok");
-    msgIco.textContent = type === "bad" ? "!" : (type === "warn" ? "⚠" : "✓");
-    msgTitle.textContent = title || "";
-    msgText.textContent = text || "";
-  }
+        <div class="flex" style="gap:6px;margin-bottom:6px">
+          <div class="pill">Folio: <span id="vFolio">—</span></div>
+          <div class="pill">Estado: <span id="vEstado">—</span></div>
+          <div class="pill">Saldo: $<span id="vSaldo">0.00</span></div>
+        </div>
 
-  function hideBar(){ msgBar.style.display = "none"; }
-
-  function showOpToast(type, title, details){
-    opToast.style.display = "block";
-    opToast.className = "toast " + (type === "ok" ? "ok" : "bad");
-    opToast.innerHTML = `
-      <div class="t">${escapeHtml(title || "")}</div>
-      <div class="d">${escapeHtml(details || "")}</div>
-    `;
-    setTimeout(()=>{ opToast.style.display = "none"; }, 4500);
-  }
-
-  function logAdmin(txt){
-    if(!out) return;
-    out.textContent = txt;
-  }
-
-  function renderStatus(){
-    $("stCliente").textContent = "Cliente: " + (currentClient ? (currentClient.nombre || currentClient.telefono) : "—");
-    $("stPuntos").textContent  = "Puntos: " + (currentClient ? (currentClient.puntos ?? 0) : "—");
-    $("stSaldo").textContent   = "Saldo kg: " + (currentClient ? Number(currentClient.saldo_kg||0).toFixed(3) : "—");
-  }
-
-  function applyRoleUI(){
-    roleChip.textContent = "Modo: " + (role === "admin" ? "Admin" : "Operador");
-    document.body.classList.toggle("role-admin", role === "admin");
-    document.body.classList.toggle("role-op", role !== "admin");
-
-    document.querySelectorAll(".adminOnly").forEach(el=>{
-      el.style.display = (role === "admin") ? "" : "none";
-    });
-    document.querySelectorAll(".opOnly").forEach(el=>{
-      el.style.display = (role === "admin") ? "none" : "";
-    });
-
-    // sincroniza kg
-    if(role !== "admin"){
-      const opKg = $("kgAutoOp");
-      const adminKg = $("kgAuto");
-      if(opKg) opKg.value = adminKg ? (adminKg.value || "") : "";
-    }
-  }
-
-  // Modal role
-  function openModal(){ modalBg.style.display = "grid"; pinBox.style.display="none"; pinMsg.textContent=""; adminPin.value=""; }
-  function closeModal(){ modalBg.style.display = "none"; pinBox.style.display="none"; pinMsg.textContent=""; adminPin.value=""; }
-
-  btnCambiarUsuario.addEventListener("click", ()=>{ if(role !== "admin") return; openModal(); });
-  btnCloseModal.addEventListener("click", closeModal);
-
-  btnSetOp.addEventListener("click", ()=>{
-    role = "op"; localStorage.setItem(ROLE_KEY, role);
-    applyRoleUI(); closeModal();
-  });
-  btnSetAdmin.addEventListener("click", ()=>{ pinBox.style.display="block"; adminPin.focus(); });
-  btnCancelPin.addEventListener("click", ()=>{ pinBox.style.display="none"; pinMsg.textContent=""; adminPin.value=""; });
-  btnOkPin.addEventListener("click", ()=>{
-    if(String(adminPin.value||"").trim() === ADMIN_PIN){
-      role = "admin"; localStorage.setItem(ROLE_KEY, role);
-      applyRoleUI(); closeModal();
-    }else{
-      pinMsg.style.color = "#ef4444";
-      pinMsg.textContent = "PIN incorrecto.";
-    }
-  });
-  modalBg.addEventListener("click", (e)=>{ if(e.target === modalBg) closeModal(); });
-
-  // =========================
-  // QR Cliente
-  // =========================
-  function siteBaseUrl(){
-    const u = new URL(window.location.href);
-    return u.origin + u.pathname;
-  }
-
-  async function renderClientQR(){
-    const box = $("qrClienteBox");
-    const txt = $("qrClienteText");
-    box.innerHTML = "";
-    if(txt) txt.textContent = "";
-
-    if(!currentClient?.id){
-      box.innerHTML = `<span class="hint">Selecciona un cliente para ver su QR</span>`;
-      lastClientQrUrl = "";
-      return;
-    }
-
-    const url = `${siteBaseUrl()}?cid=${encodeURIComponent(currentClient.id)}`;
-    lastClientQrUrl = url;
-
-    const img = document.createElement("img");
-    img.alt = "QR del cliente";
-    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}`;
-    box.appendChild(img);
-
-    if(txt) txt.textContent = `URL: ${url}`;
-  }
-
-  const btnCopiarUrl = $("btnCopiarUrl");
-  const btnAbrirUrl = $("btnAbrirUrl");
-  if(btnCopiarUrl){
-    btnCopiarUrl.addEventListener("click", async ()=>{
-      if(!lastClientQrUrl) return showBar("warn","Falta cliente","Selecciona un cliente primero.");
-      try{ await navigator.clipboard.writeText(lastClientQrUrl); showBar("ok","Copiado","URL del QR copiada ✅"); }
-      catch{ showBar("bad","No se pudo copiar","Permiso del navegador."); }
-    });
-  }
-  if(btnAbrirUrl){
-    btnAbrirUrl.addEventListener("click", ()=>{
-      if(!lastClientQrUrl) return showBar("warn","Falta cliente","Selecciona un cliente primero.");
-      window.open(lastClientQrUrl, "_blank");
-    });
-  }
-
-  // =========================
-  // Inventario / ventas (tu lógica intacta)
-  // =========================
-  const BOX_FULL_KG = 27.22;
-
-  function canonSku(productoOriginal){
-    let t = String(productoOriginal || "")
-      .trim()
-      .toUpperCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    if(/PATA[\s_-]*MORENA/.test(t)) return "PATA_MORENA";
-    if(/^CAJA\s+AZUL\b/.test(t) || t.includes("CAJA AZUL")) return "CAJA_MENUDO_NATIONAL";
-    if(/^CAJA\s+CANADIAN\b/.test(t) || t.includes("CAJA CANADIAN")) return "MENUDO_CANADIAN";
-    if(t.includes("NATIONAL")) return "CAJA_MENUDO_NATIONAL";
-    return t.replace(/\s+/g, "_");
-  }
-
-  function applyBoxRules(productoOriginal, qty){
-    const name = String(productoOriginal || "").toUpperCase();
-    const q = Number(qty);
-
-    const isCajaCompleta =
-      name.includes("CAJA") &&
-      name.includes("COMPLETA") &&
-      Number.isFinite(q) &&
-      Math.abs(q - 1) < 1e-9;
-
-    let kgForInv = Number.isFinite(q) ? q : 0;
-    let kgForTotal = kgForInv;
-
-    if(isCajaCompleta){
-      if(name.includes("AZUL") || name.includes("CANADIAN") || name.includes("NATIONAL")){
-        kgForInv = BOX_FULL_KG;
-        kgForTotal = 0;
-      }
-    }
-    return { kgForInv, kgForTotal };
-  }
-
-  function isIgnorableItem(productoOriginal){
-    const t = String(productoOriginal||"")
-      .trim()
-      .toUpperCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    return (
-      /\bPELLEJO\b/.test(t) ||
-      /\bBOLSA(S)?\b/.test(t) ||
-      /\bSERVICIO\b/.test(t) ||
-      /\bPROPINA\b/.test(t)
-    );
-  }
-
-  function hashQr(str){
-    let h = 2166136261;
-    for(let i=0;i<str.length;i++){
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return "QR_" + (h >>> 0).toString(16);
-  }
-
-  function safeParseJson(text){ return JSON.parse((text||"").trim()); }
-
-  function normalizePayload(raw, decodedText){
-    const mapLine = (x) => {
-      const producto = String(x.producto || x.sku || "").trim();
-      const qty = Number(x.cantidad ?? x.kg ?? 0);
-      if(isIgnorableItem(producto)) return null;
-
-      const sku = canonSku(producto);
-      const { kgForInv, kgForTotal } = applyBoxRules(producto, qty);
-
-      if(!sku || !Number.isFinite(kgForInv) || kgForInv <= 0) return null;
-      return { producto: producto || sku, sku, kg: kgForInv, _kgTotal: kgForTotal };
-    };
-
-    if(Array.isArray(raw)){
-      const itemsUi = raw.map(mapLine).filter(Boolean);
-      const itemsForRpc = itemsUi.map(({sku, kg}) => ({ sku, kg }));
-      return { qr_id: hashQr(decodedText), items: itemsForRpc, _itemsUi: itemsUi };
-    }
-
-    if(raw && typeof raw === "object"){
-      let items = raw.items;
-      if(!Array.isArray(items) && Array.isArray(raw.productos)) items = raw.productos;
-
-      const itemsUi = (items || []).map(mapLine).filter(Boolean);
-      const itemsForRpc = itemsUi.map(({sku, kg}) => ({ sku, kg }));
-      return { qr_id: String(raw.qr_id || hashQr(decodedText)), items: itemsForRpc, _itemsUi: itemsUi };
-    }
-    return null;
-  }
-
-  function calcTotalKgVisual(itemsUi){
-    let sum = 0;
-    for(const it of (itemsUi||[])){
-      const k = Number(it._kgTotal ?? it.kg);
-      if(Number.isFinite(k)) sum += k;
-    }
-    return sum;
-  }
-
-  function updateTotalsUI(payload, fingerprint){
-    const itemsUi = payload._itemsUi || [];
-    const totalKg = calcTotalKgVisual(itemsUi);
-
-    totalKgEl.textContent = totalKg.toFixed(2);
-
-    if(countLinesEl) countLinesEl.textContent = String((payload.items || []).length || 0);
-    if(fpShortEl) fpShortEl.textContent = fingerprint ? fingerprint.slice(0, 10) : "—";
-
-    const kgAdmin = $("kgAuto");
-    if(kgAdmin) kgAdmin.value = totalKg.toFixed(2);
-
-    const kgOp = $("kgAutoOp");
-    if(kgOp) kgOp.value = totalKg.toFixed(2);
-  }
-
-  function renderDetalleEditable(){
-    const box = $("detalleBox");
-    if(!box) return;
-    if(!ticketItemsUi.length){ box.textContent = "—"; return; }
-
-    const rows = ticketItemsUi.map((it, idx)=>`
-      <tr>
-        <td style="width:55%">
-          <input data-idx="${idx}" data-field="producto" value="${escapeHtml(it.producto)}" />
-          <div style="color:var(--muted);font-size:12px;margin-top:4px">sku: ${escapeHtml(it.sku)}</div>
-        </td>
-        <td style="width:25%">
-          <input data-idx="${idx}" data-field="kg" inputmode="decimal" value="${Number(it.kg).toFixed(3)}" />
-          <div style="color:var(--muted);font-size:12px;margin-top:4px">total: ${Number(it._kgTotal ?? it.kg).toFixed(3)}</div>
-        </td>
-        <td style="width:20%;text-align:right">
-          <button class="ghost" data-del="${idx}" style="margin:0;padding:10px;border-radius:14px">Quitar</button>
-        </td>
-      </tr>
-    `).join("");
-
-    box.innerHTML = `
-      <div style="color:var(--muted);font-size:12px;margin-bottom:8px">Admin puede corregir antes de guardar.</div>
-      <div style="overflow:auto;border:1px solid var(--line);border-radius:18px;background:#fff">
-        <table style="width:100%;border-collapse:collapse">
+        <table>
           <thead>
             <tr>
-              <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line);background:var(--card2)">Producto</th>
-              <th style="text-align:left;padding:10px;border-bottom:1px solid var(--line);background:var(--card2)">Kg</th>
-              <th style="text-align:right;padding:10px;border-bottom:1px solid var(--line);background:var(--card2)">Acción</th>
+              <th>Fecha/Hora</th>
+              <th>Producto</th>
+              <th>Kg</th>
+              <th>Pzas</th>
+              <th>P.Unit</th>
+              <th>Importe</th>
+              <th>Acciones</th>
             </tr>
           </thead>
-          <tbody>${rows}</tbody>
+          <tbody id="vistaBody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="6" style="text-align:right">Total</td>
+              <td id="vistaTotal">$0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+    </div>
+
+    <!-- ✅ BANDEJA (COMPACTA + BUSCADOR + ACCIONES DROPDOWN + SCROLL INTERNO) -->
+    <section class="card">
+      <h2>📥 Notas abiertas hoy (todas)</h2>
+
+      <div class="bandejaTools">
+        <div style="flex:1; min-width:220px">
+          <label>Fecha</label>
+          <input id="bandejaFecha" type="date" />
+        </div>
+
+        <div style="flex:2; min-width:260px">
+          <label>Buscar (folio o cliente)</label>
+          <input id="bandejaBuscar" placeholder="Ej. CVC-20260206... o Carnicería" />
+        </div>
+
+        <div style="min-width:220px">
+          <label>&nbsp;</label>
+          <button class="btn btn-ghost" id="btnBandeja" type="button">Actualizar</button>
+        </div>
+
+        <span class="muted" style="align-self:center">Tip: carga una nota al Slot A o B y alterna rápido.</span>
+      </div>
+
+      <div class="bandejaWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Cliente</th>
+              <th>Saldo</th>
+              <th>Estado</th>
+              <th style="text-align:right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="bandejaBody"></tbody>
         </table>
       </div>
-    `;
+    </section>
 
-    box.querySelectorAll('input[data-idx]').forEach(inp=>{
-      inp.addEventListener("input", ()=>{
-        const idx = Number(inp.getAttribute("data-idx"));
-        const field = inp.getAttribute("data-field");
-        if(!ticketItemsUi[idx]) return;
+    <!-- REPORTE DIARIO GENERAL -->
+    <section class="card">
+      <h2>📄 Reporte diario GENERAL (todos los clientes)</h2>
 
-        if(field === "kg"){
-          const v = toNum(inp.value);
-          ticketItemsUi[idx].kg = Number.isFinite(v) ? v : 0;
-          ticketItemsUi[idx]._kgTotal = ticketItemsUi[idx].kg;
-        }else{
-          ticketItemsUi[idx].producto = normalizeLine(inp.value);
-          ticketItemsUi[idx].sku = canonSku(ticketItemsUi[idx].producto);
-        }
-
-        ticketItemsInv = ticketItemsUi.map(it=>({ sku: it.sku, kg: Number(it.kg)||0 }))
-          .filter(it=>it.sku && Number.isFinite(it.kg) && it.kg>0);
-
-        const total = calcTotalKgVisual(ticketItemsUi);
-        const kgAdmin = $("kgAuto");
-        if(kgAdmin) kgAdmin.value = total.toFixed(2);
-        const kgOp = $("kgAutoOp");
-        if(kgOp) kgOp.value = total.toFixed(2);
-
-        totalKgEl.textContent = total.toFixed(2);
-        if(countLinesEl) countLinesEl.textContent = String(ticketItemsInv.length);
-      });
-    });
-
-    box.querySelectorAll('button[data-del]').forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const idx = Number(btn.getAttribute("data-del"));
-        ticketItemsUi.splice(idx, 1);
-
-        ticketItemsInv = ticketItemsUi.map(it=>({ sku: it.sku, kg: Number(it.kg)||0 }))
-          .filter(it=>it.sku && Number.isFinite(it.kg) && it.kg>0);
-
-        const total = calcTotalKgVisual(ticketItemsUi);
-        const kgAdmin = $("kgAuto");
-        if(kgAdmin) kgAdmin.value = total.toFixed(2);
-        const kgOp = $("kgAutoOp");
-        if(kgOp) kgOp.value = total.toFixed(2);
-
-        totalKgEl.textContent = total.toFixed(2);
-        if(countLinesEl) countLinesEl.textContent = String(ticketItemsInv.length);
-
-        renderDetalleEditable();
-      });
-    });
-  }
-
-  async function descontarInventarioConRPC(payload, fingerprint){
-    const { data, error } = await sb.rpc('procesar_venta_qr', {
-      payload: { qr_id: payload.qr_id, items: payload.items },
-      p_fingerprint: fingerprint
-    });
-    if(error) return { ok:false, error: error.message };
-    if(data?.code === 'DUPLICATE') return { ok:false, duplicate:true, data };
-    if(!data?.ok) return { ok:false, error: "NO OK:\n" + JSON.stringify(data, null, 2), data };
-    return { ok:true, data };
-  }
-
-  async function guardarVentaClienteDesdeQR(decodedText, fingerprint){
-    if(!currentClient) throw new Error("Primero selecciona un cliente.");
-
-    const tipo = $("tipo").value;
-
-    const kgAdmin = $("kgAuto");
-    const kgOp = $("kgAutoOp");
-    const kg = toNum( (kgAdmin && role==="admin") ? kgAdmin.value : (kgOp ? kgOp.value : "") );
-    if(!Number.isFinite(kg) || kg <= 0) throw new Error("Total kg inválido.");
-
-    const items = (ticketItemsInv || [])
-      .map(it => ({ sku: String(it.sku||"").trim(), kg: Number(it.kg)||0 }))
-      .filter(it => it.sku && Number.isFinite(it.kg) && it.kg > 0);
-
-    const { data, error } = await sb.rpc("guardar_venta_cliente_qr", {
-      p_cliente_id: currentClient.id,
-      p_tipo: tipo,
-      p_total_kg: kg,
-      p_items: items,
-      p_fingerprint: fingerprint,
-      p_raw: decodedText
-    });
-    if(error) throw new Error("RPC guardar_venta_cliente_qr: " + error.message);
-
-    if(data?.code === "DUPLICATE"){
-      return { duplicate:true, venta_id: data.venta_id, puntosGanados: 0, itemsCount: items.length };
-    }
-    if(!data?.ok) throw new Error("NO OK: " + JSON.stringify(data, null, 2));
-
-    const { data: cli2 } = await sb
-      .from(T_CLIENTES)
-      .select("id,telefono,nombre,puntos,saldo_kg")
-      .eq("id", currentClient.id)
-      .single();
-    if(cli2) currentClient = cli2;
-
-    renderStatus();
-    await renderClientQR();
-
-    return {
-      venta_id: data.venta_id,
-      puntosGanados: Number(data.puntos_ganados||0),
-      itemsCount: items.length
-    };
-  }
-
-  async function handleDecoded(decodedText){
-    if(busy) return;
-    busy = true;
-
-    try{
-      if(!currentClient){
-        if(role === "admin") logAdmin("Falta cliente. Selecciona un cliente primero.");
-        else showOpToast("bad","Falta cliente","Selecciona cliente primero.");
-        showBar("warn","Falta cliente","Paso 1: elige cliente.");
-        return;
-      }
-
-      const payloadBox = $("qrPayload");
-      if(payloadBox) payloadBox.value = decodedText;
-
-      const raw = safeParseJson(decodedText);
-      const payload = normalizePayload(raw, decodedText);
-
-      if(!payload?.items?.length){
-        if(role === "admin") logAdmin("QR inválido o conceptos ignorados.\n\n" + decodedText);
-        else showOpToast("bad","QR inválido","No pude leer productos.");
-        showBar("bad","QR inválido","Intenta con una foto más cerca y sin reflejo.");
-        return;
-      }
-
-      const fingerprint = hashQr(decodedText);
-
-      updateTotalsUI(payload, fingerprint);
-      ticketItemsUi = payload._itemsUi || [];
-      ticketItemsInv = payload.items || [];
-
-      if(role === "admin") renderDetalleEditable();
-
-      if(role === "admin") logAdmin("1) Descontando inventario…");
-      else showOpToast("ok","Procesando…","Aplicando inventario y guardando compra.");
-
-      const invRes = await descontarInventarioConRPC(payload, fingerprint);
-
-      if(invRes.duplicate){
-        if(role === "admin") logAdmin("Ticket ya procesado (DUPLICATE).");
-        else showOpToast("ok","Ya procesado","Este ticket ya estaba aplicado ✅");
-        showBar("ok","Listo","Este ticket ya estaba aplicado ✅");
-        return;
-      }
-
-      if(!invRes.ok){
-        if(role === "admin") logAdmin("ERROR INVENTARIO:\n" + (invRes.error || "—"));
-        else showOpToast("bad","Error","No se pudo descontar inventario.");
-        showBar("bad","Error inventario","No se pudo aplicar el descuento.");
-        return;
-      }
-
-      if(role === "admin") logAdmin("2) Guardando venta del cliente…");
-
-      const saveRes = await guardarVentaClienteDesdeQR(decodedText, fingerprint);
-
-      if(role === "admin"){
-        logAdmin("✅ LISTO\nVenta: " + saveRes.venta_id + "\nPuntos: " + saveRes.puntosGanados);
-      }else{
-        const kg = $("kgAutoOp")?.value || "";
-        showOpToast("ok","✅ OK — Venta aplicada", `Cliente: ${currentClient?.nombre || "—"}\nTotal: ${kg} kg`);
-      }
-
-      showBar("ok","✅ Venta aplicada", `Cliente: ${currentClient?.nombre || "—"}\nTotal: ${totalKgEl.textContent} kg`);
-
-    }catch(e){
-      if(role === "admin") logAdmin("ERROR:\n" + (e?.message || String(e)) + "\n\nContenido:\n" + decodedText);
-      else showOpToast("bad","Error","No se pudo procesar el ticket.");
-      showBar("bad","Error","No se pudo procesar el ticket.");
-    }finally{
-      setTimeout(()=> busy = false, BUSY_COOLDOWN_MS);
-    }
-  }
-
-  // =========================
-  // Scanner QR
-  // =========================
-  async function onScanSuccess(decodedText){ await handleDecoded(decodedText); }
-
-  async function refreshCameras(){
-    cameras = await Html5Qrcode.getCameras();
-    if(!Array.isArray(cameras)) cameras = [];
-    switchBtn.style.display = (cameras.length >= 2) ? "block" : "none";
-    const idxBack = cameras.findIndex(c => /back|rear|environment|trasera/i.test(c.label || ""));
-    if(idxBack >= 0) camIndex = idxBack;
-  }
-
-  async function startWithCurrentCamera(){
-    if(!scanner) scanner = new Html5Qrcode("reader");
-    if(!cameras.length) await refreshCameras();
-
-    running = true;
-    toggleBtn.textContent = "Detener cámara";
-
-    const config = {
-      fps: 15,
-      qrbox: (vw, vh) => {
-        const size = Math.min(vw, vh) * 0.78;
-        return { width: Math.floor(size), height: Math.floor(size) };
-      },
-      disableFlip: true,
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-    };
-
-    const constraints = cameras.length
-      ? { deviceId: { exact: cameras[camIndex].id } }
-      : { facingMode: { ideal: "environment" }, width:{ ideal:1920 }, height:{ ideal:1080 } };
-
-    try{
-      await scanner.start(constraints, config, onScanSuccess);
-      if(role === "admin") logAdmin("Cámara lista.");
-      else showOpToast("ok","Cámara lista","Escanea el QR del ticket.");
-    }catch(e){
-      running = false;
-      toggleBtn.textContent = "Iniciar cámara";
-      if(role === "admin") logAdmin("No pude iniciar cámara. Revisa permisos/HTTPS.");
-      else showOpToast("bad","Cámara","No pude abrir la cámara.");
-      showBar("bad","Cámara","No pude abrir la cámara (permiso/https).");
-    }
-  }
-
-  async function start(){ if(running) return; await refreshCameras(); await startWithCurrentCamera(); }
-  async function stop(){
-    if(!running) return;
-    running = false;
-    toggleBtn.textContent = "Iniciar cámara";
-    try{ await scanner.stop(); }catch(e){}
-    if(role === "admin") logAdmin("Cámara detenida.");
-  }
-  async function switchCamera(){
-    if(cameras.length < 2){
-      if(role === "admin") logAdmin("Solo hay 1 cámara.");
-      else showOpToast("bad","Cámara","Solo hay 1 cámara.");
-      return;
-    }
-    camIndex = (camIndex + 1) % cameras.length;
-    if(running){ await stop(); await start(); }
-  }
-
-  filePick.addEventListener('change', async (e)=>{
-    const file = e.target.files?.[0];
-    if(!file) return;
-    try{
-      if(!scanner) scanner = new Html5Qrcode("reader");
-      if(role === "admin") logAdmin("Leyendo foto…");
-      else showOpToast("ok","Leyendo foto…","Procesando QR.");
-      const decodedText = await scanner.scanFile(file, true);
-      await handleDecoded(decodedText);
-    }catch(err){
-      if(role === "admin") logAdmin("No pude leer la foto. Más cerca y sin reflejo.");
-      else showOpToast("bad","No se pudo","Toma la foto más cerca y sin reflejo.");
-      showBar("bad","No se pudo leer","Toma la foto más cerca y sin reflejo.");
-    }finally{
-      filePick.value = "";
-    }
-  });
-
-  toggleBtn.addEventListener("click", async ()=>{ if(!running) await start(); else await stop(); });
-  switchBtn.addEventListener("click", switchCamera);
-
-  // =========================
-  // ✅ Combo clientes (mejor UX)
-  // =========================
-  function initials(name){
-    const parts = normalizeLine(name).split(" ").filter(Boolean);
-    const a = (parts[0]||"").slice(0,1);
-    const b = (parts[1]||"").slice(0,1);
-    return (a+b).toUpperCase() || "CL";
-  }
-
-  function openCombo(showAll=false){
-    comboList.classList.add("open");
-    renderComboList(showAll ? "" : ($("nombre").value || ""));
-  }
-  function closeCombo(){ comboList.classList.remove("open"); }
-
-  function renderComboList(filterText){
-    const f = normalizeLine(filterText).toLowerCase();
-    const filtered = (clientsCache || [])
-      .filter(c => (c.nombre || "").trim().length > 0)
-      .filter(c => {
-        if(!f) return true;
-        const nm = normalizeLine(c.nombre||"").toLowerCase();
-        const ph = String(c.telefono||"");
-        return nm.includes(f) || ph.includes(f);
-      })
-      .slice(0, 250);
-
-    if(!filtered.length){
-      comboList.innerHTML = `<div class="comboEmpty">Sin resultados. Puedes crear el cliente con “Crear / Actualizar”.</div>`;
-      return;
-    }
-
-    comboList.innerHTML = filtered.map(c => `
-      <div class="comboItem" data-id="${escapeHtml(c.id)}">
-        <div class="avatar">${escapeHtml(initials(c.nombre||""))}</div>
+      <div class="row">
         <div>
-          <div class="nm">${escapeHtml(c.nombre || "—")}</div>
-          <div class="ph">${escapeHtml(c.telefono || "")}</div>
+          <label>Fecha</label>
+          <input id="diaFecha" type="date" />
+        </div>
+
+        <div>
+          <label>&nbsp;</label>
+          <div class="flex">
+            <button class="btn btn-ghost" id="btnDiaA4" type="button">Imprimir A4 (todos)</button>
+            <button class="btn btn-ghost" id="btnDiaCSV" type="button">CSV (todos)</button>
+            <span class="pill right" id="diaResumen">—</span>
+          </div>
         </div>
       </div>
-    `).join("");
+    </section>
 
-    comboList.querySelectorAll(".comboItem").forEach(item=>{
-      item.addEventListener("click", async ()=>{
-        const id = item.getAttribute("data-id");
-        const c = (clientsCache||[]).find(x => String(x.id) === String(id));
-        if(!c) return;
+    <!-- ACCIONES NOTA -->
+    <section class="card">
+      <div class="flex">
+        <button class="btn btn-ghost" id="btnWA" type="button">WhatsApp Cuenta</button>
+        <button class="btn btn-ghost" id="btnImprimir" type="button">Imprimir A4</button>
+        <button class="btn btn-ghost" id="btnImprimir80" type="button">Imprimir 80mm</button>
+        <button class="btn btn-ghost" id="btnCSV" type="button">Exportar CSV</button>
+        <button class="btn btn-ghost danger right" id="btnCerrar" type="button">Cerrar Nota</button>
+      </div>
+    </section>
+  </main>
 
-        $("nombre").value = c.nombre || "";
-        $("tel").value = c.telefono || "";
-        currentClient = c;
+  <div id="printArea" style="display:none"></div>
+  <datalist id="catProductos"></datalist>
 
-        renderStatus();
-        await renderClientQR();
-        showBar("ok","Cliente listo", `${currentClient?.nombre || "—"}`);
-        closeCombo();
+  <!-- ✅ UNA sola carga UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    /* ========================= CONFIG ========================= */
+    const SUPABASE_URL = "https://bjebybdqcqscouxlinfd.supabase.co";
+    const SUPABASE_ANON_KEY = "REEMPLAZA_AQUI_TU_KEY";
+
+    // ✅ Cliente Supabase “blindado”
+    const sb = window.__sb || (window.__sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
+
+    const STORE_NAME = "Carnes y Vísceras del Centro";
+
+    // ✅ Pesos fijos por caja
+    const CAJA_KG = 27.22;
+
+    /* ========================= UTILS ========================= */
+    const $ = s => document.querySelector(s);
+    const to2 = n => Number(n || 0).toFixed(2);
+    function todayISO(){
+      const d = new Date();
+      const z = d.getTimezoneOffset() * 60000;
+      return new Date(d - z).toISOString().slice(0,10);
+    }
+    function addDays(dateISO, days){
+      const d = new Date(dateISO);
+      d.setDate(d.getDate() + Number(days || 0));
+      const z = d.getTimezoneOffset() * 60000;
+      return new Date(d - z).toISOString().slice(0,10);
+    }
+    function genFolio(){
+      const d = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      return `CVC-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
+    function csvEscape(s){ return '"' + String(s).replaceAll('"','""') + '"'; }
+    function normalizeName(s){ return (s || '').toString().trim().toLowerCase(); }
+
+    // ✅ helper para imprimir en <pre> sin romper HTML
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;');
+    }
+
+    /* ========================= STATE ========================= */
+    let CLIENTES = [], PRODUCTOS = [], PRECIOS = {};
+    let slotActive = 'A';
+    let notaA = null, notaB = null;
+
+    const slotState = {
+      A:{cliente_id:null, telefono:null},
+      B:{cliente_id:null, telefono:null}
+    };
+
+    /* ========================= REFS ========================= */
+    const cliSelect = $('#cliSelect');
+    const cliTelefono = $('#cliTelefono');
+
+    const notaFolio = $('#notaFolio');
+    const notaFecha = $('#notaFecha');
+    const notaDias = $('#notaDias');
+    const notaVence = $('#notaVence');
+    const notaInfo = $('#notaInfo');
+
+    const pProducto = $('#pProducto');
+    const pKg = $('#pKg');
+    const pPzas = $('#pPzas');
+    const pPrecio = $('#pPrecio');
+    const subtotalBox = $('#subtotalBox');
+
+    const vFolio = $('#vFolio');
+    const vEstado = $('#vEstado');
+    const vSaldo = $('#vSaldo');
+    const vistaBody = $('#vistaBody');
+    const vistaTotal = $('#vistaTotal');
+
+    const bandejaFecha = $('#bandejaFecha');
+    const bandejaBuscar = $('#bandejaBuscar');
+    const bandejaBody = $('#bandejaBody');
+
+    const diaFecha = $('#diaFecha');
+    const diaResumen = $('#diaResumen');
+
+    const notaObs = $('#notaObs');
+
+    /* ========================= INIT ========================= */
+    notaFecha.value = todayISO();
+    notaVence.value = addDays(notaFecha.value, notaDias.value);
+    bandejaFecha.value = todayISO();
+    diaFecha.value = todayISO();
+    notaFolio.value = genFolio();
+
+    /* ========================= STUBS mínimos (para que el archivo no truene)
+       👉 OJO: TU CÓDIGO ORIGINAL TRAE TODAS LAS FUNCIONES.
+       Aquí solo metí lo NUEVO de impresión 80mm para que lo pegues en tu archivo real:
+    ========================= */
+
+    async function saveNotaObs(){
+      const n = activeNota();
+      if(!n) return;
+      const val = (notaObs.value||'').trim() || null;
+      try{
+        await sb.from('notas_credito').update({ observaciones: val }).eq('id', n.id);
+      }catch(e){ console.error(e); }
+    }
+
+    function getClient(id){ return (CLIENTES||[]).find(c=> String(c.id)===String(id)); }
+    function getClientName(id){ return getClient(id)?.nombre || ''; }
+
+    function activeNota(){ return slotActive==='A' ? notaA : notaB; }
+
+    /* ========================= ✅ NUEVA IMPRESIÓN 80mm (FIX SALTOS) ========================= */
+    async function imprimirNota80mm(nota_id){
+      await saveNotaObs();
+
+      const { data: nota } = await sb
+        .from('notas_credito')
+        .select('*, clientes(nombre)')
+        .eq('id', nota_id)
+        .single();
+
+      const { data: det } = await sb
+        .from('notas_detalle')
+        .select('*')
+        .eq('nota_id', nota_id)
+        .order('created_at');
+
+      const cliente = nota.clientes?.nombre || '(sin nombre)';
+      const obs = (nota.observaciones || '').trim();
+
+      const lines = [];
+      lines.push(`${STORE_NAME}`);
+      lines.push(`NOTA A CREDITO`);
+      lines.push(`Cliente: ${cliente}`);
+      lines.push(`Folio: ${nota.folio}`);
+      lines.push(`Fecha: ${nota.fecha}`);
+      lines.push(`--------------------------------`);
+
+      (det || []).forEach(d=>{
+        const qty = d.piezas ? `${to2(d.cantidad)}kg (${d.piezas}pz)` : `${to2(d.cantidad)}kg`;
+        const prod = String(d.producto || '').slice(0, 24);
+        const left = prod.padEnd(24, ' ');
+        const right = qty.padStart(12, ' ');
+        lines.push(`${left}${right}`);
       });
-    });
-  }
 
-  btnOpenCombo.addEventListener("click", ()=>{
-    if(comboList.classList.contains("open")) closeCombo();
-    else openCombo(true);
-  });
+      lines.push(`--------------------------------`);
+      if(obs){
+        lines.push(`Obs:`);
+        obs.split('\n').forEach(l => lines.push(l));
+        lines.push(`--------------------------------`);
+      }
+      lines.push(`Gracias por su preferencia`);
+      lines.push(``);
 
-  $("nombre").addEventListener("click", ()=> openCombo(true));
-  $("nombre").addEventListener("focus", ()=> openCombo(true));
+      const ticketText = lines.join('\n');
 
-  function findClientByName(name){
-    const n = normalizeLine(name).toLowerCase();
-    return clientsCache.find(c => normalizeLine(c.nombre || "").toLowerCase() === n) || null;
-  }
+      const html = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="utf-8" />
+          <title>Ticket 80mm</title>
+          <style>
+            *{ box-sizing:border-box; }
+            body{
+              margin:0;
+              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+              font-size: 12px;
+              line-height: 1.25;
+              background:#fff;
+            }
+            .paper{
+              width: 80mm;
+              padding: 2mm;
+            }
+            pre{
+              margin:0;
+              white-space: pre-wrap;
+              word-break: break-word;
+            }
+            @media print{
+              @page{ size: 80mm auto; margin: 0mm; }
+              body{ margin:0; }
+              .paper{ width:80mm; padding:2mm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="paper">
+            <pre>${escapeHtml(ticketText)}</pre>
+          </div>
 
-  $("nombre").addEventListener("input", async ()=>{
-    openCombo(false);
-    const c = findClientByName($("nombre").value);
-    if(c){
-      $("tel").value = c.telefono || "";
-      currentClient = c;
-      renderStatus();
-      await renderClientQR();
-      showBar("ok","Cliente listo", `${currentClient?.nombre || "—"}`);
-      closeCombo();
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                setTimeout(() => window.close(), 250);
+              }, 150);
+            };
+          </script>
+        </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank', 'width=420,height=700');
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
     }
-  });
 
-  document.addEventListener("click", (e)=>{
-    if(comboList.classList.contains("open") && !comboWrap.contains(e.target)){
-      closeCombo();
-    }
-  });
+    /* ========================= BOTÓN 80mm ========================= */
+    $('#btnImprimir80').addEventListener('click', ()=> activeNota() && imprimirNota80mm(activeNota().id));
 
-  // =========================
-  // CRUD Clientes
-  // =========================
-  async function loadClients(){
-    const { data, error } = await sb
-      .from(T_CLIENTES)
-      .select("id,telefono,nombre,puntos,saldo_kg")
-      .order("nombre", { ascending: true })
-      .limit(5000);
-
-    if(error){ console.error(error); return; }
-    clientsCache = (data || []).filter(c => (c.nombre || "").trim().length > 0);
-    if(comboList.classList.contains("open")) renderComboList("");
-  }
-
-  async function buscarClientePorNombreOTel(){
-    const nombre = normalizeLine($("nombre").value);
-    const tel = cleanPhone($("tel").value);
-    if(!nombre) throw new Error("Escribe el nombre del cliente.");
-
-    const cached = findClientByName(nombre);
-    if(cached){
-      currentClient = cached;
-      $("tel").value = cached.telefono || tel;
-      renderStatus();
-      await renderClientQR();
-      showBar("ok","Cliente encontrado", currentClient.nombre || "—");
-      closeCombo();
-      return;
-    }
-
-    const { data, error } = await sb
-      .from(T_CLIENTES)
-      .select("id,telefono,nombre,puntos,saldo_kg")
-      .ilike("nombre", nombre)
-      .maybeSingle();
-
-    if(error) throw error;
-
-    currentClient = data || null;
-    if(data) $("tel").value = data.telefono || tel;
-
-    renderStatus();
-    await renderClientQR();
-
-    if(data) showBar("ok","Cliente encontrado", data.nombre || "—");
-    else showBar("warn","No existe", "Puedes crearlo con “Crear / Actualizar”.");
-  }
-
-  async function crearOActualizarCliente(){
-    const nombre = normalizeLine($("nombre").value);
-    const tel = cleanPhone($("tel").value);
-
-    if(!nombre) throw new Error("Escribe el nombre del cliente.");
-    if(tel && tel.length !== 10) throw new Error("Teléfono inválido (10 dígitos).");
-
-    const payload = { nombre };
-    if(tel) payload.telefono = tel;
-
-    let res;
-    if(tel){
-      res = await sb.from(T_CLIENTES).upsert(payload, { onConflict: "telefono" })
-        .select("id,telefono,nombre,puntos,saldo_kg").single();
-    }else{
-      res = await sb.from(T_CLIENTES).insert(payload)
-        .select("id,telefono,nombre,puntos,saldo_kg").single();
-    }
-    if(res.error) throw res.error;
-
-    currentClient = res.data;
-    renderStatus();
-    await renderClientQR();
-    await loadClients();
-    showBar("ok","Guardado", `${currentClient?.nombre || "—"} ✅`);
-    closeCombo();
-  }
-
-  $("btnBuscar").addEventListener("click", async ()=>{
-    try{ await buscarClientePorNombreOTel(); }
-    catch(e){ showBar("bad","Error", e.message || String(e)); }
-  });
-
-  $("btnCrear").addEventListener("click", async ()=>{
-    try{ await crearOActualizarCliente(); }
-    catch(e){ showBar("bad","Error", e.message || String(e)); }
-  });
-
-  $("btnReloadNames").addEventListener("click", async ()=>{
-    await loadClients();
-    showBar("ok","Listo", "Lista de clientes actualizada ✅");
-  });
-
-  // Admin: procesar pegado + limpiar
-  const btnProcesarPegado = $("btnProcesarPegado");
-  const btnLimpiar = $("btnLimpiar");
-  if(btnProcesarPegado){
-    btnProcesarPegado.addEventListener("click", async ()=>{
-      const txt = ($("qrPayload")?.value || "").trim();
-      if(!txt) return logAdmin("Pega el contenido del QR primero.");
-      await handleDecoded(txt);
-    });
-  }
-  if(btnLimpiar){
-    btnLimpiar.addEventListener("click", ()=>{
-      if($("qrPayload")) $("qrPayload").value = "";
-      totalKgEl.textContent = "0.00";
-      if(countLinesEl) countLinesEl.textContent = "0";
-      if(fpShortEl) fpShortEl.textContent = "—";
-      if($("kgAuto")) $("kgAuto").value = "";
-      if($("kgAutoOp")) $("kgAutoOp").value = "";
-      ticketItemsUi = []; ticketItemsInv = [];
-      renderDetalleEditable();
-      logAdmin("Listo.");
-      showBar("ok","Listo","Se limpió el ticket.");
-    });
-  }
-
-  // Cargar por ?cid=
-  async function cargarClientePorQuery(){
-    const u = new URL(window.location.href);
-    const cid = u.searchParams.get("cid");
-    if(!cid) return;
-
-    const { data, error } = await sb
-      .from(T_CLIENTES)
-      .select("id,telefono,nombre,puntos,saldo_kg")
-      .eq("id", cid)
-      .maybeSingle();
-
-    if(error){ showBar("bad","Error", "No pude cargar cid."); return; }
-    if(!data){ showBar("warn","No existe", "Este cliente no existe."); return; }
-
-    currentClient = data;
-    $("nombre").value = data.nombre || "";
-    $("tel").value = data.telefono || "";
-    renderStatus();
-    await renderClientQR();
-    showBar("ok","Cliente listo", data.nombre || "—");
-    closeCombo();
-  }
-
-  // Init
-  (async function init(){
-    applyRoleUI();
-    renderStatus();
-    renderDetalleEditable();
-    await loadClients();
-    await cargarClientePorQuery();
-    await refreshCameras();
-
-    // Mensaje inicial simple
-    showBar("ok","Listo para trabajar","Paso 1: elige cliente. Paso 2: escanea ticket.");
-    if(role === "admin") logAdmin("Listo. Selecciona cliente y escanea QR.");
-  })();
-</script>
-
+    /* =========================
+       TODO: aquí iría el RESTO de tu JS original (loadClientes, loadProductos, recalc, renderVista, etc.)
+       Pega esta función dentro de tu archivo real y listo.
+    ========================= */
+  </script>
 </body>
 </html>
