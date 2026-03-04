@@ -119,22 +119,39 @@
 
     <div class="hr"></div>
 
-    <h2 style="margin:0;">Etiqueta libre 80mm</h2>
-    <div class="hint">Escribe el texto como quieras (con saltos de línea). Ej: “CAJA WASHINGTON↵890 kg↵40 cajas”.</div>
-
-    <label for="etiquetaTexto">Texto de etiqueta:</label>
-    <textarea id="etiquetaTexto" placeholder="CAJA WASHINGTON
-890 kg
-40 cajas"></textarea>
+    <!-- ✅ NUEVA ETIQUETA ENVÍO 80MM -->
+    <h2 style="margin:0;">Etiqueta envío 80mm (horizontal)</h2>
+    <div class="hint">Selecciona quién entrega y la colonia destino. (Sin texto libre)</div>
 
     <div class="row">
+      <div>
+        <label for="entregaNombre">Quién entrega:</label>
+        <select id="entregaNombre">
+          <option value="">— Selecciona —</option>
+          <option value="FER">FER</option>
+          <option value="NETO">NETO</option>
+          <option value="ALE">ALE</option>
+          <option value="PACO">PACO</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="coloniaDestino">Colonia destino:</label>
+        <select id="coloniaDestino">
+          <option value="">— Selecciona —</option>
+        </select>
+        <div class="mini">La lista de colonias se edita en el código.</div>
+      </div>
+
       <div>
         <label for="etqCopias">Copias:</label>
         <input type="number" id="etqCopias" min="1" step="1" value="1" />
       </div>
+
       <div style="flex:0 0 auto;">
         <button onclick="imprimirEtiqueta80mm()">Imprimir etiqueta 80mm</button>
       </div>
+
       <div style="flex:0 0 auto;">
         <button class="btn-gray" onclick="limpiarEtiqueta()">Limpiar</button>
       </div>
@@ -288,6 +305,29 @@
       ]
     };
 
+    // ✅ EDITA AQUÍ LAS COLONIAS (combo de destino)
+    const COLONIAS_DESTINO = [
+      "San Roque",
+      "San Cristóbal",
+      "Las Heras",
+      "Villas de Irapuato",
+      "Centro",
+      "La Moderna",
+      "Calzada de Guadalupe"
+    ];
+
+    function llenarColonias(){
+      const sel = document.getElementById('coloniaDestino');
+      if(!sel) return;
+      sel.innerHTML = '<option value="">— Selecciona —</option>';
+      COLONIAS_DESTINO.forEach(c=>{
+        const op = document.createElement('option');
+        op.value = c;
+        op.textContent = c;
+        sel.appendChild(op);
+      });
+    }
+
     function fillProductoOptions(origen){
       const sel = document.getElementById('prodSelect');
       const freeWrap = document.getElementById('prodNombreWrap');
@@ -369,7 +409,8 @@
         fields: {
           fecha: document.getElementById('fecha')?.value || '',
           seboKg: document.getElementById('seboKg')?.value || '',
-          etiquetaTexto: document.getElementById('etiquetaTexto')?.value || '',
+          entregaNombre: document.getElementById('entregaNombre')?.value || '',
+          coloniaDestino: document.getElementById('coloniaDestino')?.value || '',
           etqCopias: document.getElementById('etqCopias')?.value || '1',
           origenTipo: document.getElementById('origenTipo')?.value || '',
           prodSelect: document.getElementById('prodSelect')?.value || '',
@@ -393,7 +434,12 @@
 
       setVal('fecha', f.fecha);
       setVal('seboKg', f.seboKg);
-      setVal('etiquetaTexto', f.etiquetaTexto);
+
+      // Llenar colonias antes de setear
+      llenarColonias();
+      setVal('entregaNombre', f.entregaNombre);
+      setVal('coloniaDestino', f.coloniaDestino);
+
       setVal('etqCopias', f.etqCopias);
       setVal('origenTipo', f.origenTipo);
 
@@ -446,7 +492,9 @@
 
       document.getElementById('fecha').value = '';
       document.getElementById('seboKg').value = '';
-      document.getElementById('etiquetaTexto').value = '';
+
+      document.getElementById('entregaNombre').value = '';
+      document.getElementById('coloniaDestino').value = '';
       document.getElementById('etqCopias').value = 1;
 
       document.getElementById('origenTipo').value = '';
@@ -578,16 +626,17 @@
       vdcDraftSave();
     }
 
-    // ✅✅✅ ETIQUETA 80MM HORIZONTAL + TEXTO CENTRADO (VERTICAL Y HORIZONTAL) ✅✅✅
+    // ✅✅✅ ETIQUETA ENVÍO: QUIÉN ENTREGA + COLONIA DESTINO (HORIZONTAL CENTRADA) ✅✅✅
     function imprimirEtiqueta80mm() {
-      const texto = (document.getElementById('etiquetaTexto').value || '').trim();
+      const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
+      const colonia = (document.getElementById('coloniaDestino')?.value || '').trim();
       const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
-      if (!texto) return alert("Escribe el texto de la etiqueta.");
+
+      if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
+      if (!colonia) return alert("Selecciona la colonia destino.");
 
       const STORE = "Carnes y Vísceras del Centro";
       const fecha = fechaMX();
-
-      const safe = escapeHtml(texto).replaceAll('\n','<br>');
 
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -612,26 +661,30 @@
           text-align:center;
         }
 
-        .c{font-size:11px;line-height:1.3}
+        .c{font-size:12px;line-height:1.25}
         .line{width:100%;border-top:1px dashed #000;margin:6px 0}
 
-        .body{
-          width:100%;
+        .who{
+          font-weight:900;
+          font-size:26px;
+          letter-spacing:1px;
+          margin-top:2mm;
+        }
+
+        .col{
           font-weight:900;
           font-size:22px;
-          line-height:1.2;
+          margin-top:2mm;
           word-break:break-word;
-          display:flex;
-          align-items:center;
-          justify-content:center;
+          padding:0 2mm;
         }
       </style></head><body>
         <div id="t">
           <div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>
           <div class="line"></div>
-          <div class="body">${safe}</div>
+          <div class="who">${escapeHtml(entrega)}</div>
+          <div class="col">${escapeHtml(colonia.toUpperCase())}</div>
           <div class="line"></div>
-          <div class="c">Etiqueta / Señalamiento</div>
         </div>
       </body></html>`;
 
@@ -658,7 +711,8 @@
     }
 
     function limpiarEtiqueta(){
-      document.getElementById('etiquetaTexto').value = '';
+      document.getElementById('entregaNombre').value = '';
+      document.getElementById('coloniaDestino').value = '';
       document.getElementById('etqCopias').value = 1;
       scheduleDraft();
     }
@@ -864,6 +918,7 @@
 
       setupUI();
       fillProductoOptions('');
+      llenarColonias();
 
       vdcDraftLoad();
       vdcDraftSave();
