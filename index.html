@@ -626,7 +626,7 @@
       vdcDraftSave();
     }
 
-    // ✅✅✅ ETIQUETA ENVÍO: QUIÉN ENTREGA + COLONIA DESTINO (HORIZONTAL CENTRADA) ✅✅✅
+    // ✅✅✅ ETIQUETA ENVÍO: AGREGAR LÍNEA ENTRE NOMBRE Y COLONIA ✅✅✅
     function imprimirEtiqueta80mm() {
       const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
       const colonia = (document.getElementById('coloniaDestino')?.value || '').trim();
@@ -649,15 +649,14 @@
           @page{ size: landscape; margin:0; }
         }
 
-        /* Contenedor ocupa la "altura" imprimible para centrar vertical */
         #t{
           width:100%;
           min-height:100vh;
           padding:10mm;
           display:flex;
           flex-direction:column;
-          justify-content:center; /* ✅ centra vertical */
-          align-items:center;     /* ✅ centra horizontal */
+          justify-content:center;
+          align-items:center;
           text-align:center;
         }
 
@@ -682,7 +681,10 @@
         <div id="t">
           <div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>
           <div class="line"></div>
+
           <div class="who">${escapeHtml(entrega)}</div>
+          <div class="line"></div> <!-- ✅ línea separadora entre nombre y colonia -->
+
           <div class="col">${escapeHtml(colonia.toUpperCase())}</div>
           <div class="line"></div>
         </div>
