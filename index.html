@@ -1,147 +1,67 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
+  <title>Hoja de pesos y sebo 2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VDC360° — Notas a Crédito</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
-    :root{--ink:#111;--brand:#0a7a3b;--muted:#6b7280;--bg:#f6f7f8;--card:#fff}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto}
-    header{background:var(--brand);color:#fff;padding:14px 18px}
-    header h1{margin:0;font-size:18px}
-    main{max-width:1240px;margin:0 auto;padding:16px;display:grid;gap:16px}
-    .card{background:var(--card);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:16px}
-    h2{margin:0 0 10px 0;font-size:18px}
-    label{display:block;margin-top:8px;font-size:14px;color:#111}
-    input,select,button,textarea{width:100%;padding:10px;margin-top:6px;font-size:14px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}
-    table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{padding:8px;border-bottom:1px solid #eef0f2;text-align:left;font-size:14px}
-    th{background:#fafafa}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-    .grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
-    .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .right{margin-left:auto}
-    .btn{cursor:pointer}
-    .btn-primary{background:var(--brand);color:#fff;border:none}
-    .btn-ghost{background:#fff;border:1px solid #e5e7eb;color:#111}
-    .btn-muted{background:#111;color:#fff;border:none}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef7f0;color:#0a7a3b;font-size:12px}
-    .muted{color:var(--muted);font-size:13px}
-    .danger{color:#b91c1c}
-    .slotbar{display:flex;gap:8px;align-items:center;margin-top:8px}
-    .slotbtn{border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer}
-    .slotbtn.active{background:#0a7a3b;color:#fff;border-color:#0a7a3b}
-    .btn-sm{padding:4px 8px;font-size:12px}
-    .cell-editing input{width:100%;padding:6px;font-size:14px}
+    body { font-family: sans-serif; background:#f2f2f2; padding:30px; }
+    .container { background:#fff; padding:40px; border-radius:12px; max-width:900px; margin:auto; }
+    h1 { margin:0 0 12px; font-size:32px; }
+    label { display:block; margin-top:18px; font-weight:700; }
+    input, textarea, select {
+      width:100%; padding:10px; font-size:16px; margin-top:6px;
+      border:1px solid #d1d5db; border-radius:10px;
+    }
+    textarea { min-height:120px; resize:vertical; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-top:14px; }
+    .row > div { flex:1 1 220px; }
+    button {
+      padding:12px 18px; border:none; border-radius:10px;
+      background:#198754; color:#fff; font-size:16px; cursor:pointer;
+    }
+    button:hover { background:#146c43; }
+    .btn-gray{ background:#374151; }
+    .btn-gray:hover{ background:#111827; }
+    .btn-teal{ background:#0f766e; }
+    .btn-teal:hover{ background:#115e59; }
+    .btn-red{ background:#dc2626; }
+    .btn-red:hover{ background:#b91c1c; }
 
-    /* ====== IMPRESIÓN GENERAL (nota individual / ticket80 usando #printArea) ====== */
-    @media print{
-      body *{visibility:hidden}
-      #printArea, #printArea *{visibility:visible}
-      #printArea{position:fixed; left:0; top:0}
-      @page{ size: A4 landscape; margin: 10mm; }
+    #resultado-totales{
+      margin-top:22px; white-space:pre-line; font-size:16px;
+      background:#f9fafb; border:1px solid #e5e7eb; padding:14px; border-radius:12px;
+    }
+    .hr{ margin:26px 0; border-top:1px solid #e5e7eb; }
+    .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
 
-      #printArea:not(.ticket80){
-        width:297mm;
-        padding:8mm 10mm;
-      }
-      #printArea:not(.ticket80) h3{ margin:0 0 4mm 0; font-size:14px; }
-      #printArea:not(.ticket80) table{ width:100%; border-collapse:collapse; }
-      #printArea:not(.ticket80) th,
-      #printArea:not(.ticket80) td{ border:1px solid #aaa; padding:3px 4px; font-size:11px; }
-
-      /* Ticket 80mm */
-      #printArea.ticket80{width:80mm; padding:2mm}
-      #printArea.ticket80 .tk-header{ text-align:center; font-size:12px; line-height:1.2; margin-bottom:6px }
-      #printArea.ticket80 .tk-header .store{ font-weight:700; font-size:14px }
-      #printArea.ticket80 .tk-meta{ font-size:11px; margin-bottom:6px }
-      #printArea.ticket80 .tk-line{ border-top:1px dashed #000; margin:6px 0 }
-      #printArea.ticket80 .tk-items{ width:100%; font-size:11px; border-collapse:collapse }
-      #printArea.ticket80 .tk-items th,
-      #printArea.ticket80 .tk-items td{ padding:2px 0; }
-      #printArea.ticket80 .right{ float:right }
-      #printArea.ticket80 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace }
-      #printArea.ticket80 .totals{ font-size:12px; font-weight:700; margin-top:4px }
-      #printArea.ticket80 .obs-title{ font-weight:700; font-size:11px; margin-top:6px }
-      #printArea.ticket80 .obs{ white-space:pre-wrap; font-size:11px; }
-      #printArea.ticket80 .thanks{ text-align:center; margin-top:8px; font-size:11px }
+    table{ width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td{ border:1px solid #e5e7eb; padding:8px; text-align:left; }
+    th{ background:#f9fafb; }
+    .mini{ font-size:12px; color:#6b7280; }
+    .msgbox{
+      margin-top:12px; white-space:pre-line; background:#0b1220; color:#e5e7eb;
+      padding:14px; border-radius:12px; border:1px solid #111827;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
     }
 
-    /* ===========================
-       ✅ BANDEJA COMPACTA (SIN SCROLL INFINITO)
-       - contenedor con scroll interno
-       - header sticky
-       - buscador
-       - menú de acciones dropdown
-    =========================== */
-    .bandejaWrap{
-      max-height: 55vh;
-      overflow:auto;
-      border:1px solid #eef0f2;
-      border-radius:12px;
-      margin-top:12px;
-    }
-    .bandejaWrap table{ margin-top:0; }
-    .bandejaWrap thead th{
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background:#fafafa;
-    }
-    .bandejaTools{
-      display:flex;
-      gap:10px;
-      align-items:flex-end;
-      flex-wrap:wrap;
-    }
-    .bandejaTools input, .bandejaTools select, .bandejaTools button{ margin-top:0; }
-
-    details.actionMenu{ position:relative; display:inline-block; }
-    details.actionMenu summary{
-      list-style:none;
-      cursor:pointer;
-      user-select:none;
-      padding:8px 10px;
-      border-radius:10px;
-      border:1px solid #e5e7eb;
-      background:#fff;
-      font-weight:800;
-    }
-    details.actionMenu[open] summary{
-      background:#0a7a3b;
-      color:#fff;
-      border-color:#0a7a3b;
-    }
-    details.actionMenu summary::-webkit-details-marker{ display:none; }
-
-    .menuPanel{
-      position:absolute;
-      right:0;
-      margin-top:8px;
-      min-width:220px;
-      background:#fff;
+    .draftbar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      margin: 8px 0 18px;
+      padding:10px 12px;
       border:1px solid #e5e7eb;
       border-radius:12px;
-      box-shadow:0 12px 28px rgba(0,0,0,.12);
-      padding:8px;
-      z-index:50;
+      background:#f9fafb;
     }
-    .menuPanel button{
-      width:100%;
-      text-align:left;
-      padding:10px 10px;
-      border-radius:10px;
-      border:1px solid #eef0f2;
-      background:#fff;
-      margin:6px 0;
-      cursor:pointer;
-      font-weight:800;
+    .draftbar .status{
+      font-size:12px; color:#6b7280; font-weight:700;
     }
-    .menuPanel button:hover{ background:#f6f7f8; }
-    .menuPanel button.danger{ border-color:#fee2e2; color:#b91c1c; }
+
+    /* Solo se ve cuando eliges "Producto libre" */
+    #prodNombreWrap{ display:none; }
   </style>
 </head>
 
@@ -163,1806 +83,791 @@
   ← VDC Central
 </a>
 
-  <header>
-    <h1>VDC360° · Notas a Crédito (Slots A/B + Reporte Diario)</h1>
-  </header>
+  <div class="container">
+    <h1>Hoja de pesos y sebo</h1>
 
-  <main>
-    <!-- SLOTS A/B -->
-    <section class="card">
-      <h2>🧭 Trabajo en paralelo (2 clientes)</h2>
-      <div class="slotbar">
-        <button class="slotbtn active" id="slotA" type="button">Slot A</button>
-        <span class="pill" id="slotALabel">—</span>
-
-        <button class="slotbtn" id="slotB" type="button">Slot B</button>
-        <span class="pill" id="slotBLabel">—</span>
-
-        <span class="right flex" style="gap:6px">
-          <input type="checkbox" id="exitGuardToggle" />
-          <label for="exitGuardToggle" class="muted" style="margin:0">Confirmar al salir</label>
-        </span>
-      </div>
-    </section>
-
-    <!-- CONTROLES (slot activo) -->
-    <section class="card">
-      <h2>🧾 Nota (Slot activo)</h2>
-
-      <div class="row">
-        <div>
-          <label>Cliente</label>
-          <div class="flex" style="gap:6px; align-items:stretch">
-            <select id="cliSelect"></select>
-            <button class="btn btn-ghost" id="btnNuevoCliente" type="button">+ Cliente</button>
-          </div>
-        </div>
-
-        <div>
-          <label>Teléfono (WhatsApp)</label>
-          <input id="cliTelefono" placeholder="10 dígitos" />
-        </div>
-      </div>
-
-      <div class="row-3">
-        <div>
-          <label>Folio</label>
-          <input id="notaFolio" placeholder="Autogenerado" />
-        </div>
-
-        <div>
-          <label>Fecha</label>
-          <input id="notaFecha" type="date" />
-        </div>
-
-        <div>
-          <label>Días de crédito</label>
-          <select id="notaDias">
-            <option value="7">7</option>
-            <option value="15">15</option>
-            <option value="30" selected>30</option>
-            <option value="45">45</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Vence</label>
-          <input id="notaVence" type="date" />
-        </div>
-
-        <div>
-          <label>&nbsp;</label>
-          <div class="flex">
-            <button class="btn btn-primary" id="btnContinuar" type="button">
-              Crear / Continuar Nota en Slot Activo
-            </button>
-            <span class="pill right" id="notaInfo">Sin nota en slot</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div class="grid-2">
-      <!-- CAPTURA -->
-      <section class="card">
-        <h2>🧺 Capturar partidas</h2>
-
-        <!-- ===== MODO NORMAL (todos los clientes) ===== -->
-        <div id="capNormal">
-          <div class="row-3">
-            <div>
-              <label>Producto</label>
-              <input id="pProducto" list="catProductos" placeholder="Ej. Panza de Res" />
-            </div>
-
-            <div>
-              <label>Kilos</label>
-              <input id="pKg" type="number" min="0" step="0.01" value="1" />
-
-              <!-- ✅ BÁSCULA (Realtime entre dispositivos vía Supabase) -->
-              <div class="flex" style="margin-top:8px; gap:8px">
-                <button type="button" class="btn btn-ghost" id="btnPeso">📥 Tomar peso</button>
-
-                <label class="muted" style="display:flex; align-items:center; gap:8px; margin:0">
-                  <input type="checkbox" id="rtBascula" />
-                  Real-time
-                </label>
-
-                <select id="rtModo" style="max-width:220px">
-                  <option value="auto" selected>Auto (Realtime Supabase)</option>
-                  <option value="poll">Poll (consultar cada X ms)</option>
-                </select>
-
-                <select id="rtMs" style="max-width:140px">
-                  <option value="250">0.25s</option>
-                  <option value="500" selected>0.50s</option>
-                  <option value="800">0.80s</option>
-                  <option value="1000">1.0s</option>
-                  <option value="1500">1.5s</option>
-                </select>
-
-                <span id="pesoStatus" class="pill">Báscula: —</span>
-              </div>
-            </div>
-
-            <div>
-              <label>Piezas (opcional)</label>
-              <input id="pPzas" type="number" min="0" step="1" />
-            </div>
-          </div>
-
-          <div style="margin-top:8px">
-            <label>Precio/kg</label>
-            <input id="pPrecio" type="number" min="0" step="0.01" value="0" />
-          </div>
-
-          <div class="flex" style="margin-top:10px">
-            <button class="btn btn-primary" id="btnAgregar" type="button">Agregar a nota (Enter)</button>
-            <span class="pill right" id="subtotalBox">Subtotal: $0.00</span>
-          </div>
-        </div>
-
-        <!-- ===== MODO Pieles y Grasas (solo ese cliente) ===== -->
-        <div id="capPG" style="display:none">
-          <!-- SEBO -->
-          <div class="row-3">
-            <div>
-              <label>Producto</label>
-              <input value="Sebo" disabled />
-            </div>
-            <div>
-              <label>Kilos</label>
-              <input id="seboKg" type="number" min="0" step="0.01" value="0" />
-            </div>
-            <div>
-              <label>Piezas (opcional)</label>
-              <input id="seboPzas" type="number" min="0" step="1" />
-            </div>
-          </div>
-
-          <div class="flex" style="margin-top:10px">
-            <button class="btn btn-primary" id="btnAgregarSebo" type="button">Agregar Sebo</button>
-            <span class="pill right" id="subtotalBox2">Subtotal: $0.00</span>
-          </div>
-
-          <hr style="border:none;border-top:1px solid #eef0f2;margin:14px 0" />
-
-          <!-- HUESO -->
-          <div class="row-3">
-            <div>
-              <label>Producto</label>
-              <input value="Hueso" disabled />
-            </div>
-            <div>
-              <label>Kilos</label>
-              <input id="huesoKg" type="number" min="0" step="0.01" value="0" />
-            </div>
-            <div>
-              <label>Piezas (opcional)</label>
-              <input id="huesoPzas" type="number" min="0" step="1" />
-            </div>
-          </div>
-
-          <div class="flex" style="margin-top:10px">
-            <button class="btn btn-primary" id="btnAgregarHueso" type="button">Agregar Hueso</button>
-          </div>
-        </div>
-
-        <label style="margin-top:12px">Observaciones</label>
-        <textarea id="notaObs" rows="2" placeholder="Instrucciones, cortes, etc."></textarea>
-      </section>
-
-      <!-- VISTA EN VIVO -->
-      <section class="card">
-        <h2>👤 Vista del cliente (slot activo)</h2>
-
-        <div class="flex" style="gap:6px;margin-bottom:6px">
-          <div class="pill">Folio: <span id="vFolio">—</span></div>
-          <div class="pill">Estado: <span id="vEstado">—</span></div>
-          <div class="pill">Saldo: $<span id="vSaldo">0.00</span></div>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha/Hora</th>
-              <th>Producto</th>
-              <th>Kg</th>
-              <th>Pzas</th>
-              <th>P.Unit</th>
-              <th>Importe</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="vistaBody"></tbody>
-          <tfoot>
-            <tr>
-              <td colspan="6" style="text-align:right">Total</td>
-              <td id="vistaTotal">$0.00</td>
-            </tr>
-          </tfoot>
-        </table>
-      </section>
+    <div class="draftbar">
+      <button class="btn-gray" type="button" onclick="vdcDraftSave()">💾 Guardar borrador</button>
+      <button class="btn-red" type="button" onclick="vdcDraftClear()">🧹 Limpiar borrador</button>
+      <span id="draftStatus" class="status">Borrador: —</span>
     </div>
 
-    <!-- ✅ BANDEJA (COMPACTA + BUSCADOR + ACCIONES DROPDOWN + SCROLL INTERNO) -->
-    <section class="card">
-      <h2>📥 Notas abiertas hoy (todas)</h2>
+    <label for="fecha">Fecha del viaje:</label>
+    <input type="date" id="fecha" />
 
-      <div class="bandejaTools">
-        <div style="flex:1; min-width:220px">
-          <label>Fecha</label>
-          <input id="bandejaFecha" type="date" />
-        </div>
+    <div class="row">
+      <div style="flex:0 0 auto;">
+        <button onclick="guardarViaje()">Guardar Viaje</button>
+      </div>
+      <div style="flex:0 0 auto;">
+        <button class="btn-gray" onclick="generarDocumento()">Generar Documento de Totales</button>
+      </div>
+    </div>
 
-        <div style="flex:2; min-width:260px">
-          <label>Buscar (folio o cliente)</label>
-          <input id="bandejaBuscar" placeholder="Ej. CVC-20260206... o Carnicería" />
-        </div>
+    <div class="hr"></div>
 
-        <div style="min-width:220px">
-          <label>&nbsp;</label>
-          <button class="btn btn-ghost" id="btnBandeja" type="button">Actualizar</button>
-        </div>
+    <h2 style="margin:0;">Papel de sebo 80mm</h2>
+    <div class="row">
+      <div>
+        <label for="seboKg">Kilos de sebo (DIO SEBO):</label>
+        <input type="number" id="seboKg" step="0.01" min="0" placeholder="Ej. 15.00" />
+      </div>
+      <div style="flex:0 0 auto;">
+        <button onclick="imprimirSebo80mm()">Imprimir papel de sebo 80mm</button>
+      </div>
+    </div>
 
-        <span class="muted" style="align-self:center">Tip: carga una nota al Slot A o B y alterna rápido.</span>
+    <div class="hr"></div>
+
+    <h2 style="margin:0;">Etiqueta libre 80mm</h2>
+    <div class="hint">Escribe el texto como quieras (con saltos de línea). Ej: “CAJA WASHINGTON↵890 kg↵40 cajas”.</div>
+
+    <label for="etiquetaTexto">Texto de etiqueta:</label>
+    <textarea id="etiquetaTexto" placeholder="CAJA WASHINGTON
+890 kg
+40 cajas"></textarea>
+
+    <div class="row">
+      <div>
+        <label for="etqCopias">Copias:</label>
+        <input type="number" id="etqCopias" min="1" step="1" value="1" />
+      </div>
+      <div style="flex:0 0 auto;">
+        <button onclick="imprimirEtiqueta80mm()">Imprimir etiqueta 80mm</button>
+      </div>
+      <div style="flex:0 0 auto;">
+        <button class="btn-gray" onclick="limpiarEtiqueta()">Limpiar</button>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <!-- === MENSAJE PARA WHATSAPP === -->
+    <h2 style="margin:0;">Mensaje de pesajes para WhatsApp</h2>
+    <div class="hint">Elige el origen, luego el producto (combo) y agrega kg/pzas.</div>
+
+    <div class="row">
+      <div>
+        <label>Origen (tipo):</label>
+        <select id="origenTipo">
+          <option value="">— Selecciona —</option>
+          <option value="rastro">Rastro</option>
+          <option value="granja">Granja</option>
+          <option value="limpieza">Limpieza</option>
+        </select>
+        <div class="mini">Esto define qué opciones salen en “Producto”.</div>
       </div>
 
-      <div class="bandejaWrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Folio</th>
-              <th>Cliente</th>
-              <th>Saldo</th>
-              <th>Estado</th>
-              <th style="text-align:right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="bandejaBody"></tbody>
-        </table>
+      <div>
+        <label for="whatsNumero">WhatsApp destino (opcional):</label>
+        <input id="whatsNumero" placeholder="Ej. 524621872594 (sin + ni espacios)" />
+        <div class="mini">Si lo dejas vacío, igual genera el texto y tú lo pegas donde quieras.</div>
       </div>
-    </section>
+    </div>
 
-    <!-- REPORTE DIARIO GENERAL -->
-    <section class="card">
-      <h2>📄 Reporte diario GENERAL (todos los clientes)</h2>
-
-      <div class="row">
-        <div>
-          <label>Fecha</label>
-          <input id="diaFecha" type="date" />
-        </div>
-
-        <div>
-          <label>&nbsp;</label>
-          <div class="flex">
-            <button class="btn btn-ghost" id="btnDiaA4" type="button">Imprimir A4 (todos)</button>
-            <button class="btn btn-ghost" id="btnDiaCSV" type="button">CSV (todos)</button>
-            <span class="pill right" id="diaResumen">—</span>
-          </div>
-        </div>
+    <div class="row">
+      <div>
+        <label>Producto (según origen):</label>
+        <select id="prodSelect" disabled>
+          <option value="">— Selecciona origen primero —</option>
+        </select>
       </div>
-    </section>
 
-    <!-- ACCIONES NOTA -->
-    <section class="card">
-      <div class="flex">
-        <button class="btn btn-ghost" id="btnWA" type="button">WhatsApp Cuenta</button>
-        <button class="btn btn-ghost" id="btnImprimir" type="button">Imprimir A4</button>
-        <button class="btn btn-ghost" id="btnImprimir80" type="button">Imprimir 80mm</button>
-        <button class="btn btn-ghost" id="btnCSV" type="button">Exportar CSV</button>
-        <button class="btn btn-ghost danger right" id="btnCerrar" type="button">Cerrar Nota</button>
+      <div id="prodNombreWrap">
+        <label for="prodNombre">Producto libre:</label>
+        <input id="prodNombre" placeholder="Escribe producto personalizado" />
       </div>
-    </section>
-  </main>
 
-  <div id="printArea" style="display:none"></div>
-  <datalist id="catProductos"></datalist>
+      <div>
+        <label for="prodKg">Kg (opcional):</label>
+        <input type="number" id="prodKg" step="0.01" min="0" placeholder="Ej. 130" />
+      </div>
+      <div>
+        <label for="prodPzas">Pzas (opcional):</label>
+        <input type="number" id="prodPzas" step="1" min="0" placeholder="Ej. 20" />
+      </div>
 
-  <!-- ✅ UNA sola carga UMD -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <div style="flex:0 0 auto;">
+        <button onclick="agregarLinea()">Agregar</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Kg</th>
+          <th>Pzas</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tablaLineas"></tbody>
+    </table>
+
+    <div class="row">
+      <div style="flex:0 0 auto;">
+        <button class="btn-teal" onclick="generarMensaje()">Generar mensaje</button>
+      </div>
+      <div style="flex:0 0 auto;">
+        <button onclick="copiarMensaje()">Copiar</button>
+      </div>
+      <div style="flex:0 0 auto;">
+        <button class="btn-gray" onclick="abrirWhatsApp()">Abrir WhatsApp</button>
+      </div>
+      <div style="flex:0 0 auto;">
+        <button class="btn-red" onclick="limpiarPesajes()">Limpiar todo</button>
+      </div>
+    </div>
+
+    <div id="vistaMensaje" class="msgbox" style="display:none;"></div>
+    <div id="resultado-totales"></div>
+
+    <div id="debug" class="msgbox" style="display:none;"></div>
+  </div>
 
   <script>
-    /* ========================= CONFIG ========================= */
-    const SUPABASE_URL = "https://bjebybdqcqscouxlinfd.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWJ5YmRxY3FzY291eGxpbmZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYzMjQ3MTksImV4cCI6MjA3MTkwMDcxOX0.mQgWtiYEyJTiF04pdcLv63SqPNrU1Iehws0vKqr82O0";
-
-    // ✅ Cliente Supabase “blindado”
-    const sb = window.__sb || (window.__sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
-
-    const STORE_NAME = "Carnes y Vísceras del Centro";
-
-    // ✅ Pesos fijos por caja
-    const CAJA_KG = 27.22;
-
-    /* ========================= BÁSCULA — REALTIME ENTRE DISPOSITIVOS (SUPABASE) =========================
-      Requiere tabla: bascula_live(id PK text, peso numeric, updated_at timestamptz)
-      Windows (python) hace UPSERT a id='torrey_1'
-    =============================================================================================== */
-    const BASCULA_ID = "torrey_1";     // ✅ tu única báscula
-    const BASCULA_TABLE = "bascula_live";
-
-    const btnPeso = document.getElementById("btnPeso");
-    const rtBascula = document.getElementById("rtBascula");
-    const rtModo = document.getElementById("rtModo");
-    const rtMs = document.getElementById("rtMs");
-    const pesoStatus = document.getElementById("pesoStatus");
-
-    let basculaChannel = null;
-    let basculaPollTimer = null;
-    let basculaInFlight = false;
-
-    const bascStable = { last:null, okCount:0, needed:2, tol:0.03 };
-
-    function setPesoStatus(txt, ok=true){
-      if(!pesoStatus) return;
-      pesoStatus.textContent = txt || "Báscula: —";
-      pesoStatus.style.background = ok ? "#eef7f0" : "#fee2e2";
-      pesoStatus.style.color = ok ? "#0a7a3b" : "#b91c1c";
-    }
-
-    function setKgValue(kg){
-      const el = document.getElementById("pKg");
-      if(!el) return;
-
-      const next = Number(kg || 0);
-      if(!isFinite(next)) return;
-
-      const current = Number(el.value || 0);
-      if (Math.abs(current - next) < 0.001) return;
-
-      el.value = next.toFixed(2);
-      el.dispatchEvent(new Event("input", { bubbles:true }));
-      el.dispatchEvent(new Event("change", { bubbles:true }));
-    }
-
-    function updateStability(kg){
-      if (bascStable.last == null){
-        bascStable.last = kg;
-        bascStable.okCount = 1;
-        return { accept:false, okCount:bascStable.okCount };
+    // ========= COMPAT: replaceAll =========
+    (function(){
+      if (!String.prototype.replaceAll) {
+        String.prototype.replaceAll = function(search, replacement){
+          const target = String(this);
+          if (search instanceof RegExp) return target.replace(search, replacement);
+          const escaped = String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return target.replace(new RegExp(escaped, 'g'), replacement);
+        };
       }
-      if (Math.abs(kg - bascStable.last) <= bascStable.tol){
-        bascStable.okCount += 1;
-      } else {
-        bascStable.last = kg;
-        bascStable.okCount = 1;
-      }
-      return { accept: bascStable.okCount >= bascStable.needed, okCount:bascStable.okCount };
+    })();
+
+    function showDebug(msg){
+      const box = document.getElementById('debug');
+      box.style.display = 'block';
+      box.textContent = String(msg);
+    }
+    window.addEventListener('error', (e) => {
+      showDebug("❌ Error JS:\n" + (e && e.message ? e.message : e));
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      showDebug("❌ Promise rechazado:\n" + (e && e.reason ? (e.reason.message || e.reason) : e));
+    });
+
+    // ========= Supabase =========
+    const supabaseUrl = 'https://rcegikeiaxptolrduguc.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8';
+
+    let sb = null;
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+    } else {
+      showDebug("❌ No cargó supabase-js. Revisa conexión / CDN.");
     }
 
-    async function readPesoFromSupabase(){
-      const { data, error } = await sb
-        .from(BASCULA_TABLE)
-        .select("peso, updated_at")
-        .eq("id", BASCULA_ID)
-        .maybeSingle();
-
-      if(error) throw error;
-      const peso = data?.peso;
-      return { peso: (peso==null ? null : Math.abs(Number(peso))), updated_at: data?.updated_at || null };
+    function fechaMX() {
+      const v = document.getElementById('fecha').value;
+      if (v) return new Date(v + 'T00:00:00').toLocaleDateString('es-MX');
+      return new Date().toLocaleDateString('es-MX');
     }
 
-    async function tomarPesoManual(){
-      if(!btnPeso) return;
-      btnPeso.disabled = true;
-      setPesoStatus("Báscula: leyendo…", true);
+    // ========= DATA =========
+    let pesajes = []; // {producto, kg|null, pzas|null}
 
-      try{
-        const { peso } = await readPesoFromSupabase();
-        if(peso == null){
-          setPesoStatus("Báscula: sin lectura", false);
-          alert("No hay peso en Supabase. Revisa que el Windows esté subiendo bascula_live.");
-          return;
-        }
-        setKgValue(peso);
-        setPesoStatus(`Báscula OK: ${peso.toFixed(2)} kg`, true);
-      }catch(e){
-        console.error(e);
-        setPesoStatus("Báscula: error", false);
-        alert("Error leyendo Supabase (bascula_live). Revisa internet / RLS / tabla.");
-      }finally{
-        btnPeso.disabled = false;
-      }
-    }
-
-    function stopBasculaRealtime(){
-      if(basculaPollTimer){ clearInterval(basculaPollTimer); basculaPollTimer = null; }
-      if(basculaChannel){ sb.removeChannel(basculaChannel); basculaChannel = null; }
-      bascStable.last = null; bascStable.okCount = 0;
-      setPesoStatus("Báscula: —", true);
-    }
-
-    function startBasculaRealtime(){
-      stopBasculaRealtime();
-
-      const modo = (rtModo?.value || "auto");
-      const interval = Number(rtMs?.value || 500);
-
-      setPesoStatus("Báscula: real-time ON…", true);
-
-      if(modo === "poll"){
-        basculaPollTimer = setInterval(async ()=>{
-          if(basculaInFlight) return;
-          basculaInFlight = true;
-          try{
-            const { peso } = await readPesoFromSupabase();
-            if(peso == null){
-              setPesoStatus("Báscula: sin lectura", false);
-              return;
-            }
-            const st = updateStability(peso);
-            if(st.accept){
-              setKgValue(peso);
-              setPesoStatus(`Báscula: ${peso.toFixed(2)} kg ✅`, true);
-            } else {
-              setPesoStatus(`Báscula: ${peso.toFixed(2)} kg (est ${st.okCount}/${bascStable.needed})`, true);
-            }
-          }catch(e){
-            console.error(e);
-            setPesoStatus("Báscula: error (poll)", false);
-          }finally{
-            basculaInFlight = false;
-          }
-        }, interval);
-        return;
-      }
-
-      // ✅ Realtime Supabase
-      basculaChannel = sb
-        .channel(`bascula-${BASCULA_ID}`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: BASCULA_TABLE, filter: `id=eq.${BASCULA_ID}` },
-          async (payload)=>{
-            const row = payload.new || payload.old;
-            const peso = row?.peso;
-            const kg = (peso==null ? null : Math.abs(Number(peso)));
-
-            if(kg == null){
-              setPesoStatus("Báscula: sin lectura", false);
-              return;
-            }
-
-            const st = updateStability(kg);
-            if(st.accept){
-              setKgValue(kg);
-              setPesoStatus(`Báscula: ${kg.toFixed(2)} kg ✅`, true);
-            } else {
-              setPesoStatus(`Báscula: ${kg.toFixed(2)} kg (est ${st.okCount}/${bascStable.needed})`, true);
-            }
-          }
-        )
-        .subscribe(async (status)=>{
-          if(status === "SUBSCRIBED"){
-            try{
-              const { peso } = await readPesoFromSupabase();
-              if(peso != null){
-                setKgValue(peso);
-                setPesoStatus(`Báscula: ${peso.toFixed(2)} kg (init)`, true);
-              }
-            }catch{}
-          }
-        });
-    }
-
-    btnPeso?.addEventListener("click", tomarPesoManual);
-    rtBascula?.addEventListener("change", ()=> rtBascula.checked ? startBasculaRealtime() : stopBasculaRealtime());
-    rtModo?.addEventListener("change", ()=> { if(rtBascula?.checked) startBasculaRealtime(); });
-    rtMs?.addEventListener("change", ()=> { if(rtBascula?.checked) startBasculaRealtime(); });
-
-    /* ========================= UTILS ========================= */
-    const $ = s => document.querySelector(s);
-    const $$ = s => Array.from(document.querySelectorAll(s));
-    const to2 = n => Number(n || 0).toFixed(2);
-
-    function todayISO(){
-      const d = new Date();
-      const z = d.getTimezoneOffset() * 60000;
-      return new Date(d - z).toISOString().slice(0,10);
-    }
-    function addDays(dateISO, days){
-      const d = new Date(dateISO);
-      d.setDate(d.getDate() + Number(days || 0));
-      const z = d.getTimezoneOffset() * 60000;
-      return new Date(d - z).toISOString().slice(0,10);
-    }
-    function genFolio(){
-      const d = new Date();
-      const pad = n => String(n).padStart(2,'0');
-      return `CVC-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-    }
-    function csvEscape(s){ return '"' + String(s).replaceAll('"','""') + '"'; }
-
-    function normalizeName(s){
-      return (s || '').toString().trim().toLowerCase();
-    }
-
-    /* === Observaciones automáticas por producto (suma kg/pzas) === */
-    function buildAutoObsFromDetalle(det){
-      if(!det || !det.length) return '';
-      const grupos = {};
-
-      det.forEach(d=>{
-        const prod = d.producto || 'Sin producto';
-        if(!grupos[prod]){
-          grupos[prod] = { kg:0, pzas:0, tienePzas:false };
-        }
-        grupos[prod].kg += Number(d.cantidad || 0);
-
-        if(d.piezas != null){
-          grupos[prod].pzas += Number(d.piezas || 0);
-          grupos[prod].tienePzas = true;
-        }
-      });
-
-      const lineas = Object.entries(grupos).map(([prod, g])=>{
-        const kgTxt = to2(g.kg);
-        const pzasTxt = g.tienePzas ? ` / ${Math.round(g.pzas)} pzas` : '';
-        return `TOTAL ${prod} = ${kgTxt} kg${pzasTxt}`;
-      });
-
-      return lineas.join('\n');
-    }
-
-    /* ========================= STATE ========================= */
-    let CLIENTES = [], PRODUCTOS = [], PRECIOS = {};
-    let slotActive = 'A';
-    let notaA = null, notaB = null;
-    let chA = null, chB = null;
-
-    const slotState = {
-      A:{cliente_id:null, telefono:null},
-      B:{cliente_id:null, telefono:null}
+    // ========= ORIGEN -> OPCIONES DE PRODUCTO =========
+    const PRODUCT_OPTIONS_BY_ORIGEN = {
+      rastro: [
+        "Animales Jaramillo",
+        "Animales Botello",
+        "Animales Mireles",
+        "Animales Bravo"
+      ],
+      granja: [
+        "Menudo sucio",
+        "Libro sucio"
+      ],
+      limpieza: [
+        "Menudo limpio",
+        "Libro limpio"
+      ]
     };
 
-    /* ===== Protector de salida ===== */
-    let exitGuardEnabled = JSON.parse(localStorage.getItem('exitGuardEnabled') || 'true');
-    let isDirty = false;
-    function markDirty(){ if(exitGuardEnabled) isDirty = true; }
-    function clearDirty(){ isDirty = false; }
+    function fillProductoOptions(origen){
+      const sel = document.getElementById('prodSelect');
+      const freeWrap = document.getElementById('prodNombreWrap');
+      const freeInput = document.getElementById('prodNombre');
 
-    /* ========================= REFS ========================= */
-    const exitGuardToggle = $('#exitGuardToggle');
-    const slotABtn = $('#slotA'), slotBBtn = $('#slotB');
-    const slotALabel = $('#slotALabel'), slotBLabel = $('#slotBLabel');
+      sel.innerHTML = "";
 
-    const cliSelect = $('#cliSelect');
-    const cliTelefono = $('#cliTelefono');
-
-    const notaFolio = $('#notaFolio');
-    const notaFecha = $('#notaFecha');
-    const notaDias = $('#notaDias');
-    const notaVence = $('#notaVence');
-    const notaInfo = $('#notaInfo');
-
-    // CAPTURA NORMAL
-    const capNormal = $('#capNormal');
-    const pProducto = $('#pProducto');
-    const pKg = $('#pKg');
-    const pPzas = $('#pPzas');
-    const pPrecio = $('#pPrecio');
-    const subtotalBox = $('#subtotalBox');
-
-    // CAPTURA Pieles y Grasas
-    const capPG = $('#capPG');
-    const seboKg = $('#seboKg');
-    const seboPzas = $('#seboPzas');
-    const huesoKg = $('#huesoKg');
-    const huesoPzas = $('#huesoPzas');
-    const subtotalBox2 = $('#subtotalBox2');
-
-    const vFolio = $('#vFolio');
-    const vEstado = $('#vEstado');
-    const vSaldo = $('#vSaldo');
-    const vistaBody = $('#vistaBody');
-    const vistaTotal = $('#vistaTotal');
-
-    const bandejaFecha = $('#bandejaFecha');
-    const bandejaBuscar = $('#bandejaBuscar');   // ✅ NUEVO buscador
-    const bandejaBody = $('#bandejaBody');
-
-    const diaFecha = $('#diaFecha');
-    const diaResumen = $('#diaResumen');
-
-    const notaObs = $('#notaObs');
-
-    /* ========================= INIT ========================= */
-    notaFecha.value = todayISO();
-    notaVence.value = addDays(notaFecha.value, notaDias.value);
-    bandejaFecha.value = todayISO();
-    diaFecha.value = todayISO();
-
-    exitGuardToggle.checked = exitGuardEnabled;
-    exitGuardToggle.addEventListener('change', ()=>{
-      exitGuardEnabled = exitGuardToggle.checked;
-      localStorage.setItem('exitGuardEnabled', JSON.stringify(exitGuardEnabled));
-      if(!exitGuardEnabled) clearDirty();
-    });
-
-    window.addEventListener('beforeunload', (e)=>{
-      if(exitGuardEnabled && isDirty){
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    });
-
-    notaDias.addEventListener('change', ()=>{ notaVence.value = addDays(notaFecha.value, notaDias.value); });
-    notaFecha.addEventListener('change', ()=>{ notaVence.value = addDays(notaFecha.value, notaDias.value); });
-
-    // ===== Auto precio + Auto kilos para cajas =====
-    ['keyup','change'].forEach(ev=> pProducto.addEventListener(ev, ()=>{
-      prefPrecio();
-      autoKgFromCaja();
-      markDirty();
-    }));
-    ['keyup','change','blur'].forEach(ev=> pPzas.addEventListener(ev, ()=>{
-      autoKgFromCaja();
-      markDirty();
-    }));
-
-    ['keyup','change'].forEach(ev=> pKg.addEventListener(ev, markDirty));
-    ['keyup','change'].forEach(ev=> pPrecio.addEventListener(ev, markDirty));
-    ['keyup','change'].forEach(ev=> notaObs.addEventListener(ev, markDirty));
-
-    notaObs.addEventListener('blur', saveNotaObs);
-
-    // Botones
-    $('#btnContinuar').addEventListener('click', continuarNota);
-    $('#btnAgregar').addEventListener('click', addPartida);
-
-    $('#btnAgregarSebo').addEventListener('click', ()=> addFixedPartidaPG('Sebo', seboKg.value, seboPzas.value));
-    $('#btnAgregarHueso').addEventListener('click', ()=> addFixedPartidaPG('Hueso', huesoKg.value, huesoPzas.value));
-
-    $('#btnWA').addEventListener('click', ()=> activeNota() && waNota(activeNota().id));
-    $('#btnImprimir').addEventListener('click', ()=> activeNota() && imprimirNotaA4(activeNota().id));
-    $('#btnImprimir80').addEventListener('click', ()=> activeNota() && imprimirNota80mm(activeNota().id));
-    $('#btnCSV').addEventListener('click', ()=> activeNota() && exportNotaCSV(activeNota().id));
-    $('#btnCerrar').addEventListener('click', cerrarNota);
-    $('#btnNuevoCliente').addEventListener('click', addCliente);
-    $('#btnBandeja').addEventListener('click', loadBandeja);
-    $('#btnDiaA4').addEventListener('click', imprimirDiaA4);
-    $('#btnDiaCSV').addEventListener('click', exportDiaCSV);
-
-    // ✅ buscador en vivo
-    bandejaBuscar?.addEventListener('input', ()=> loadBandeja());
-
-    // ✅ cerrar dropdown si click fuera
-    document.addEventListener('click', (e)=>{
-      const inside = e.target.closest?.('details.actionMenu');
-      if(!inside) cerrarTodosLosMenus();
-    });
-
-    // Cambios de cliente/teléfono ligados al slot activo
-    cliSelect.addEventListener('change', ()=>{
-      slotState[slotActive].cliente_id = cliSelect.value || null;
-      const c = getClient(slotState[slotActive].cliente_id);
-      cliTelefono.value = c ? (c.telefono || '') : '';
-      slotState[slotActive].telefono = cliTelefono.value || null;
-
-      updateCaptureMode(); // ✅ activar modo PG si aplica
-    });
-
-    cliTelefono.addEventListener('blur', async ()=>{ await saveClientPhone(); });
-
-    slotABtn.onclick = ()=> setActiveSlot('A');
-    slotBBtn.onclick = ()=> setActiveSlot('B');
-
-    // ✅ Enter inteligente: modo normal vs modo Pieles y Grasas
-    document.addEventListener('keydown', (e)=>{
-      if(e.key !== 'Enter') return;
-
-      const id = document.activeElement?.id || '';
-
-      // Modo Pieles y Grasas
-      if(isPielesYGrasasSelected()){
-        if(['seboKg','seboPzas'].includes(id)){
-          e.preventDefault();
-          addFixedPartidaPG('Sebo', seboKg.value, seboPzas.value);
-          return;
-        }
-        if(['huesoKg','huesoPzas'].includes(id)){
-          e.preventDefault();
-          addFixedPartidaPG('Hueso', huesoKg.value, huesoPzas.value);
-          return;
-        }
+      if(!origen || !PRODUCT_OPTIONS_BY_ORIGEN[origen]){
+        sel.disabled = true;
+        const op = document.createElement('option');
+        op.value = "";
+        op.textContent = "— Selecciona origen primero —";
+        sel.appendChild(op);
+        freeWrap.style.display = "none";
+        freeInput.value = "";
         return;
       }
 
-      // Modo normal
-      if(['pProducto','pKg','pPzas','pPrecio'].includes(id)){
-        e.preventDefault();
-        addPartida();
-      }
-    });
+      sel.disabled = false;
 
-    window.addEventListener('load', async ()=>{
-      await Promise.all([loadClientes(), loadProductos()]);
-      notaFolio.value = genFolio();
-      await loadBandeja();
+      const op0 = document.createElement('option');
+      op0.value = "";
+      op0.textContent = "— Selecciona —";
+      sel.appendChild(op0);
 
-      if(CLIENTES[0]){
-        slotState.A.cliente_id = CLIENTES[0].id;
-        slotState.A.telefono = CLIENTES[0].telefono || null;
-        applySlotUI('A');
-      }
+      PRODUCT_OPTIONS_BY_ORIGEN[origen].forEach(name=>{
+        const op = document.createElement('option');
+        op.value = name;
+        op.textContent = name;
+        sel.appendChild(op);
+      });
 
-      updateCaptureMode();
-    });
+      const opFree = document.createElement('option');
+      opFree.value = "__FREE__";
+      opFree.textContent = "Producto libre (escribir)";
+      sel.appendChild(opFree);
 
-    /* ========================= HELPERS ========================= */
-    function getClient(id){ return (CLIENTES||[]).find(c=> String(c.id)===String(id)); }
-    function getClientName(id){ return getClient(id)?.nombre || ''; }
-
-    function activeNota(){ return slotActive==='A' ? notaA : notaB; }
-
-    function setActiveSlot(s){
-      slotActive = s;
-      slotABtn.classList.toggle('active', s==='A');
-      slotBBtn.classList.toggle('active', s==='B');
-      applySlotUI(s);
-      renderVista();
-      refreshNotaInfo();
-      updateCaptureMode();
+      // default hide
+      freeWrap.style.display = "none";
+      freeInput.value = "";
     }
 
-    function setSlotNota(s, nota){
-      if(s==='A'){ notaA = nota; subRealtime('A'); }
-      else { notaB = nota; subRealtime('B'); }
-
-      slotState[s].cliente_id = nota.cliente_id || slotState[s].cliente_id;
-      const c = getClient(slotState[s].cliente_id);
-      slotState[s].telefono = c ? (c.telefono || null) : slotState[s].telefono;
-
-      if(slotActive===s){
-        applySlotUI(s);
-        renderVista();
-      }
-      refreshNotaInfo();
-      updateCaptureMode();
+    function getOrigenNice(){
+      const tipo = (document.getElementById('origenTipo').value || "").trim();
+      if(!tipo) return "";
+      return tipo.charAt(0).toUpperCase() + tipo.slice(1);
     }
 
-    function refreshNotaInfo(){
-      slotALabel.textContent = notaA ? `${notaA.folio}` : '—';
-      slotBLabel.textContent = notaB ? `${notaB.folio}` : '—';
-      const n = activeNota();
-      notaInfo.textContent = n ? `Nota: ${n.folio}` : 'Sin nota en slot';
+    function shouldShowKgTotal(){
+      const tipo = (document.getElementById('origenTipo').value || "").trim();
+      // NO total para "animales" (rastro)
+      return (tipo === "granja" || tipo === "limpieza");
     }
 
-    function applySlotUI(s){
-      const n = (s==='A') ? notaA : notaB;
-      const cid = (n?.cliente_id) || slotState[s].cliente_id || (CLIENTES[0]?.id || '');
-      cliSelect.value = cid;
-      const c = getClient(cid);
-      cliTelefono.value = (n && c) ? (c.telefono || '') : (slotState[s].telefono || c?.telefono || '');
-      updateCaptureMode();
+    function totalKg(){
+      let sum = 0;
+      pesajes.forEach(p => { sum += (Number(p.kg) || 0); });
+      return sum;
     }
 
-    /* ========================= MODO Pieles y Grasas ========================= */
-    function isPielesYGrasasSelected(){
-      const cid = cliSelect.value;
-      const c = getClient(cid);
-      const nombre = c?.nombre || '';
-      return normalizeName(nombre) === normalizeName('Pieles y Grasas');
+    // ========= BORRADOR =========
+    function todayISO(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    }
+    const DRAFT_KEY = () => `vdc360:draft:peso_sebo:${todayISO()}`;
+
+    function setDraftStatus(text){
+      const el = document.getElementById('draftStatus');
+      if(el) el.textContent = text;
     }
 
-    function updateCaptureMode(){
-      const pg = isPielesYGrasasSelected();
+    function collectDraft(){
+      return {
+        ts: Date.now(),
+        fields: {
+          fecha: document.getElementById('fecha')?.value || '',
+          seboKg: document.getElementById('seboKg')?.value || '',
+          etiquetaTexto: document.getElementById('etiquetaTexto')?.value || '',
+          etqCopias: document.getElementById('etqCopias')?.value || '1',
+          origenTipo: document.getElementById('origenTipo')?.value || '',
+          prodSelect: document.getElementById('prodSelect')?.value || '',
+          prodNombre: document.getElementById('prodNombre')?.value || '',
+          whatsNumero: document.getElementById('whatsNumero')?.value || '',
+          prodKg: document.getElementById('prodKg')?.value || '',
+          prodPzas: document.getElementById('prodPzas')?.value || ''
+        },
+        pesajes: pesajes
+      };
+    }
 
-      capPG.style.display = pg ? 'block' : 'none';
-      capNormal.style.display = pg ? 'none' : 'block';
+    function applyDraft(d){
+      if(!d) return;
+      const f = d.fields || {};
 
-      if(pg){
-        setTimeout(()=>{ seboKg?.focus(); seboKg?.select(); }, 0);
+      const setVal = (id, v) => {
+        const el = document.getElementById(id);
+        if(el && v != null) el.value = v;
+      };
+
+      setVal('fecha', f.fecha);
+      setVal('seboKg', f.seboKg);
+      setVal('etiquetaTexto', f.etiquetaTexto);
+      setVal('etqCopias', f.etqCopias);
+      setVal('origenTipo', f.origenTipo);
+
+      // Llenar productos según origen antes de setear selección
+      fillProductoOptions(f.origenTipo || '');
+
+      setVal('prodSelect', f.prodSelect);
+      setVal('prodNombre', f.prodNombre);
+      setVal('whatsNumero', f.whatsNumero);
+      setVal('prodKg', f.prodKg);
+      setVal('prodPzas', f.prodPzas);
+
+      // Mostrar/hide producto libre si corresponde
+      const freeWrap = document.getElementById('prodNombreWrap');
+      if((document.getElementById('prodSelect').value || '') === '__FREE__'){
+        freeWrap.style.display = 'block';
       }else{
-        setTimeout(()=>{ pProducto?.focus(); }, 0);
+        freeWrap.style.display = 'none';
+      }
+
+      if(Array.isArray(d.pesajes)){
+        pesajes = d.pesajes;
+        renderTabla();
       }
     }
 
-    /* ========================= CATÁLOGOS ========================= */
-    async function loadClientes(){
-      const { data, error } = await sb
-        .from('clientes')
-        .select('id, nombre, telefono')
-        .order('nombre');
-
-      if(error){
-        console.error(error);
-        alert('No se pudieron cargar CLIENTES');
-        return;
-      }
-
-      CLIENTES = data || [];
-      cliSelect.innerHTML = (CLIENTES||[])
-        .map(c=> `<option value="${c.id}">${c.nombre}</option>`)
-        .join('');
+    function vdcDraftSave(){
+      const d = collectDraft();
+      localStorage.setItem(DRAFT_KEY(), JSON.stringify(d));
+      const hh = new Date(d.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      setDraftStatus(`Borrador guardado ✅ (${hh})`);
     }
 
-    async function loadProductos(){
-      let { data, error } = await sb
-        .from('productos')
-        .select('id,nombre,precio_kg,activo')
-        .eq('activo', true)
-        .order('nombre');
-
-      if(error){
-        ({ data } = await sb
-          .from('productos')
-          .select('id,nombre,precio_kg')
-          .order('nombre'));
-      }
-
-      PRODUCTOS = data || [];
-      PRECIOS = Object.fromEntries(PRODUCTOS.map(p=>[p.nombre, Number(p.precio_kg||0).toFixed(2)]));
-
-      $('#catProductos').innerHTML = PRODUCTOS
-        .map(p=> `<option value="${p.nombre}"></option>`)
-        .join('');
-    }
-
-    function prefPrecio(){
-      const n = (pProducto.value||'').trim();
-      if(PRECIOS[n]) pPrecio.value = PRECIOS[n];
-    }
-
-    /* ========================= AUTO-KG PARA CAJAS (27.22) ========================= */
-    function isCajaMenudoTarget(prodName){
-      const n = normalizeName(prodName);
-      return (
-        n === normalizeName('Caja Menudo National') ||
-        n === normalizeName('Caja Menudo Canadian')
-      );
-    }
-
-    function autoKgFromCaja(){
-      if(capNormal.style.display === 'none') return;
-
-      const prod = (pProducto.value||'').trim();
-      if(!isCajaMenudoTarget(prod)) return;
-
-      const pz = Number(pPzas.value || 0);
-      if(!pz || pz <= 0) return;
-
-      const kg = pz * CAJA_KG;
-      pKg.value = to2(kg);
-    }
-
-    /* ========================= GUARDAR TELÉFONO ========================= */
-    async function saveClientPhone(){
-      const cid = slotState[slotActive].cliente_id || activeNota()?.cliente_id;
-      if(!cid) return;
-
-      const val = (cliTelefono.value||'').trim() || null;
+    function vdcDraftLoad(){
+      const raw = localStorage.getItem(DRAFT_KEY());
+      if(!raw){ setDraftStatus('Borrador: —'); return; }
       try{
-        await sb.from('clientes').update({ telefono: val }).eq('id', cid);
-        const c = getClient(cid);
-        if(c) c.telefono = val;
-        slotState[slotActive].telefono = val;
+        const d = JSON.parse(raw);
+        applyDraft(d);
+        const hh = new Date(d.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        setDraftStatus(`Borrador cargado ✅ (${hh})`);
       }catch(e){
-        console.error(e);
+        setDraftStatus('Borrador dañado ⚠️');
       }
     }
 
-    /* ========================= GUARDAR OBSERVACIONES ========================= */
-    async function saveNotaObs(){
-      const n = activeNota();
-      if(!n) return;
-      const val = (notaObs.value||'').trim() || null;
-      try{
-        await sb.from('notas_credito').update({ observaciones: val }).eq('id', n.id);
-        clearDirty();
-      }catch(e){
-        console.error(e);
-      }
+    function vdcDraftClear(){
+      if(!confirm("¿Seguro que quieres borrar el borrador de HOY?")) return;
+      localStorage.removeItem(DRAFT_KEY());
+
+      document.getElementById('fecha').value = '';
+      document.getElementById('seboKg').value = '';
+      document.getElementById('etiquetaTexto').value = '';
+      document.getElementById('etqCopias').value = 1;
+
+      document.getElementById('origenTipo').value = '';
+      fillProductoOptions('');
+      document.getElementById('prodSelect').value = '';
+      document.getElementById('prodNombre').value = '';
+      document.getElementById('prodNombreWrap').style.display = 'none';
+
+      limpiarPesajes();
+      document.getElementById('resultado-totales').textContent = '';
+      setDraftStatus('Borrador limpiado 🧹');
+      vdcDraftSave();
     }
 
-    /* ========================= CREAR/CONTINUAR NOTA ========================= */
-    async function continuarNota(){
-      const cliente_id = slotState[slotActive].cliente_id || cliSelect.value;
-      if(!cliente_id) return alert('Selecciona cliente');
-
-      const fecha = notaFecha.value || todayISO();
-
-      let { data: nota } = await sb
-        .from('notas_credito')
-        .select('*')
-        .eq('cliente_id', cliente_id)
-        .eq('fecha', fecha)
-        .eq('estado','abierta')
-        .order('created_at', {ascending:false})
-        .limit(1)
-        .maybeSingle();
-
-      if(!nota){
-        const payload = {
-          id: crypto.randomUUID(),
-          folio: genFolio(),
-          fecha,
-          vence: (notaVence.value || addDays(fecha, notaDias.value)),
-          cliente_id,
-          total: 0,
-          saldo: 0,
-          observaciones: (notaObs.value || null)
-        };
-
-        const { error } = await sb.from('notas_credito').insert(payload);
-        if(error){
-          console.error(error);
-          return alert('No se pudo crear la nota');
-        }
-        nota = payload;
-      }
-
-      setSlotNota(slotActive, nota);
-      notaFolio.value = nota.folio;
-      notaObs.value = nota.observaciones || '';
-
-      updateCaptureMode();
+    let tDraft=null;
+    function scheduleDraft(){
+      clearTimeout(tDraft);
+      tDraft=setTimeout(vdcDraftSave, 250);
     }
 
-    /* ========================= NUEVO CLIENTE ========================= */
-    async function addCliente(){
-      const nombre = prompt('Nombre del cliente:');
-      if(!nombre || !nombre.trim()) return;
+    document.addEventListener('input', (e)=>{
+      if(e.target && e.target.matches('input,textarea,select')) scheduleDraft();
+    });
+    document.addEventListener('change', (e)=>{
+      if(e.target && e.target.matches('input,textarea,select')) scheduleDraft();
+    });
 
-      const telefono = prompt('Teléfono (WhatsApp, opcional):') || null;
+    window.vdcDraftSave = vdcDraftSave;
+    window.vdcDraftLoad = vdcDraftLoad;
+    window.vdcDraftClear = vdcDraftClear;
 
-      const row = {
-        id: crypto.randomUUID(),
-        nombre: nombre.trim(),
-        telefono: telefono || null
+    // ========= VIAJE / TOTALES =========
+    async function guardarViaje() {
+      if (!sb) return alert("Supabase no está listo (revisa panel de errores).");
+
+      const fecha = document.getElementById('fecha').value;
+      if (!fecha) return alert("Selecciona la fecha del viaje");
+
+      const datos = {
+        "Teleco": [{ kg: 15.8, pzas: 14 }, { kg: 108.5, pzas: 100 }],
+        "Cuajo": [{ kg: 40.2, pzas: 40 }]
       };
 
-      const { error } = await sb.from('clientes').insert(row);
-      if(error){
-        console.error(error);
-        return alert('No se pudo crear el cliente (RLS/SQL)');
-      }
+      const { error } = await sb.from('hoja_viaje').insert([{ fecha, resultados: datos }]);
+      if (error) return alert("❌ Error al guardar viaje: " + error.message);
+      alert("✅ Viaje guardado correctamente.");
 
-      await loadClientes();
-
-      const c = CLIENTES.find(x=>x.nombre===nombre.trim());
-      if(c){
-        slotState[slotActive].cliente_id = c.id;
-        slotState[slotActive].telefono = c.telefono || null;
-        applySlotUI(slotActive);
-      }
-
-      updateCaptureMode();
-      alert('✅ Cliente creado');
+      vdcDraftSave();
     }
 
-    /* ========================= INSERTAR PARTIDA (NORMAL) ========================= */
-    async function addPartida(){
-      const nota = activeNota();
-      if(!nota) return alert('Primero crea/continúa una nota en el slot activo');
+    async function generarDocumento() {
+      if (!sb) return alert("Supabase no está listo (revisa panel de errores).");
 
-      const prod = (pProducto.value||'').trim();
-      const cant = Number(pKg.value||0);
-      const piezas = (pPzas.value !== '' && pPzas.value != null) ? Number(pPzas.value||0) : null;
-      const precio = Number(pPrecio.value||0);
+      const fecha = document.getElementById('fecha').value;
+      const out = document.getElementById('resultado-totales');
+      if (!fecha) return alert("Selecciona la fecha del viaje");
+      out.textContent = "⏳ Cargando totales...";
 
-      if(!prod || cant<=0) return alert('Producto y kilos son obligatorios');
+      const { data, error } = await sb.from('hoja_viaje').select('resultados').eq('fecha', fecha);
+      if (error) { out.textContent = "❌ Error: " + error.message; return; }
+      if (!data || data.length === 0) { out.textContent = "❌ No se encontraron registros para esa fecha."; return; }
 
-      const { error } = await sb.from('notas_detalle').insert({
-        id: crypto.randomUUID(),
-        nota_id: nota.id,
-        producto: prod,
-        cantidad: cant,
-        piezas: (piezas != null && piezas > 0 ? Math.round(piezas) : null),
-        precio,
-        importe: cant * precio
-      });
-
-      if(error){
-        console.error(error);
-        return alert('No se pudo agregar la partida');
-      }
-
-      pProducto.value = '';
-      if(!rtBascula?.checked) pKg.value = '1';
-      pPzas.value = '';
-      prefPrecio();
-      clearDirty();
-
-      await recalcNota(nota.id);
-      pProducto.focus();
-    }
-
-    /* ========================= INSERTAR PARTIDA (Pieles y Grasas) ========================= */
-    async function addFixedPartidaPG(productoNombre, kgVal, pzasVal){
-      const nota = activeNota();
-      if(!nota) return alert('Primero crea/continúa una nota en el slot activo');
-
-      const prod = (productoNombre || '').trim();
-      const cant = Number(kgVal || 0);
-      const piezas = (pzasVal !== '' && pzasVal != null) ? Number(pzasVal || 0) : null;
-
-      if(!prod || cant <= 0) return alert('Kilos deben ser mayor a 0');
-
-      const precio = Number(PRECIOS[prod] || 0);
-
-      const { error } = await sb.from('notas_detalle').insert({
-        id: crypto.randomUUID(),
-        nota_id: nota.id,
-        producto: prod,
-        cantidad: cant,
-        piezas: (piezas != null && piezas > 0 ? Math.round(piezas) : null),
-        precio,
-        importe: cant * precio
-      });
-
-      if(error){
-        console.error(error);
-        return alert('No se pudo agregar la partida');
-      }
-
-      if(normalizeName(prod) === normalizeName('sebo')){
-        seboKg.value = '0';
-        seboPzas.value = '';
-        seboKg.focus(); seboKg.select();
-      } else {
-        huesoKg.value = '0';
-        huesoPzas.value = '';
-        huesoKg.focus(); huesoKg.select();
-      }
-
-      clearDirty();
-      await recalcNota(nota.id);
-    }
-
-    async function recalcNota(nota_id){
-      let total = 0;
-
-      try{
-        const { data } = await sb.rpc('sum_importe_nota', { p_nota_id: nota_id });
-        total = Number(data?.total || 0);
-      }catch{
-        const { data } = await sb.from('notas_detalle').select('importe').eq('nota_id', nota_id);
-        total = (data||[]).reduce((a,b)=>a+Number(b.importe||0),0);
-      }
-
-      await sb.from('notas_credito').update({ total, saldo: total }).eq('id', nota_id);
-      await renderVista();
-      await loadBandeja();
-    }
-
-    /* ========================= VISTA (SLOT ACTIVO) ========================= */
-    async function renderVista(){
-      const n = activeNota();
-
-      if(!n){
-        vFolio.textContent='—';
-        vEstado.textContent='—';
-        vSaldo.textContent='0.00';
-        vistaBody.innerHTML='';
-        vistaTotal.textContent='$0.00';
-        subtotalBox.textContent='Subtotal: $0.00';
-        if(subtotalBox2) subtotalBox2.textContent='Subtotal: $0.00';
-        notaObs.value='';
-        refreshNotaInfo();
-        return;
-      }
-
-      const { data: nota } = await sb
-        .from('notas_credito')
-        .select('*')
-        .eq('id', n.id)
-        .single();
-
-      const { data: det } = await sb
-        .from('notas_detalle')
-        .select('*')
-        .eq('nota_id', n.id)
-        .order('created_at');
-
-      if(slotActive==='A') notaA = nota; else notaB = nota;
-
-      slotState[slotActive].cliente_id = nota.cliente_id;
-      const c = getClient(nota.cliente_id);
-      slotState[slotActive].telefono = c ? (c.telefono || null) : slotState[slotActive].telefono;
-      applySlotUI(slotActive);
-
-      vFolio.textContent = nota.folio;
-      vEstado.textContent = nota.estado || 'abierta';
-      vSaldo.textContent = to2(nota.saldo || 0);
-
-      const autoObs = buildAutoObsFromDetalle(det || []);
-      notaObs.value = autoObs;
-
-      try{
-        await sb.from('notas_credito').update({ observaciones: autoObs || null }).eq('id', nota.id);
-      }catch(e){
-        console.error(e);
-      }
-
-      vistaBody.innerHTML = (det||[]).map(d=> `
-        <tr data-id="${d.id}">
-          <td>${new Date(d.created_at).toLocaleString()}</td>
-          <td>${d.producto}</td>
-          <td class="editable" data-field="cantidad">${to2(d.cantidad)}</td>
-          <td class="editable" data-field="piezas">${d.piezas != null ? d.piezas : ''}</td>
-          <td class="editable" data-field="precio">$${to2(d.precio)}</td>
-          <td>$${to2(d.importe)}</td>
-          <td><button class="btn btn-ghost btn-sm" data-del="${d.id}" title="Borrar" type="button">🗑️</button></td>
-        </tr>
-      `).join('');
-
-      const tot = (det||[]).reduce((a,b)=>a+Number(b.importe||0),0);
-      vistaTotal.textContent = `$${to2(tot)}`;
-      subtotalBox.textContent = `Subtotal: $${to2(tot)}`;
-      if(subtotalBox2) subtotalBox2.textContent = `Subtotal: $${to2(tot)}`;
-
-      vistaBody.querySelectorAll('[data-del]').forEach(b=>{
-        b.onclick = ()=> deleteDetalle(b.dataset.del);
-      });
-
-      vistaBody.querySelectorAll('.editable').forEach(td=>{
-        td.addEventListener('click', ()=> makeCellEditable(td, n.id));
-      });
-
-      refreshNotaInfo();
-      updateCaptureMode();
-    }
-
-    function makeCellEditable(td, nota_id){
-      if(td.classList.contains('cell-editing')) return;
-
-      const field = td.dataset.field;
-      const row = td.closest('tr');
-      const detId = row.dataset.id;
-      const raw = td.textContent.replace('$','').trim();
-
-      let oldV = raw ? Number(raw.replace(',', '.')) : null;
-
-      td.classList.add('cell-editing');
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.step = (field==='piezas') ? '1' : '0.01';
-      input.min = '0';
-      input.value = (oldV != null ? oldV : 0);
-
-      td.innerHTML = '';
-      td.appendChild(input);
-      input.focus();
-      input.select();
-
-      markDirty();
-
-      const commit = async(save)=>{
-        const newV = Number(input.value||'');
-
-        let displayV;
-        if(field==='precio'){
-          const val = save ? newV : (oldV ?? 0);
-          displayV = `$${to2(val)}`;
-        } else if(field==='cantidad'){
-          const val = save ? newV : (oldV ?? 0);
-          displayV = to2(val);
-        } else if(field==='piezas'){
-          const val = save ? newV : (oldV ?? null);
-          displayV = (val == null || isNaN(val) || val === 0) ? '' : String(Math.round(val));
-        } else {
-          displayV = input.value;
-        }
-
-        td.classList.remove('cell-editing');
-        td.innerHTML = displayV;
-
-        if(!save){
-          clearDirty();
-          return;
-        }
-
-        if(field === 'piezas'){
-          const newVal = (isNaN(newV) || newV <= 0) ? null : Math.round(newV);
-          await sb.from('notas_detalle').update({ piezas: newVal }).eq('id', detId);
-          clearDirty();
-          await renderVista();
-          return;
-        }
-
-        const { data: cur } = await sb
-          .from('notas_detalle')
-          .select('cantidad, precio')
-          .eq('id', detId)
-          .single();
-
-        const cantidad = field==='cantidad' ? newV : Number(cur?.cantidad||0);
-        const precio = field==='precio' ? newV : Number(cur?.precio||0);
-        const importe = cantidad * precio;
-
-        await sb.from('notas_detalle').update({ cantidad, precio, importe }).eq('id', detId);
-        clearDirty();
-        await recalcNota(nota_id);
-      };
-
-      input.addEventListener('keydown', e=>{
-        if(e.key==='Enter') commit(true);
-        if(e.key==='Escape') commit(false);
-      });
-      input.addEventListener('blur', ()=> commit(true));
-    }
-
-    async function deleteDetalle(detId){
-      if(!confirm('¿Borrar esta partida?')) return;
-      const n = activeNota();
-      if(!n) return;
-      await sb.from('notas_detalle').delete().eq('id', detId);
-      await recalcNota(n.id);
-    }
-
-    /* ========================= REALTIME (NOTAS) ========================= */
-    function subRealtime(slot){
-      const nota = slot==='A' ? notaA : notaB;
-      if(!nota) return;
-
-      if(slot==='A' && chA){ sb.removeChannel(chA); chA=null; }
-      if(slot==='B' && chB){ sb.removeChannel(chB); chB=null; }
-
-      const ch = sb
-        .channel(`rt-${slot}-${nota.id}`)
-        .on('postgres_changes',
-          {event:'*',schema:'public',table:'notas_detalle',filter:`nota_id=eq.${nota.id}`},
-          ()=>{ if(slot===slotActive) renderVista(); }
-        )
-        .on('postgres_changes',
-          {event:'update',schema:'public',table:'notas_credito',filter:`id=eq.${nota.id}`},
-          ()=>{ if(slot===slotActive) renderVista(); }
-        )
-        .subscribe();
-
-      if(slot==='A') chA=ch; else chB=ch;
-    }
-
-    /* ========================= BANDEJA (COMPACTA) ========================= */
-    function cerrarTodosLosMenus(){
-      document.querySelectorAll('details.actionMenu[open]').forEach(d=> d.open = false);
-    }
-
-    async function loadBandeja(){
-      const f = bandejaFecha.value || todayISO();
-      const q = (bandejaBuscar?.value || '').trim().toLowerCase();
-
-      const { data, error } = await sb
-        .from('notas_credito')
-        .select('id,folio,saldo,estado,clientes(nombre),cliente_id,created_at')
-        .eq('fecha', f)
-        .eq('estado','abierta')
-        .order('created_at', { ascending:false });
-
-      if(error){
-        console.error(error);
-        bandejaBody.innerHTML = `<tr><td colspan="5" class="muted">Error cargando bandeja</td></tr>`;
-        return;
-      }
-
-      let rows = data || [];
-
-      // ✅ filtro local por folio o cliente
-      if(q){
-        rows = rows.filter(r=>{
-          const fol = (r.folio||'').toLowerCase();
-          const cli = (r.clientes?.nombre||'').toLowerCase();
-          return fol.includes(q) || cli.includes(q);
+      const totales = {};
+      data.forEach(r => {
+        const res = r.resultados || {};
+        Object.keys(res).forEach(prod => {
+          (res[prod] || []).forEach(p => {
+            if (!totales[prod]) totales[prod] = { kg: 0, pzas: 0 };
+            totales[prod].kg += Number(p.kg) || 0;
+            totales[prod].pzas += Number(p.pzas) || 0;
+          });
         });
-      }
+      });
 
-      bandejaBody.innerHTML = rows.map(r=> `
-        <tr>
-          <td>${r.folio}</td>
-          <td>${r.clientes?.nombre||''}</td>
-          <td>$${to2(r.saldo||0)}</td>
-          <td>${r.estado||'abierta'}</td>
-          <td style="text-align:right">
-            <details class="actionMenu">
-              <summary>Acciones ▾</summary>
-              <div class="menuPanel">
-                <button type="button" data-usea="${r.id}" data-cid="${r.cliente_id}">Usar en A</button>
-                <button type="button" data-useb="${r.id}" data-cid="${r.cliente_id}">Usar en B</button>
-                <button type="button" data-a4="${r.id}">Imprimir A4</button>
-                <button type="button" data-id80="${r.id}">Imprimir 80mm</button>
-                <button type="button" data-wa="${r.id}">Enviar WA</button>
-                <button type="button" class="danger" data-close="${r.id}">Cerrar</button>
-              </div>
-            </details>
-          </td>
-        </tr>
-      `).join('');
+      let doc = `📄 TOTALES DEL DÍA ${fecha}\n\n`;
+      Object.entries(totales).forEach(([prod, d]) => {
+        doc += `🟢 ${prod} → ${d.kg.toFixed(2)} kg | ${d.pzas} piezas\n`;
+      });
+      out.textContent = doc;
 
-      // handlers
-      bandejaBody.querySelectorAll('[data-usea]').forEach(b=> b.onclick = ()=>{
-        cerrarTodosLosMenus();
-        cargarEnSlot('A', b.dataset.usea, b.dataset.cid);
-      });
-      bandejaBody.querySelectorAll('[data-useb]').forEach(b=> b.onclick = ()=>{
-        cerrarTodosLosMenus();
-        cargarEnSlot('B', b.dataset.useb, b.dataset.cid);
-      });
-      bandejaBody.querySelectorAll('[data-a4]').forEach(b=> b.onclick = ()=>{
-        cerrarTodosLosMenus();
-        imprimirNotaA4(b.dataset.a4);
-      });
-      bandejaBody.querySelectorAll('[data-id80]').forEach(b=> b.onclick = ()=>{
-        cerrarTodosLosMenus();
-        imprimirNota80mm(b.dataset.id80);
-      });
-      bandejaBody.querySelectorAll('[data-wa]').forEach(b=> b.onclick = ()=>{
-        cerrarTodosLosMenus();
-        waNota(b.dataset.wa);
-      });
-      bandejaBody.querySelectorAll('[data-close]').forEach(b=> b.onclick = ()=>{
-        cerrarTodosLosMenus();
-        cerrarNotaById(b.dataset.close);
-      });
+      vdcDraftSave();
     }
 
-    async function cargarEnSlot(slot, nota_id, cliente_id){
-      const { data: nota } = await sb
-        .from('notas_credito')
-        .select('*')
-        .eq('id', nota_id)
-        .single();
-
-      if(!nota) return;
-
-      setSlotNota(slot, nota);
-      slotState[slot].cliente_id = cliente_id || nota.cliente_id;
-
-      const c = getClient(slotState[slot].cliente_id);
-      slotState[slot].telefono = c ? (c.telefono || null) : null;
-
-      setActiveSlot(slot);
-    }
-
-    /* ========================= WHATSAPP / A4 / CSV / 80mm ========================= */
-    function plantillaWA(nota, det, clienteNombre){
-      const items = (det||[]).map(d=>{
-        const piezasTxt = d.piezas ? ` (${d.piezas} pzas)` : '';
-        return `• ${d.producto} ${to2(d.cantidad)}kg${piezasTxt}`;
-      }).join('\n');
-
-      return [
-        `Hola *${clienteNombre}*,`,
-        `te compartimos el detalle de tu cuenta del día:\n`,
-        `*Folio:* ${nota.folio}`,
-        `*Fecha:* ${nota.fecha}`,
-        '',
-        items,
-        '',
-        (nota.observaciones ? `*Notas:* ${nota.observaciones}` : ''),
-        '',
-        `¡Gracias por tu preferencia! — ${STORE_NAME}`
-      ].join('\n');
-    }
-
-    function normalizeMxPhoneToWhatsAppDigits(phoneRaw){
-      const digits = (phoneRaw || '').replace(/[^\d]/g,'');
-      if(!digits) return '';
-      if(digits.length === 10) return '52' + digits;
-      return digits;
-    }
-
-    async function waNota(nota_id){
-      const { data: nota } = await sb.from('notas_credito').select('*').eq('id', nota_id).single();
-      const { data: det } = await sb.from('notas_detalle').select('*').eq('nota_id', nota_id).order('created_at');
-
-      const nombre = getClientName(nota.cliente_id);
-
-      let phone = slotState[slotActive].telefono;
-      if(!phone || (activeNota()?.cliente_id !== nota.cliente_id)){
-        const c = getClient(nota.cliente_id);
-        phone = c ? (c.telefono||'') : '';
-      }
-
-      const phoneRaw = (phone || '').trim();
-      if(!phoneRaw){
-        alert('El cliente no tiene teléfono guardado. Captura el número en "Teléfono (WhatsApp)" y vuelve a intentar.');
+    // ========= IMPRESIÓN =========
+    function printHtmlWindow(html){
+      const win = window.open('', '_blank', 'width=420,height=650');
+      if (!win) {
+        alert("No se pudo abrir la ventana de impresión. Activa ventanas emergentes (popups) en tu navegador.");
         return;
       }
-
-      const digits = normalizeMxPhoneToWhatsAppDigits(phoneRaw);
-      if(!digits){
-        alert('El teléfono del cliente no es válido.');
-        return;
-      }
-
-      const msg = plantillaWA(nota, det||[], nombre);
-      const u = `https://wa.me/${digits}?text=${encodeURIComponent(msg)}`;
-      const u2 = `https://api.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(msg)}`;
-
-      const w = window.open(u,"_blank");
-      setTimeout(()=>{
-        if(!w || w.closed) window.open(u2,"_blank");
-      }, 600);
-    }
-
-    async function imprimirNotaA4(nota_id){
-      const { data: nota } = await sb
-        .from('notas_credito')
-        .select('*, clientes(nombre)')
-        .eq('id', nota_id)
-        .single();
-
-      const { data: det } = await sb
-        .from('notas_detalle')
-        .select('*')
-        .eq('nota_id', nota_id)
-        .order('created_at');
-
-      const el = $('#printArea');
-      el.style.display='block';
-      el.classList.remove('ticket80');
-
-      el.innerHTML = `
-        <h3>Nota — ${nota.clientes?.nombre||''}</h3>
-        <div><b>Folio:</b> ${nota.folio} &nbsp; <b>Fecha:</b> ${nota.fecha} &nbsp; <b>Vence:</b> ${nota.vence||''}</div>
-        <div><b>Total:</b> $${to2(nota.total)} &nbsp; <b>Saldo:</b> $${to2(nota.saldo)}</div>
-
-        ${nota.observaciones ? `
-          <div style="margin-top:6mm">
-            <b>Notas del cliente:</b><br>${(nota.observaciones||'').replace(/\n/g,'<br>')}
-          </div>
-        ` : ''}
-
-        <br/>
-
-        <table>
-          <thead><tr><th>Fecha/Hora</th><th>Producto</th><th>Kg</th><th>Pzas</th><th>P.Unit</th><th>Importe</th></tr></thead>
-          <tbody>
-            ${(det||[]).map(d=>`
-              <tr>
-                <td>${new Date(d.created_at).toLocaleString()}</td>
-                <td>${d.producto}</td>
-                <td>${to2(d.cantidad)}</td>
-                <td>${d.piezas != null ? d.piezas : ''}</td>
-                <td>$${to2(d.precio)}</td>
-                <td>$${to2(d.importe)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-
-      window.print();
-      setTimeout(()=>{ el.style.display='none'; el.innerHTML=''; }, 500);
-    }
-
-    /* ========================= ✅ NUEVO TICKET 80mm (ANTI "TODO JUNTO") ========================= */
-    async function imprimirNota80mm(nota_id){
-      await saveNotaObs();
-
-      const { data: nota } = await sb
-        .from('notas_credito')
-        .select('*, clientes(nombre)')
-        .eq('id', nota_id)
-        .single();
-
-      const { data: det } = await sb
-        .from('notas_detalle')
-        .select('*')
-        .eq('nota_id', nota_id)
-        .order('created_at');
-
-      const cliente = nota.clientes?.nombre || '(sin nombre)';
-      const obs = (nota.observaciones || '').trim();
-
-      // ✅ texto tipo ticket (respetando saltos con <pre>)
-      const lines = [];
-      lines.push(`${STORE_NAME}`);
-      lines.push(`NOTA A CREDITO`);
-      lines.push(`Cliente: ${cliente}`);
-      lines.push(`Folio: ${nota.folio}`);
-      lines.push(`Fecha: ${nota.fecha}`);
-      lines.push(`--------------------------------`);
-
-      (det || []).forEach(d=>{
-        const qty = d.piezas ? `${to2(d.cantidad)}kg (${d.piezas}pz)` : `${to2(d.cantidad)}kg`;
-        const prod = String(d.producto || '').slice(0, 24);
-        const left = prod.padEnd(24, ' ');
-        const right = qty.padStart(12, ' ');
-        lines.push(`${left}${right}`);
-      });
-
-      lines.push(`--------------------------------`);
-      if(obs){
-        lines.push(`Obs:`);
-        obs.split('\n').forEach(l => lines.push(l));
-        lines.push(`--------------------------------`);
-      }
-      lines.push(`Gracias por su preferencia`);
-      lines.push(``);
-
-      const ticketText = lines.join('\n');
-
-      const html = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="utf-8" />
-          <title>Ticket 80mm</title>
-          <style>
-            *{ box-sizing:border-box; }
-            body{
-              margin:0;
-              font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
-              font-size: 12px;
-              line-height: 1.25;
-              background:#fff;
-            }
-            .paper{
-              width: 80mm;
-              padding: 2mm;
-            }
-            pre{
-              margin:0;
-              white-space: pre-wrap;
-              word-break: break-word;
-            }
-            @media print{
-              @page{ size: 80mm auto; margin: 0mm; }
-              body{ margin:0; }
-              .paper{ width:80mm; padding:2mm; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="paper">
-            <pre>${escapeHtml(ticketText)}</pre>
-          </div>
-
-          <script>
-            window.onload = () => {
-              setTimeout(() => {
-                window.print();
-                setTimeout(() => window.close(), 250);
-              }, 150);
-            };
-          </script>
-        </body>
-        </html>
-      `;
-
-      const win = window.open('', '_blank', 'width=420,height=700');
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-
-      // ✅ helper local (evita que símbolos rompan el HTML)
-      function escapeHtml(s){
-        return String(s)
-          .replaceAll('&','&amp;')
-          .replaceAll('<','&lt;')
-          .replaceAll('>','&gt;');
-      }
-    }
-
-    /* ========================= REPORTE DIARIO GENERAL ========================= */
-    async function imprimirDiaA4(){
-      const f = diaFecha.value || todayISO();
-
-      const { data: notas } = await sb
-        .from('notas_credito')
-        .select('id, folio, fecha, clientes(nombre)')
-        .eq('fecha', f)
-        .order('created_at');
-
-      const ids = (notas || []).map(n => n.id);
-      if(!ids.length){ alert('No hay notas ese día'); return; }
-
-      const { data: det } = await sb
-        .from('notas_detalle')
-        .select('nota_id, producto, cantidad, piezas, precio, importe, created_at')
-        .in('nota_id', ids)
-        .order('created_at');
-
-      const byClient = {};
-      (notas || []).forEach(n=>{
-        const c = n.clientes?.nombre || '—';
-        if(!byClient[c]) byClient[c] = { items: [], totalImporte: 0 };
-      });
-
-      (det || []).forEach(d=>{
-        const nota = (notas || []).find(x => x.id === d.nota_id);
-        const cliente = nota?.clientes?.nombre || '—';
-        if(!byClient[cliente]) byClient[cliente] = { items: [], totalImporte: 0 };
-        byClient[cliente].items.push({
-          folio: nota?.folio || '',
-          created_at: d.created_at,
-          producto: d.producto,
-          cantidad: d.cantidad,
-          piezas: d.piezas,
-          importe: d.importe
-        });
-        byClient[cliente].totalImporte += Number(d.importe || 0);
-      });
-
-      const totalDia = (det || []).reduce((a, b) => a + Number(b.importe || 0), 0);
-      diaResumen.textContent = `Clientes: ${Object.keys(byClient).length} · Total día: $${to2(totalDia)}`;
-
-      let html = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="utf-8" />
-          <title>Reporte diario</title>
-          <style>
-            @page { size: letter landscape; margin: 8mm; }
-            body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 11px; margin: 0; }
-            h3 { margin: 0 0 4mm 0; font-size: 14px; }
-            h4 { margin: 2mm 0 1mm 0; font-size: 11px; }
-            .subinfo { font-size: 10px; margin-bottom: 3mm; }
-            #columns { column-count: 2; column-gap: 5mm; }
-            .client-group { break-inside: avoid; page-break-inside: avoid; margin-bottom: 3mm; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ccc; padding: 2px 3px; font-size: 9.5px; text-align: left; }
-            th { background: #f3f3f3; }
-          </style>
-        </head>
-        <body>
-          <h3>Reporte diario — ${f}</h3>
-          <div class="subinfo">Clientes: ${Object.keys(byClient).length} · Total día: $${to2(totalDia)}</div>
-          <div id="columns">
-      `;
-
-      Object.entries(byClient).forEach(([cliente, pack])=>{
-        html += `
-          <div class="client-group">
-            <h4>${cliente} — Total: $${to2(pack.totalImporte)}</h4>
-            <table>
-              <thead>
-                <tr>
-                  <th>Folio</th>
-                  <th>Hora</th>
-                  <th>Producto</th>
-                  <th>Kg</th>
-                  <th>Pzas</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${(pack.items || []).map(d => `
-                  <tr>
-                    <td>${d.folio}</td>
-                    <td>${new Date(d.created_at).toLocaleTimeString()}</td>
-                    <td>${d.producto}</td>
-                    <td>${to2(d.cantidad)}</td>
-                    <td>${d.piezas != null ? d.piezas : ''}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      });
-
-      html += `
-          </div>
-        </body>
-        </html>
-      `;
-
-      const win = window.open('', '_blank', 'width=1200,height=800');
       win.document.open();
       win.document.write(html);
       win.document.close();
       win.focus();
-      setTimeout(() => { win.print(); }, 400);
+      setTimeout(() => win.print(), 300);
     }
 
-    async function exportDiaCSV(){
-      const f = diaFecha.value || todayISO();
+    function imprimirSebo80mm() {
+      const kg = Number(document.getElementById('seboKg').value || 0);
+      if (!kg || kg <= 0) return alert("Ingresa los kilos de sebo.");
 
-      const { data: notas } = await sb
-        .from('notas_credito')
-        .select('id, folio, fecha, clientes(nombre)')
-        .eq('fecha', f);
+      const STORE = "Carnes y Vísceras del Centro";
+      const fecha = fechaMX();
 
-      const ids = (notas||[]).map(n=>n.id);
-      if(!ids.length) return alert('No hay notas ese día');
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <style>
+        body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+        #t{width:80mm;padding:2mm}
+        h3{margin:0;text-align:center;font-size:14px}
+        .c{text-align:center;font-size:11px;margin-top:4px}
+        .line{border-top:1px dashed #000;margin:6px 0}
+        .big{text-align:center;font-weight:800;font-size:16px}
+        .amt{text-align:center;font-weight:900;font-size:20px;margin-top:4px}
+        @media print{@page{size:80mm auto;margin:0}}
+      </style></head><body>
+        <div id="t">
+          <h3>${STORE}</h3>
+          <div class="c">PAPEL DE SEBO<br>FECHA: ${fecha}</div>
+          <div class="line"></div>
+          <div class="big">DIO SEBO</div>
+          <div class="amt">${kg.toFixed(2)} KG</div>
+          <div class="line"></div>
+          <div class="c">FIRMA: ____________________________</div>
+        </div>
+      </body></html>`;
 
-      const { data: det } = await sb
-        .from('notas_detalle')
-        .select('nota_id, producto, cantidad, piezas, precio, importe, created_at')
-        .in('nota_id', ids);
-
-      const head = ['Cliente','Folio','Fecha','Hora','Producto','Kg','Piezas','Precio','Importe'];
-
-      const rows = (det||[]).map(d=>{
-        const n = (notas||[]).find(x=>x.id===d.nota_id) || {};
-        return [
-          (n.clientes?.nombre||''),
-          n.folio,
-          f,
-          new Date(d.created_at).toLocaleTimeString(),
-          d.producto,
-          to2(d.cantidad),
-          (d.piezas != null ? d.piezas : ''),
-          to2(d.precio),
-          to2(d.importe)
-        ];
-      });
-
-      const csv = [head, ...rows].map(r=> r.map(csvEscape).join(',')).join('\n');
-      const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `reporte_${f}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      printHtmlWindow(html);
+      vdcDraftSave();
     }
 
-    async function exportNotaCSV(nota_id){
-      const { data: nota } = await sb
-        .from('notas_credito')
-        .select('folio, fecha, clientes(nombre), cliente_id')
-        .eq('id', nota_id)
-        .single();
+    // ✅✅✅ ETIQUETA 80MM HORIZONTAL + TEXTO CENTRADO (VERTICAL Y HORIZONTAL) ✅✅✅
+    function imprimirEtiqueta80mm() {
+      const texto = (document.getElementById('etiquetaTexto').value || '').trim();
+      const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
+      if (!texto) return alert("Escribe el texto de la etiqueta.");
 
-      const { data: det } = await sb
-        .from('notas_detalle')
-        .select('*')
-        .eq('nota_id', nota_id)
-        .order('created_at');
+      const STORE = "Carnes y Vísceras del Centro";
+      const fecha = fechaMX();
 
-      const head = ['Cliente','Folio','Fecha','Hora','Producto','Kg','Piezas','Precio','Importe'];
-      const rows = (det||[]).map(d => ([
-        (nota?.clientes?.nombre || ''),
-        nota?.folio || '',
-        nota?.fecha || '',
-        new Date(d.created_at).toLocaleTimeString(),
-        d.producto,
-        to2(d.cantidad),
-        (d.piezas != null ? d.piezas : ''),
-        to2(d.precio),
-        to2(d.importe)
-      ]));
+      const safe = escapeHtml(texto).replaceAll('\n','<br>');
 
-      const csv = [head, ...rows].map(r=> r.map(csvEscape).join(',')).join('\n');
-      const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nota_${nota?.folio || 'sin_folio'}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <style>
+        *{box-sizing:border-box}
+        html,body{margin:0;padding:0;font-family:ui-monospace,Menlo,Consolas,monospace}
 
-    async function cerrarNotaById(nota_id){
-      if(!nota_id) return;
-      if(!confirm('¿Cerrar esta nota?')) return;
+        /* Fuerza impresión horizontal */
+        @media print{
+          @page{ size: landscape; margin:0; }
+        }
 
-      const { error } = await sb
-        .from('notas_credito')
-        .update({estado:'cerrada'})
-        .eq('id', nota_id);
+        /* Contenedor ocupa la "altura" imprimible para centrar vertical */
+        #t{
+          width:100%;
+          min-height:100vh;
+          padding:10mm;
+          display:flex;
+          flex-direction:column;
+          justify-content:center; /* ✅ centra vertical */
+          align-items:center;     /* ✅ centra horizontal */
+          text-align:center;
+        }
 
-      if(error){
-        console.error(error);
-        alert('No se pudo cerrar la nota');
+        .c{font-size:11px;line-height:1.3}
+        .line{width:100%;border-top:1px dashed #000;margin:6px 0}
+
+        .body{
+          width:100%;
+          font-weight:900;
+          font-size:22px;
+          line-height:1.2;
+          word-break:break-word;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+        }
+      </style></head><body>
+        <div id="t">
+          <div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>
+          <div class="line"></div>
+          <div class="body">${safe}</div>
+          <div class="line"></div>
+          <div class="c">Etiqueta / Señalamiento</div>
+        </div>
+      </body></html>`;
+
+      const win = window.open('', '_blank', 'width=420,height=650');
+      if (!win) {
+        alert("No se pudo abrir la ventana de impresión. Activa ventanas emergentes (popups).");
         return;
       }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
 
-      if(notaA?.id === nota_id) notaA = null;
-      if(notaB?.id === nota_id) notaB = null;
+      let i = 0;
+      const doPrint = () => {
+        win.focus();
+        win.print();
+        i++;
+        if (i < copias) setTimeout(doPrint, 450);
+      };
+      setTimeout(doPrint, 300);
 
-      await renderVista();
-      await loadBandeja();
-      alert('✅ Nota cerrada');
+      vdcDraftSave();
     }
 
-    async function cerrarNota(){
-      const n = activeNota();
-      if(!n) return alert('Sin nota');
-
-      await sb.from('notas_credito').update({estado:'cerrada'}).eq('id', n.id);
-      await renderVista();
-      await loadBandeja();
-      alert('✅ Nota cerrada');
+    function limpiarEtiqueta(){
+      document.getElementById('etiquetaTexto').value = '';
+      document.getElementById('etqCopias').value = 1;
+      scheduleDraft();
     }
+
+    // ========= PESAJES =========
+    function getSelectedProducto(){
+      const selVal = (document.getElementById('prodSelect').value || '').trim();
+      if(!selVal) return '';
+      if(selVal === '__FREE__'){
+        return (document.getElementById('prodNombre').value || '').trim();
+      }
+      return selVal;
+    }
+
+    function agregarLinea(){
+      const origenTipo = (document.getElementById('origenTipo').value || '').trim();
+      if(!origenTipo) return alert("Selecciona Origen (tipo).");
+
+      const producto = getSelectedProducto();
+      const kgRaw = document.getElementById('prodKg').value;
+      const pzasRaw = document.getElementById('prodPzas').value;
+
+      const kg = (kgRaw === '') ? null : Number(kgRaw);
+      const pzas = (pzasRaw === '') ? null : Number(pzasRaw);
+
+      if (!producto) return alert("Selecciona un producto (o escribe en Producto libre).");
+
+      const kgOk = (kg !== null && kg > 0);
+      const pzasOk = (pzas !== null && pzas > 0);
+      if (!kgOk && !pzasOk) return alert("Ingresa kilos, piezas o ambos.");
+
+      pesajes.push({
+        producto,
+        kg: kgOk ? kg : null,
+        pzas: pzasOk ? parseInt(pzas,10) : null
+      });
+
+      // reset
+      document.getElementById('prodKg').value = '';
+      document.getElementById('prodPzas').value = '';
+      if(document.getElementById('prodSelect').value === '__FREE__'){
+        document.getElementById('prodNombre').value = '';
+      }else{
+        document.getElementById('prodSelect').value = '';
+      }
+
+      renderTabla();
+      vdcDraftSave();
+    }
+
+    function eliminarLinea(idx){
+      pesajes.splice(idx, 1);
+      renderTabla();
+      vdcDraftSave();
+    }
+
+    function renderTabla(){
+      const tbody = document.getElementById('tablaLineas');
+      tbody.innerHTML = '';
+      pesajes.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(p.producto)}</td>
+          <td>${p.kg ? Number(p.kg).toFixed(2) : ''}</td>
+          <td>${p.pzas ? p.pzas : ''}</td>
+          <td><button class="btn-red" style="padding:8px 12px;border-radius:8px;" onclick="eliminarLinea(${idx})">Quitar</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function generarMensaje(){
+      const origenNice = getOrigenNice();
+      const fecha = fechaMX();
+      const tipo = (document.getElementById('origenTipo').value || '').trim();
+
+      if (pesajes.length === 0) return alert("Agrega al menos un producto.");
+      if (!tipo) return alert("Selecciona Origen (tipo).");
+
+      let msg = `📦 *PESAJE RECIBIDO*\n`;
+      msg += `📅 Fecha: ${fecha}\n`;
+      msg += `👤 Origen: ${origenNice}\n\n`;
+      msg += `*Detalle:*\n`;
+
+      pesajes.forEach(p => {
+        let linea = `• ${p.producto} — `;
+        if (p.kg && p.pzas) linea += `${Number(p.kg).toFixed(2)} kg | ${p.pzas} pzas`;
+        else if (p.kg) linea += `${Number(p.kg).toFixed(2)} kg`;
+        else if (p.pzas) linea += `${p.pzas} pzas`;
+        msg += linea + `\n`;
+      });
+
+      // total kg SOLO granja/limpieza (NO animales/rastro)
+      if (shouldShowKgTotal()){
+        msg += `\n🧮 *Total KG:* ${totalKg().toFixed(2)} kg\n`;
+      }
+
+      const box = document.getElementById('vistaMensaje');
+      box.style.display = 'block';
+      box.textContent = msg;
+
+      vdcDraftSave();
+      return msg;
+    }
+
+    async function copiarMensaje(){
+      const msg = generarMensaje();
+      if (!msg) return;
+
+      try{
+        if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard no disponible");
+        await navigator.clipboard.writeText(msg);
+        alert("✅ Mensaje copiado.");
+      }catch(e){
+        alert("En esta tablet no se pudo copiar automático. Mantén presionado el texto y copia manual.");
+      }
+    }
+
+    function abrirWhatsApp(){
+      const msg = generarMensaje();
+      if (!msg) return;
+
+      const num = (document.getElementById('whatsNumero').value || '').trim();
+      const encoded = encodeURIComponent(msg);
+
+      const url = num
+        ? `https://wa.me/${num}?text=${encoded}`
+        : `https://wa.me/?text=${encoded}`;
+
+      window.open(url, '_blank');
+      vdcDraftSave();
+    }
+
+    function limpiarPesajes(){
+      pesajes = [];
+      document.getElementById('whatsNumero').value = '';
+      document.getElementById('prodKg').value = '';
+      document.getElementById('prodPzas').value = '';
+      document.getElementById('prodSelect').value = '';
+      document.getElementById('prodNombre').value = '';
+      document.getElementById('prodNombreWrap').style.display = 'none';
+
+      document.getElementById('vistaMensaje').style.display = 'none';
+      document.getElementById('vistaMensaje').textContent = '';
+      renderTabla();
+      vdcDraftSave();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    // ========= INIT UI =========
+    function setupUI(){
+      const origenEl = document.getElementById('origenTipo');
+      const prodSel = document.getElementById('prodSelect');
+      const freeWrap = document.getElementById('prodNombreWrap');
+
+      origenEl.addEventListener('change', ()=>{
+        fillProductoOptions(origenEl.value);
+        // reset selección y libre
+        prodSel.value = '';
+        freeWrap.style.display = 'none';
+        document.getElementById('prodNombre').value = '';
+        scheduleDraft();
+      });
+
+      prodSel.addEventListener('change', ()=>{
+        if(prodSel.value === '__FREE__'){
+          freeWrap.style.display = 'block';
+          document.getElementById('prodNombre').focus();
+        }else{
+          freeWrap.style.display = 'none';
+          document.getElementById('prodNombre').value = '';
+        }
+        scheduleDraft();
+      });
+    }
+
+    // ========= EXPONER =========
+    window.guardarViaje = guardarViaje;
+    window.generarDocumento = generarDocumento;
+    window.imprimirSebo80mm = imprimirSebo80mm;
+    window.imprimirEtiqueta80mm = imprimirEtiqueta80mm;
+    window.limpiarEtiqueta = limpiarEtiqueta;
+
+    window.agregarLinea = agregarLinea;
+    window.eliminarLinea = eliminarLinea;
+    window.generarMensaje = generarMensaje;
+    window.copiarMensaje = copiarMensaje;
+    window.abrirWhatsApp = abrirWhatsApp;
+    window.limpiarPesajes = limpiarPesajes;
+
+    // ========= ARRANQUE =========
+    window.addEventListener('DOMContentLoaded', () => {
+      const f = document.getElementById('fecha');
+      if(f && !f.value) f.value = todayISO();
+
+      setupUI();
+      fillProductoOptions('');
+
+      vdcDraftLoad();
+      vdcDraftSave();
+    });
   </script>
 </body>
 </html>
