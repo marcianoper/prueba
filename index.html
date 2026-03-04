@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />.who
+  <meta charset="UTF-8" />
   <title>Hoja de pesos y sebo 2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -38,16 +38,6 @@
     .hr{ margin:26px 0; border-top:1px solid #e5e7eb; }
     .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
 
-    table{ width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td{ border:1px solid #e5e7eb; padding:8px; text-align:left; }
-    th{ background:#f9fafb; }
-    .mini{ font-size:12px; color:#6b7280; }
-    .msgbox{
-      margin-top:12px; white-space:pre-line; background:#0b1220; color:#e5e7eb;
-      padding:14px; border-radius:12px; border:1px solid #111827;
-      font-family: ui-monospace, Menlo, Consolas, monospace;
-    }
-
     .draftbar{
       display:flex; gap:10px; flex-wrap:wrap; align-items:center;
       margin: 8px 0 18px;
@@ -59,9 +49,6 @@
     .draftbar .status{
       font-size:12px; color:#6b7280; font-weight:700;
     }
-
-    /* Solo se ve cuando eliges "Producto libre" */
-    #prodNombreWrap{ display:none; }
 
     /* Secciones de notas */
     .noteBox{
@@ -94,6 +81,12 @@
       background:#0f766e;
       color:#fff;
       border-color:#0f766e;
+    }
+
+    .msgbox{
+      margin-top:12px; white-space:pre-line; background:#0b1220; color:#e5e7eb;
+      padding:14px; border-radius:12px; border:1px solid #111827;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
     }
   </style>
 </head>
@@ -218,88 +211,7 @@
       </div>
     </div>
 
-    <div class="hr"></div>
-
-    <!-- === MENSAJE PARA WHATSAPP === -->
-    <h2 style="margin:0;">Mensaje de pesajes para WhatsApp</h2>
-    <div class="hint">Elige el origen, luego el producto (combo) y agrega kg/pzas.</div>
-
-    <div class="row">
-      <div>
-        <label>Origen (tipo):</label>
-        <select id="origenTipo">
-          <option value="">— Selecciona —</option>
-          <option value="rastro">Rastro</option>
-          <option value="granja">Granja</option>
-          <option value="limpieza">Limpieza</option>
-        </select>
-        <div class="mini">Esto define qué opciones salen en “Producto”.</div>
-      </div>
-
-      <div>
-        <label for="whatsNumero">WhatsApp destino (opcional):</label>
-        <input id="whatsNumero" placeholder="Ej. 524621872594 (sin + ni espacios)" />
-        <div class="mini">Si lo dejas vacío, igual genera el texto y tú lo pegas donde quieras.</div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div>
-        <label>Producto (según origen):</label>
-        <select id="prodSelect" disabled>
-          <option value="">— Selecciona origen primero —</option>
-        </select>
-      </div>
-
-      <div id="prodNombreWrap">
-        <label for="prodNombre">Producto libre:</label>
-        <input id="prodNombre" placeholder="Escribe producto personalizado" />
-      </div>
-
-      <div>
-        <label for="prodKg">Kg (opcional):</label>
-        <input type="number" id="prodKg" step="0.01" min="0" placeholder="Ej. 130" />
-      </div>
-      <div>
-        <label for="prodPzas">Pzas (opcional):</label>
-        <input type="number" id="prodPzas" step="1" min="0" placeholder="Ej. 20" />
-      </div>
-
-      <div style="flex:0 0 auto;">
-        <button onclick="agregarLinea()">Agregar</button>
-      </div>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Kg</th>
-          <th>Pzas</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody id="tablaLineas"></tbody>
-    </table>
-
-    <div class="row">
-      <div style="flex:0 0 auto;">
-        <button class="btn-teal" onclick="generarMensaje()">Generar mensaje</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button onclick="copiarMensaje()">Copiar</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button class="btn-gray" onclick="abrirWhatsApp()">Abrir WhatsApp</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button class="btn-red" onclick="limpiarPesajes()">Limpiar todo</button>
-      </div>
-    </div>
-
-    <div id="vistaMensaje" class="msgbox" style="display:none;"></div>
     <div id="resultado-totales"></div>
-
     <div id="debug" class="msgbox" style="display:none;"></div>
   </div>
 
@@ -345,27 +257,6 @@
       return new Date().toLocaleDateString('es-MX');
     }
 
-    // ========= DATA =========
-    let pesajes = []; // {producto, kg|null, pzas|null}
-
-    // ========= ORIGEN -> OPCIONES DE PRODUCTO =========
-    const PRODUCT_OPTIONS_BY_ORIGEN = {
-      rastro: [
-        "Animales Jaramillo",
-        "Animales Botello",
-        "Animales Mireles",
-        "Animales Bravo"
-      ],
-      granja: [
-        "Menudo sucio",
-        "Libro sucio"
-      ],
-      limpieza: [
-        "Menudo limpio",
-        "Libro limpio"
-      ]
-    };
-
     // ✅ EDITA AQUÍ LAS COLONIAS (combo de destino)
     const COLONIAS_DESTINO = [
       "San Roque",
@@ -405,66 +296,6 @@
     }
     window.setTipoNota = setTipoNota;
 
-    function fillProductoOptions(origen){
-      const sel = document.getElementById('prodSelect');
-      const freeWrap = document.getElementById('prodNombreWrap');
-      const freeInput = document.getElementById('prodNombre');
-
-      sel.innerHTML = "";
-
-      if(!origen || !PRODUCT_OPTIONS_BY_ORIGEN[origen]){
-        sel.disabled = true;
-        const op = document.createElement('option');
-        op.value = "";
-        op.textContent = "— Selecciona origen primero —";
-        sel.appendChild(op);
-        freeWrap.style.display = "none";
-        freeInput.value = "";
-        return;
-      }
-
-      sel.disabled = false;
-
-      const op0 = document.createElement('option');
-      op0.value = "";
-      op0.textContent = "— Selecciona —";
-      sel.appendChild(op0);
-
-      PRODUCT_OPTIONS_BY_ORIGEN[origen].forEach(name=>{
-        const op = document.createElement('option');
-        op.value = name;
-        op.textContent = name;
-        sel.appendChild(op);
-      });
-
-      const opFree = document.createElement('option');
-      opFree.value = "__FREE__";
-      opFree.textContent = "Producto libre (escribir)";
-      sel.appendChild(opFree);
-
-      // default hide
-      freeWrap.style.display = "none";
-      freeInput.value = "";
-    }
-
-    function getOrigenNice(){
-      const tipo = (document.getElementById('origenTipo').value || "").trim();
-      if(!tipo) return "";
-      return tipo.charAt(0).toUpperCase() + tipo.slice(1);
-    }
-
-    function shouldShowKgTotal(){
-      const tipo = (document.getElementById('origenTipo').value || "").trim();
-      // NO total para "animales" (rastro)
-      return (tipo === "granja" || tipo === "limpieza");
-    }
-
-    function totalKg(){
-      let sum = 0;
-      pesajes.forEach(p => { sum += (Number(p.kg) || 0); });
-      return sum;
-    }
-
     // ========= BORRADOR =========
     function todayISO(){
       const d = new Date();
@@ -493,16 +324,8 @@
           bolsasQty: document.getElementById('bolsasQty')?.value || '1',
           mostradorTexto: document.getElementById('mostradorTexto')?.value || '',
 
-          etqCopias: document.getElementById('etqCopias')?.value || '1',
-
-          origenTipo: document.getElementById('origenTipo')?.value || '',
-          prodSelect: document.getElementById('prodSelect')?.value || '',
-          prodNombre: document.getElementById('prodNombre')?.value || '',
-          whatsNumero: document.getElementById('whatsNumero')?.value || '',
-          prodKg: document.getElementById('prodKg')?.value || '',
-          prodPzas: document.getElementById('prodPzas')?.value || ''
-        },
-        pesajes: pesajes
+          etqCopias: document.getElementById('etqCopias')?.value || '1'
+        }
       };
     }
 
@@ -529,28 +352,6 @@
       setVal('mostradorTexto', f.mostradorTexto);
 
       setVal('etqCopias', f.etqCopias);
-
-      // pesajes
-      setVal('origenTipo', f.origenTipo);
-      fillProductoOptions(f.origenTipo || '');
-      setVal('prodSelect', f.prodSelect);
-      setVal('prodNombre', f.prodNombre);
-      setVal('whatsNumero', f.whatsNumero);
-      setVal('prodKg', f.prodKg);
-      setVal('prodPzas', f.prodPzas);
-
-      // Mostrar/hide producto libre si corresponde
-      const freeWrap = document.getElementById('prodNombreWrap');
-      if((document.getElementById('prodSelect').value || '') === '__FREE__'){
-        freeWrap.style.display = 'block';
-      }else{
-        freeWrap.style.display = 'none';
-      }
-
-      if(Array.isArray(d.pesajes)){
-        pesajes = d.pesajes;
-        renderTabla();
-      }
     }
 
     function vdcDraftSave(){
@@ -589,13 +390,6 @@
       document.getElementById('mostradorTexto').value = '';
       document.getElementById('etqCopias').value = 1;
 
-      document.getElementById('origenTipo').value = '';
-      fillProductoOptions('');
-      document.getElementById('prodSelect').value = '';
-      document.getElementById('prodNombre').value = '';
-      document.getElementById('prodNombreWrap').style.display = 'none';
-
-      limpiarPesajes();
       document.getElementById('resultado-totales').textContent = '';
       setDraftStatus('Borrador limpiado 🧹');
       vdcDraftSave();
@@ -726,7 +520,6 @@
       const STORE = "Carnes y Vísceras del Centro";
       const fecha = fechaMX();
 
-      let titulo2 = "";
       let lineas = [];
 
       if(tipo === "envio"){
@@ -737,15 +530,14 @@
         if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
         if (!colonia) return alert("Selecciona la colonia destino.");
 
-        titulo2 = escapeHtml(entrega);
+        // ✅ SIN última línea después de BOLSAS
         lineas = [
           {type:'line'},
-          {type:'text', cls:'who', text: titulo2},
-          {type:'line'}, // ✅ separador entre quien lleva y colonia
+          {type:'text', cls:'who', text: escapeHtml(entrega)},
+          {type:'line'},
           {type:'text', cls:'col', text: escapeHtml(colonia.toUpperCase())},
-          {type:'line'}, // ✅ separador entre colonia y bolsas
-          {type:'text', cls:'bags', text: `BOLSAS: ${bolsas}`},
-          {type:'line'}
+          {type:'line'},
+          {type:'text', cls:'bags', text: `BOLSAS: ${bolsas}`}
         ];
       }else{
         const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
@@ -794,15 +586,14 @@
         .c{font-size:12px;line-height:1.25}
         .line{width:100%;border-top:1px dashed #000;margin:6px 0}
 
-      .who{
-  font-weight:900;
-  font-size:38px !important;
-}
-
-.col{
-  font-weight:900;
-  font-size:38px !important;
-}
+        .who{
+          font-weight:900;
+          font-size:38px !important;
+        }
+        .col{
+          font-weight:900;
+          font-size:38px !important;
+        }
         .bags{
           font-weight:900;
           font-size:10px !important;
@@ -852,150 +643,6 @@
       scheduleDraft();
     }
 
-    // ========= PESAJES =========
-    function getSelectedProducto(){
-      const selVal = (document.getElementById('prodSelect').value || '').trim();
-      if(!selVal) return '';
-      if(selVal === '__FREE__'){
-        return (document.getElementById('prodNombre').value || '').trim();
-      }
-      return selVal;
-    }
-
-    function agregarLinea(){
-      const origenTipo = (document.getElementById('origenTipo').value || '').trim();
-      if(!origenTipo) return alert("Selecciona Origen (tipo).");
-
-      const producto = getSelectedProducto();
-      const kgRaw = document.getElementById('prodKg').value;
-      const pzasRaw = document.getElementById('prodPzas').value;
-
-      const kg = (kgRaw === '') ? null : Number(kgRaw);
-      const pzas = (pzasRaw === '') ? null : Number(pzasRaw);
-
-      if (!producto) return alert("Selecciona un producto (o escribe en Producto libre).");
-
-      const kgOk = (kg !== null && kg > 0);
-      const pzasOk = (pzas !== null && pzas > 0);
-      if (!kgOk && !pzasOk) return alert("Ingresa kilos, piezas o ambos.");
-
-      pesajes.push({
-        producto,
-        kg: kgOk ? kg : null,
-        pzas: pzasOk ? parseInt(pzas,10) : null
-      });
-
-      // reset
-      document.getElementById('prodKg').value = '';
-      document.getElementById('prodPzas').value = '';
-      if(document.getElementById('prodSelect').value === '__FREE__'){
-        document.getElementById('prodNombre').value = '';
-      }else{
-        document.getElementById('prodSelect').value = '';
-      }
-
-      renderTabla();
-      vdcDraftSave();
-    }
-
-    function eliminarLinea(idx){
-      pesajes.splice(idx, 1);
-      renderTabla();
-      vdcDraftSave();
-    }
-
-    function renderTabla(){
-      const tbody = document.getElementById('tablaLineas');
-      tbody.innerHTML = '';
-      pesajes.forEach((p, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(p.producto)}</td>
-          <td>${p.kg ? Number(p.kg).toFixed(2) : ''}</td>
-          <td>${p.pzas ? p.pzas : ''}</td>
-          <td><button class="btn-red" style="padding:8px 12px;border-radius:8px;" onclick="eliminarLinea(${idx})">Quitar</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function generarMensaje(){
-      const origenNice = getOrigenNice();
-      const fecha = fechaMX();
-      const tipo = (document.getElementById('origenTipo').value || '').trim();
-
-      if (pesajes.length === 0) return alert("Agrega al menos un producto.");
-      if (!tipo) return alert("Selecciona Origen (tipo).");
-
-      let msg = `📦 *PESAJE RECIBIDO*\n`;
-      msg += `📅 Fecha: ${fecha}\n`;
-      msg += `👤 Origen: ${origenNice}\n\n`;
-      msg += `*Detalle:*\n`;
-
-      pesajes.forEach(p => {
-        let linea = `• ${p.producto} — `;
-        if (p.kg && p.pzas) linea += `${Number(p.kg).toFixed(2)} kg | ${p.pzas} pzas`;
-        else if (p.kg) linea += `${Number(p.kg).toFixed(2)} kg`;
-        else if (p.pzas) linea += `${p.pzas} pzas`;
-        msg += linea + `\n`;
-      });
-
-      // total kg SOLO granja/limpieza (NO animales/rastro)
-      if (shouldShowKgTotal()){
-        msg += `\n🧮 *Total KG:* ${totalKg().toFixed(2)} kg\n`;
-      }
-
-      const box = document.getElementById('vistaMensaje');
-      box.style.display = 'block';
-      box.textContent = msg;
-
-      vdcDraftSave();
-      return msg;
-    }
-
-    async function copiarMensaje(){
-      const msg = generarMensaje();
-      if (!msg) return;
-
-      try{
-        if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error("Clipboard no disponible");
-        await navigator.clipboard.writeText(msg);
-        alert("✅ Mensaje copiado.");
-      }catch(e){
-        alert("En esta tablet no se pudo copiar automático. Mantén presionado el texto y copia manual.");
-      }
-    }
-
-    function abrirWhatsApp(){
-      const msg = generarMensaje();
-      if (!msg) return;
-
-      const num = (document.getElementById('whatsNumero').value || '').trim();
-      const encoded = encodeURIComponent(msg);
-
-      const url = num
-        ? `https://wa.me/${num}?text=${encoded}`
-        : `https://wa.me/?text=${encoded}`;
-
-      window.open(url, '_blank');
-      vdcDraftSave();
-    }
-
-    function limpiarPesajes(){
-      pesajes = [];
-      document.getElementById('whatsNumero').value = '';
-      document.getElementById('prodKg').value = '';
-      document.getElementById('prodPzas').value = '';
-      document.getElementById('prodSelect').value = '';
-      document.getElementById('prodNombre').value = '';
-      document.getElementById('prodNombreWrap').style.display = 'none';
-
-      document.getElementById('vistaMensaje').style.display = 'none';
-      document.getElementById('vistaMensaje').textContent = '';
-      renderTabla();
-      vdcDraftSave();
-    }
-
     function escapeHtml(s){
       return String(s)
         .replaceAll('&','&amp;')
@@ -1005,55 +652,17 @@
         .replaceAll("'","&#039;");
     }
 
-    // ========= INIT UI =========
-    function setupUI(){
-      const origenEl = document.getElementById('origenTipo');
-      const prodSel = document.getElementById('prodSelect');
-      const freeWrap = document.getElementById('prodNombreWrap');
-
-      origenEl.addEventListener('change', ()=>{
-        fillProductoOptions(origenEl.value);
-        // reset selección y libre
-        prodSel.value = '';
-        freeWrap.style.display = 'none';
-        document.getElementById('prodNombre').value = '';
-        scheduleDraft();
-      });
-
-      prodSel.addEventListener('change', ()=>{
-        if(prodSel.value === '__FREE__'){
-          freeWrap.style.display = 'block';
-          document.getElementById('prodNombre').focus();
-        }else{
-          freeWrap.style.display = 'none';
-          document.getElementById('prodNombre').value = '';
-        }
-        scheduleDraft();
-      });
-    }
-
-    // ========= EXPONER =========
+    // ========= INIT =========
     window.guardarViaje = guardarViaje;
     window.generarDocumento = generarDocumento;
     window.imprimirSebo80mm = imprimirSebo80mm;
-
     window.imprimirNota80mm = imprimirNota80mm;
     window.limpiarNotas = limpiarNotas;
 
-    window.agregarLinea = agregarLinea;
-    window.eliminarLinea = eliminarLinea;
-    window.generarMensaje = generarMensaje;
-    window.copiarMensaje = copiarMensaje;
-    window.abrirWhatsApp = abrirWhatsApp;
-    window.limpiarPesajes = limpiarPesajes;
-
-    // ========= ARRANQUE =========
     window.addEventListener('DOMContentLoaded', () => {
       const f = document.getElementById('fecha');
       if(f && !f.value) f.value = todayISO();
 
-      setupUI();
-      fillProductoOptions('');
       llenarColonias();
 
       // default visible: envío
