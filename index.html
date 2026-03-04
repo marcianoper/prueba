@@ -62,6 +62,39 @@
 
     /* Solo se ve cuando eliges "Producto libre" */
     #prodNombreWrap{ display:none; }
+
+    /* Secciones de notas */
+    .noteBox{
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:14px;
+      background:#f9fafb;
+      margin-top:10px;
+    }
+    .noteBox h3{ margin:0 0 8px; font-size:16px; }
+    #notaEnvioWrap{ display:none; }
+    #notaMostradorWrap{ display:none; }
+
+    .seg{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;
+      background:#f3f4f6; border:1px solid #e5e7eb; padding:10px; border-radius:12px;
+      align-items:center;
+    }
+    .seg .chip{
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid #d1d5db;
+      cursor:pointer;
+      background:#fff;
+      user-select:none;
+      font-weight:800;
+      font-size:13px;
+    }
+    .seg .chip.active{
+      background:#0f766e;
+      color:#fff;
+      border-color:#0f766e;
+    }
   </style>
 </head>
 
@@ -119,41 +152,69 @@
 
     <div class="hr"></div>
 
-    <!-- ✅ NUEVA ETIQUETA ENVÍO 80MM -->
-    <h2 style="margin:0;">Etiqueta envío 80mm (horizontal)</h2>
-    <div class="hint">Selecciona quién entrega y la colonia destino. (Sin texto libre)</div>
+    <!-- ✅ NOTAS (ENVÍOS / MOSTRADOR) -->
+    <h2 style="margin:0;">Notas 80mm (horizontal)</h2>
+    <div class="hint">Elige tipo de nota: Envios (reparto) o Mostrador (cliente pasa por pedido).</div>
+
+    <div class="seg" role="group" aria-label="Tipo de nota">
+      <div id="chipEnvio" class="chip active" onclick="setTipoNota('envio')">📦 Notas para envíos</div>
+      <div id="chipMostrador" class="chip" onclick="setTipoNota('mostrador')">🧾 Notas para mostrador</div>
+      <input type="hidden" id="tipoNota" value="envio" />
+    </div>
+
+    <!-- ENVÍO -->
+    <div id="notaEnvioWrap" class="noteBox">
+      <h3>📦 Nota de envío</h3>
+
+      <div class="row">
+        <div>
+          <label for="entregaNombre">Quién entrega:</label>
+          <select id="entregaNombre">
+            <option value="">— Selecciona —</option>
+            <option value="FER">FER</option>
+            <option value="NETO">NETO</option>
+            <option value="ALE">ALE</option>
+            <option value="PACO">PACO</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="coloniaDestino">Colonia destino:</label>
+          <select id="coloniaDestino">
+            <option value="">— Selecciona —</option>
+          </select>
+          <div class="mini">La lista de colonias se edita en el código (COLONIAS_DESTINO).</div>
+        </div>
+
+        <div>
+          <label for="bolsasQty">Cantidad de bolsas:</label>
+          <input type="number" id="bolsasQty" min="1" step="1" value="1" />
+          <div class="mini">Ej. 1, 2, 3…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOSTRADOR -->
+    <div id="notaMostradorWrap" class="noteBox">
+      <h3>🧾 Nota de mostrador</h3>
+      <div class="hint">Aquí sí es libre: normalmente el nombre del cliente que va a pasar por el pedido.</div>
+
+      <label for="mostradorTexto">Texto (cliente):</label>
+      <textarea id="mostradorTexto" placeholder="Ej. JUAN PÉREZ"></textarea>
+    </div>
 
     <div class="row">
-      <div>
-        <label for="entregaNombre">Quién entrega:</label>
-        <select id="entregaNombre">
-          <option value="">— Selecciona —</option>
-          <option value="FER">FER</option>
-          <option value="NETO">NETO</option>
-          <option value="ALE">ALE</option>
-          <option value="PACO">PACO</option>
-        </select>
-      </div>
-
-      <div>
-        <label for="coloniaDestino">Colonia destino:</label>
-        <select id="coloniaDestino">
-          <option value="">— Selecciona —</option>
-        </select>
-        <div class="mini">La lista de colonias se edita en el código.</div>
-      </div>
-
       <div>
         <label for="etqCopias">Copias:</label>
         <input type="number" id="etqCopias" min="1" step="1" value="1" />
       </div>
 
       <div style="flex:0 0 auto;">
-        <button onclick="imprimirEtiqueta80mm()">Imprimir etiqueta 80mm</button>
+        <button onclick="imprimirNota80mm()">Imprimir nota 80mm</button>
       </div>
 
       <div style="flex:0 0 auto;">
-        <button class="btn-gray" onclick="limpiarEtiqueta()">Limpiar</button>
+        <button class="btn-gray" onclick="limpiarNotas()">Limpiar</button>
       </div>
     </div>
 
@@ -313,66 +374,7 @@
       "Villas de Irapuato",
       "Centro",
       "La Moderna",
-      "Calzada de Guadalupe",
-      "naranjal1",
-      "naranjal2",
-      "almuerzos tere",
-      "pradera",
-      "rancho grande",
-      "soledad",
-      "san miguelito",
-      "abraham vallejo",
-      "rio nazas",
-      "hija de carmelita",
-      "arcos1 y 2",
-      "virgen",
-      "tellez",
-      "platan",
-      "tomelopez",
-      "purisima",
-      "fuentes",
-      "dique",
-      "pollo",
-      "juarez",
-      "coyoacan",
-      "cirilo",
-      "ucopi",
-      "division del norte",
-      "mario",
-      "pronasol",
-      "candelaria",
-      "rey sol",
-      "romeral",
-      "limon",
-      "gomez morin",
-      "playa azul",
-      "sauce",
-      "san agustin1",
-      "san agustin2",
-      "manuela acuña",
-      "san jose",
-      "san ramon",
-      "abasolo1",
-      "abasolo2",
-      "abasolo3",
-      "san irineo",
-      "leyes",
-      "arandas",
-      "plan",
-      "niños heroes",
-      "america",
-      "cobos",
-      "acambaro",
-      "zapotla",
-      "1 de mayo",
-      "resbalon",
-      "bola",
-      "san cayetano",
-      "avila camacho",
-      "nuevo leon",
-      "taquicardia",
-      "el encanto",
-      "cuecillo"
+      "Calzada de Guadalupe"
     ];
 
     function llenarColonias(){
@@ -386,6 +388,22 @@
         sel.appendChild(op);
       });
     }
+
+    // ========= TIPO DE NOTA =========
+    function setTipoNota(tipo){
+      document.getElementById('tipoNota').value = tipo;
+
+      const chipEnvio = document.getElementById('chipEnvio');
+      const chipMost = document.getElementById('chipMostrador');
+      chipEnvio.classList.toggle('active', tipo === 'envio');
+      chipMost.classList.toggle('active', tipo === 'mostrador');
+
+      document.getElementById('notaEnvioWrap').style.display = (tipo === 'envio') ? 'block' : 'none';
+      document.getElementById('notaMostradorWrap').style.display = (tipo === 'mostrador') ? 'block' : 'none';
+
+      scheduleDraft();
+    }
+    window.setTipoNota = setTipoNota;
 
     function fillProductoOptions(origen){
       const sel = document.getElementById('prodSelect');
@@ -468,9 +486,15 @@
         fields: {
           fecha: document.getElementById('fecha')?.value || '',
           seboKg: document.getElementById('seboKg')?.value || '',
+
+          tipoNota: document.getElementById('tipoNota')?.value || 'envio',
           entregaNombre: document.getElementById('entregaNombre')?.value || '',
           coloniaDestino: document.getElementById('coloniaDestino')?.value || '',
+          bolsasQty: document.getElementById('bolsasQty')?.value || '1',
+          mostradorTexto: document.getElementById('mostradorTexto')?.value || '',
+
           etqCopias: document.getElementById('etqCopias')?.value || '1',
+
           origenTipo: document.getElementById('origenTipo')?.value || '',
           prodSelect: document.getElementById('prodSelect')?.value || '',
           prodNombre: document.getElementById('prodNombre')?.value || '',
@@ -494,17 +518,21 @@
       setVal('fecha', f.fecha);
       setVal('seboKg', f.seboKg);
 
-      // Llenar colonias antes de setear
+      // notas
       llenarColonias();
+      setVal('tipoNota', f.tipoNota || 'envio');
+      setTipoNota(f.tipoNota || 'envio');
+
       setVal('entregaNombre', f.entregaNombre);
       setVal('coloniaDestino', f.coloniaDestino);
+      setVal('bolsasQty', f.bolsasQty || '1');
+      setVal('mostradorTexto', f.mostradorTexto);
 
       setVal('etqCopias', f.etqCopias);
+
+      // pesajes
       setVal('origenTipo', f.origenTipo);
-
-      // Llenar productos según origen antes de setear selección
       fillProductoOptions(f.origenTipo || '');
-
       setVal('prodSelect', f.prodSelect);
       setVal('prodNombre', f.prodNombre);
       setVal('whatsNumero', f.whatsNumero);
@@ -552,8 +580,13 @@
       document.getElementById('fecha').value = '';
       document.getElementById('seboKg').value = '';
 
+      document.getElementById('tipoNota').value = 'envio';
+      setTipoNota('envio');
+
       document.getElementById('entregaNombre').value = '';
       document.getElementById('coloniaDestino').value = '';
+      document.getElementById('bolsasQty').value = 1;
+      document.getElementById('mostradorTexto').value = '';
       document.getElementById('etqCopias').value = 1;
 
       document.getElementById('origenTipo').value = '';
@@ -685,17 +718,56 @@
       vdcDraftSave();
     }
 
-    // ✅✅✅ ETIQUETA ENVÍO: AGREGAR LÍNEA ENTRE NOMBRE Y COLONIA ✅✅✅
-    function imprimirEtiqueta80mm() {
-      const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
-      const colonia = (document.getElementById('coloniaDestino')?.value || '').trim();
+    // ✅ NOTA 80MM (ENVÍO / MOSTRADOR)
+    function imprimirNota80mm() {
+      const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
       const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
-
-      if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
-      if (!colonia) return alert("Selecciona la colonia destino.");
 
       const STORE = "Carnes y Vísceras del Centro";
       const fecha = fechaMX();
+
+      let titulo2 = "";
+      let lineas = [];
+
+      if(tipo === "envio"){
+        const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
+        const colonia = (document.getElementById('coloniaDestino')?.value || '').trim();
+        const bolsas = Math.max(1, parseInt(document.getElementById('bolsasQty')?.value || '1', 10));
+
+        if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
+        if (!colonia) return alert("Selecciona la colonia destino.");
+
+        titulo2 = escapeHtml(entrega);
+        lineas = [
+          {type:'line'},
+          {type:'text', cls:'who', text: titulo2},
+          {type:'line'}, // ✅ separador entre quien lleva y colonia
+          {type:'text', cls:'col', text: escapeHtml(colonia.toUpperCase())},
+          {type:'line'}, // ✅ separador entre colonia y bolsas
+          {type:'text', cls:'bags', text: `BOLSAS: ${bolsas}`},
+          {type:'line'}
+        ];
+      }else{
+        const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
+        if(!texto) return alert("Escribe el nombre del cliente (mostrador).");
+
+        const safe = escapeHtml(texto).replaceAll('\n','<br>');
+        lineas = [
+          {type:'line'},
+          {type:'html', cls:'free', html: safe.toUpperCase()},
+          {type:'line'}
+        ];
+      }
+
+      // construir HTML de impresión
+      const parts = [];
+      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
+
+      lineas.forEach(item=>{
+        if(item.type === 'line') parts.push(`<div class="line"></div>`);
+        else if(item.type === 'text') parts.push(`<div class="${item.cls}">${item.text}</div>`);
+        else if(item.type === 'html') parts.push(`<div class="${item.cls}">${item.html}</div>`);
+      });
 
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -728,7 +800,6 @@
           letter-spacing:1px;
           margin-top:2mm;
         }
-
         .col{
           font-weight:900;
           font-size:22px;
@@ -736,16 +807,21 @@
           word-break:break-word;
           padding:0 2mm;
         }
+        .bags{
+          font-weight:900;
+          font-size:22px;
+          margin-top:2mm;
+        }
+        .free{
+          font-weight:900;
+          font-size:24px;
+          line-height:1.15;
+          word-break:break-word;
+          padding:0 2mm;
+        }
       </style></head><body>
         <div id="t">
-          <div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>
-          <div class="line"></div>
-
-          <div class="who">${escapeHtml(entrega)}</div>
-          <div class="line"></div> <!-- ✅ línea separadora entre nombre y colonia -->
-
-          <div class="col">${escapeHtml(colonia.toUpperCase())}</div>
-          <div class="line"></div>
+          ${parts.join('\n')}
         </div>
       </body></html>`;
 
@@ -771,9 +847,11 @@
       vdcDraftSave();
     }
 
-    function limpiarEtiqueta(){
+    function limpiarNotas(){
       document.getElementById('entregaNombre').value = '';
       document.getElementById('coloniaDestino').value = '';
+      document.getElementById('bolsasQty').value = 1;
+      document.getElementById('mostradorTexto').value = '';
       document.getElementById('etqCopias').value = 1;
       scheduleDraft();
     }
@@ -962,8 +1040,9 @@
     window.guardarViaje = guardarViaje;
     window.generarDocumento = generarDocumento;
     window.imprimirSebo80mm = imprimirSebo80mm;
-    window.imprimirEtiqueta80mm = imprimirEtiqueta80mm;
-    window.limpiarEtiqueta = limpiarEtiqueta;
+
+    window.imprimirNota80mm = imprimirNota80mm;
+    window.limpiarNotas = limpiarNotas;
 
     window.agregarLinea = agregarLinea;
     window.eliminarLinea = eliminarLinea;
@@ -980,6 +1059,10 @@
       setupUI();
       fillProductoOptions('');
       llenarColonias();
+
+      // default visible: envío
+      document.getElementById('notaEnvioWrap').style.display = 'block';
+      document.getElementById('notaMostradorWrap').style.display = 'none';
 
       vdcDraftLoad();
       vdcDraftSave();
