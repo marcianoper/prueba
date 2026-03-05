@@ -2,10 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Hoja de pesos y sebo 2</title>
+  <title>Hoja de pesos y sebo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
     body { font-family: sans-serif; background:#f2f2f2; padding:30px; }
@@ -50,7 +48,6 @@
       font-size:12px; color:#6b7280; font-weight:700;
     }
 
-    /* Secciones de notas */
     .noteBox{
       border:1px solid #e5e7eb;
       border-radius:12px;
@@ -92,23 +89,6 @@
 </head>
 
 <body>
-  <a href="https://marcianoper.github.io/vdc-central/"
-   style="
-     position:fixed;
-     top:12px;
-     left:12px;
-     background:#0a7a3b;
-     color:#fff;
-     padding:10px 14px;
-     border-radius:12px;
-     text-decoration:none;
-     font-weight:900;
-     z-index:9999;
-     box-shadow:0 10px 20px rgba(0,0,0,.15);
-   ">
-  ← VDC Central
-</a>
-
   <div class="container">
     <h1>Hoja de pesos y sebo</h1>
 
@@ -118,17 +98,8 @@
       <span id="draftStatus" class="status">Borrador: —</span>
     </div>
 
-    <label for="fecha">Fecha del viaje:</label>
+    <label for="fecha">Fecha:</label>
     <input type="date" id="fecha" />
-
-    <div class="row">
-      <div style="flex:0 0 auto;">
-        <button onclick="guardarViaje()">Guardar Viaje</button>
-      </div>
-      <div style="flex:0 0 auto;">
-        <button class="btn-gray" onclick="generarDocumento()">Generar Documento de Totales</button>
-      </div>
-    </div>
 
     <div class="hr"></div>
 
@@ -145,7 +116,6 @@
 
     <div class="hr"></div>
 
-    <!-- ✅ NOTAS (ENVÍOS / MOSTRADOR) -->
     <h2 style="margin:0;">Notas 80mm (horizontal)</h2>
     <div class="hint">Elige tipo de nota: Envios (reparto) o Mostrador (cliente pasa por pedido).</div>
 
@@ -176,14 +146,18 @@
           <select id="coloniaDestino">
             <option value="">— Selecciona —</option>
           </select>
+
+          <!-- ✅ aparece solo cuando eligen OTRA -->
+          <input
+            type="text"
+            id="coloniaDestinoLibre"
+            placeholder="Escribe la colonia…"
+            style="display:none; margin-top:8px;"
+          />
           <div class="mini"></div>
         </div>
 
-        <div>
-          <label for="bolsasQty">Cantidad de bolsas:</label>
-          <input type="number" id="bolsasQty" min="1" step="1" value="1" />
-          <div class="mini">Ej. 1, 2, 3…</div>
-        </div>
+        <!-- ✅ QUITAMOS “BOLSAS” (ya no existe) -->
       </div>
     </div>
 
@@ -240,103 +214,66 @@
       showDebug("❌ Promise rechazado:\n" + (e && e.reason ? (e.reason.message || e.reason) : e));
     });
 
-    // ========= Supabase =========
-    const supabaseUrl = 'https://rcegikeiaxptolrduguc.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8';
-
-    let sb = null;
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-      sb = window.supabase.createClient(supabaseUrl, supabaseKey);
-    } else {
-      showDebug("❌ No cargó supabase-js. Revisa conexión / CDN.");
-    }
-
     function fechaMX() {
       const v = document.getElementById('fecha').value;
       if (v) return new Date(v + 'T00:00:00').toLocaleDateString('es-MX');
       return new Date().toLocaleDateString('es-MX');
     }
 
-    // ✅ EDITA AQUÍ LAS COLONIAS (combo de destino)
-      const COLONIAS_DESTINO = [
-      "San Roque",
-      "San Cristóbal",
-      "Las Heras",
-      "Villas de Irapuato",
-      "Centro",
-      "La Moderna",
-      "Calzada de Guadalupe",
-      "naranjal1",
-      "naranjal2",
-      "almuerzos tere",
-      "pradera",
-      "rancho grande",
-      "soledad",
-      "san miguelito",
-      "abraham vallejo",
-      "rio nazas",
-      "hija de carmelita",
-      "arcos1 y 2",
-      "virgen",
-      "tellez",
-      "platan",
-      "tomelopez",
-      "purisima",
-      "fuentes",
-      "dique",
-      "pollo",
-      "juarez",
-      "coyoacan",
-      "cirilo",
-      "ucopi",
-      "division del norte",
-      "mario",
-      "pronasol",
-      "candelaria",
-      "rey sol",
-      "romeral",
-      "limon",
-      "gomez morin",
-      "playa azul",
-      "sauce",
-      "san agustin1",
-      "san agustin2",
-      "manuela acuña",
-      "san jose",
-      "san ramon",
-      "abasolo1",
-      "abasolo2",
-      "abasolo3",
-      "san irineo",
-      "leyes",
-      "arandas",
-      "plan",
-      "niños heroes",
-      "america",
-      "cobos",
-      "acambaro",
-      "zapotla",
-      "1 de mayo",
-      "resbalon",
-      "bola",
-      "san cayetano",
-      "avila camacho",
-      "nuevo leon",
-      "taquicardia",
-      "el encanto",
-      "cuecillo"
+    // ✅ EDITA AQUÍ LAS COLONIAS
+    const COLONIAS_DESTINO = [
+      "San Roque","San Cristóbal","Las Heras","Villas de Irapuato","Centro","La Moderna",
+      "Calzada de Guadalupe","naranjal1","naranjal2","almuerzos tere","pradera","rancho grande",
+      "soledad","san miguelito","abraham vallejo","rio nazas","hija de carmelita","arcos1 y 2",
+      "virgen","tellez","platan","tomelopez","purisima","fuentes","dique","pollo","juarez","coyoacan",
+      "cirilo","ucopi","division del norte","mario","pronasol","candelaria","rey sol","romeral","limon",
+      "gomez morin","playa azul","sauce","san agustin1","san agustin2","manuela acuña","san jose",
+      "san ramon","abasolo1","abasolo2","abasolo3","san irineo","leyes","arandas","plan","niños heroes",
+      "america","cobos","acambaro","zapotla","1 de mayo","resbalon","bola","san cayetano",
+      "avila camacho","nuevo leon","taquicardia","el encanto","cuecillo"
     ];
+
+    const OPT_OTRA = "__OTRA__";
 
     function llenarColonias(){
       const sel = document.getElementById('coloniaDestino');
       if(!sel) return;
+
       sel.innerHTML = '<option value="">— Selecciona —</option>';
+
       COLONIAS_DESTINO.forEach(c=>{
         const op = document.createElement('option');
         op.value = c;
         op.textContent = c;
         sel.appendChild(op);
       });
+
+      // ✅ opción libre al final
+      const opOtra = document.createElement('option');
+      opOtra.value = OPT_OTRA;
+      opOtra.textContent = "OTRA (escribir)";
+      sel.appendChild(opOtra);
+    }
+
+    function toggleColoniaLibre(){
+      const sel = document.getElementById('coloniaDestino');
+      const libre = document.getElementById('coloniaDestinoLibre');
+      if(!sel || !libre) return;
+
+      const isOtra = sel.value === OPT_OTRA;
+      libre.style.display = isOtra ? 'block' : 'none';
+
+      if(!isOtra) libre.value = '';
+    }
+
+    function getColoniaFinal(){
+      const sel = document.getElementById('coloniaDestino');
+      const libre = document.getElementById('coloniaDestinoLibre');
+      const v = (sel?.value || '').trim();
+      if(v === OPT_OTRA){
+        return (libre?.value || '').trim();
+      }
+      return v;
     }
 
     // ========= TIPO DE NOTA =========
@@ -380,7 +317,7 @@
           tipoNota: document.getElementById('tipoNota')?.value || 'envio',
           entregaNombre: document.getElementById('entregaNombre')?.value || '',
           coloniaDestino: document.getElementById('coloniaDestino')?.value || '',
-          bolsasQty: document.getElementById('bolsasQty')?.value || '1',
+          coloniaDestinoLibre: document.getElementById('coloniaDestinoLibre')?.value || '',
           mostradorTexto: document.getElementById('mostradorTexto')?.value || '',
 
           etqCopias: document.getElementById('etqCopias')?.value || '1'
@@ -407,9 +344,10 @@
 
       setVal('entregaNombre', f.entregaNombre);
       setVal('coloniaDestino', f.coloniaDestino);
-      setVal('bolsasQty', f.bolsasQty || '1');
-      setVal('mostradorTexto', f.mostradorTexto);
+      setVal('coloniaDestinoLibre', f.coloniaDestinoLibre || '');
+      toggleColoniaLibre();
 
+      setVal('mostradorTexto', f.mostradorTexto);
       setVal('etqCopias', f.etqCopias);
     }
 
@@ -445,7 +383,9 @@
 
       document.getElementById('entregaNombre').value = '';
       document.getElementById('coloniaDestino').value = '';
-      document.getElementById('bolsasQty').value = 1;
+      document.getElementById('coloniaDestinoLibre').value = '';
+      toggleColoniaLibre();
+
       document.getElementById('mostradorTexto').value = '';
       document.getElementById('etqCopias').value = 1;
 
@@ -470,58 +410,6 @@
     window.vdcDraftSave = vdcDraftSave;
     window.vdcDraftLoad = vdcDraftLoad;
     window.vdcDraftClear = vdcDraftClear;
-
-    // ========= VIAJE / TOTALES =========
-    async function guardarViaje() {
-      if (!sb) return alert("Supabase no está listo (revisa panel de errores).");
-
-      const fecha = document.getElementById('fecha').value;
-      if (!fecha) return alert("Selecciona la fecha del viaje");
-
-      const datos = {
-        "Teleco": [{ kg: 15.8, pzas: 14 }, { kg: 108.5, pzas: 100 }],
-        "Cuajo": [{ kg: 40.2, pzas: 40 }]
-      };
-
-      const { error } = await sb.from('hoja_viaje').insert([{ fecha, resultados: datos }]);
-      if (error) return alert("❌ Error al guardar viaje: " + error.message);
-      alert("✅ Viaje guardado correctamente.");
-
-      vdcDraftSave();
-    }
-
-    async function generarDocumento() {
-      if (!sb) return alert("Supabase no está listo (revisa panel de errores).");
-
-      const fecha = document.getElementById('fecha').value;
-      const out = document.getElementById('resultado-totales');
-      if (!fecha) return alert("Selecciona la fecha del viaje");
-      out.textContent = "⏳ Cargando totales...";
-
-      const { data, error } = await sb.from('hoja_viaje').select('resultados').eq('fecha', fecha);
-      if (error) { out.textContent = "❌ Error: " + error.message; return; }
-      if (!data || data.length === 0) { out.textContent = "❌ No se encontraron registros para esa fecha."; return; }
-
-      const totales = {};
-      data.forEach(r => {
-        const res = r.resultados || {};
-        Object.keys(res).forEach(prod => {
-          (res[prod] || []).forEach(p => {
-            if (!totales[prod]) totales[prod] = { kg: 0, pzas: 0 };
-            totales[prod].kg += Number(p.kg) || 0;
-            totales[prod].pzas += Number(p.pzas) || 0;
-          });
-        });
-      });
-
-      let doc = `📄 TOTALES DEL DÍA ${fecha}\n\n`;
-      Object.entries(totales).forEach(([prod, d]) => {
-        doc += `🟢 ${prod} → ${d.kg.toFixed(2)} kg | ${d.pzas} piezas\n`;
-      });
-      out.textContent = doc;
-
-      vdcDraftSave();
-    }
 
     // ========= IMPRESIÓN =========
     function printHtmlWindow(html){
@@ -571,133 +459,118 @@
       vdcDraftSave();
     }
 
-     // ✅ NOTA 80MM (ENVÍO / MOSTRADOR) — versión anti “hoja extra”
-  function imprimirNota80mm() {
-    const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
-    const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
+    // ✅ NOTA 80MM (ENVÍO / MOSTRADOR) — versión anti “hoja extra”
+    function imprimirNota80mm() {
+      const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
+      const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
 
-    const STORE = "Carnes y Vísceras del Centro";
-    const fecha = fechaMX();
+      const STORE = "Carnes y Vísceras del Centro";
+      const fecha = fechaMX();
 
-    // ====== arma contenido ======
-    let lineas = [];
+      let lineas = [];
 
-    if (tipo === "envio") {
-      const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
-      const colonia = (document.getElementById('coloniaDestino')?.value || '').trim();
-      if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
-      if (!colonia) return alert("Selecciona la colonia destino.");
+      if (tipo === "envio") {
+        const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
+        const colonia = getColoniaFinal();
 
-      lineas = [
-        { type: 'line' },
-        { type: 'text', cls: 'who', text: escapeHtml(entrega) },
-        { type: 'line' },
-        { type: 'text', cls: 'col', text: escapeHtml(colonia.toUpperCase()) }
-        // ✅ sin línea final para evitar que se “estire”
-      ];
-    } else {
-      const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
-      if (!texto) return alert("Escribe el nombre del cliente (mostrador).");
+        if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
+        if (!colonia) return alert("Selecciona la colonia destino (o elige OTRA y escríbela).");
 
-      const safe = escapeHtml(texto).replaceAll('\n', '<br>');
-      lineas = [
-        { type: 'line' },
-        { type: 'html', cls: 'free', html: safe.toUpperCase() }
-      ];
-    }
+        lineas = [
+          { type: 'line' },
+          { type: 'text', cls: 'who', text: escapeHtml(entrega) },
+          { type: 'line' },
+          { type: 'text', cls: 'col', text: escapeHtml(colonia.toUpperCase()) }
+        ];
+      } else {
+        const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
+        if (!texto) return alert("Escribe el nombre del cliente (mostrador).");
 
-    // ====== HTML impresión ======
-    const parts = [];
-    parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
-    lineas.forEach(item => {
-      if (item.type === 'line') parts.push(`<div class="line"></div>`);
-      else if (item.type === 'text') parts.push(`<div class="${item.cls}">${item.text}</div>`);
-      else if (item.type === 'html') parts.push(`<div class="${item.cls}">${item.html}</div>`);
-    });
+        const safe = escapeHtml(texto).replaceAll('\n', '<br>');
+        lineas = [
+          { type: 'line' },
+          { type: 'html', cls: 'free', html: safe.toUpperCase() }
+        ];
+      }
 
-    // ✅ AJUSTE CLAVE: tamaño fijo del “papel” (evita hoja extra)
-    // Cambia NOTE_H_MM si quieres más/menos alto.
-    const NOTE_W_MM = 80;
-    const NOTE_H_MM = 45; // 👈 prueba 45; si tu letra es grande y se corta, sube a 50 o 55
+      const parts = [];
+      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
+      lineas.forEach(item => {
+        if (item.type === 'line') parts.push(`<div class="line"></div>`);
+        else if (item.type === 'text') parts.push(`<div class="${item.cls}">${item.text}</div>`);
+        else if (item.type === 'html') parts.push(`<div class="${item.cls}">${item.html}</div>`);
+      });
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <style>
-        *{box-sizing:border-box}
-        html,body{margin:0;padding:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+      const NOTE_W_MM = 80;
+      const NOTE_H_MM = 45;
 
-        /* ✅ Papel fijo: 80mm x 45mm -> NO puede “crecer” -> NO imprime hoja extra */
-        @media print{
-          @page{ size: ${NOTE_W_MM}mm ${NOTE_H_MM}mm; margin:0; }
-          html,body{width:${NOTE_W_MM}mm;height:${NOTE_H_MM}mm;overflow:hidden}
-        }
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          *{box-sizing:border-box}
+          html,body{margin:0;padding:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+          @media print{
+            @page{ size: ${NOTE_W_MM}mm ${NOTE_H_MM}mm; margin:0; }
+            html,body{width:${NOTE_W_MM}mm;height:${NOTE_H_MM}mm;overflow:hidden}
+          }
+          #t{
+            width:${NOTE_W_MM}mm;
+            height:${NOTE_H_MM}mm;
+            padding:2mm 2mm;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            text-align:center;
+            overflow:hidden;
+          }
+          .c{font-size:11px;line-height:1.2}
+          .line{width:100%;border-top:1px dashed #000;margin:3mm 0}
+          .who{font-weight:900;font-size:30px}
+          .col{font-weight:900;font-size:30px}
+          .free{
+            font-weight:900;
+            font-size:22px;
+            line-height:1.12;
+            word-break:break-word;
+            padding:0 1mm;
+          }
+        </style></head><body>
+          <div id="t">${parts.join('')}</div>
+          <script>
+            window.onload = () => { setTimeout(() => window.print(), 120); };
+            window.onafterprint = () => { setTimeout(() => window.close(), 120); };
+          <\/script>
+        </body></html>`;
 
-        /* ✅ Sin 100vh, sin padding grande */
-        #t{
-          width:${NOTE_W_MM}mm;
-          height:${NOTE_H_MM}mm;
-          padding:2mm 2mm;
-          display:flex;
-          flex-direction:column;
-          justify-content:center;
-          align-items:center;
-          text-align:center;
-          overflow:hidden;
-        }
-
-        .c{font-size:11px;line-height:1.2}
-        .line{width:100%;border-top:1px dashed #000;margin:3mm 0}
-
-        .who{font-weight:900;font-size:30px}
-        .col{font-weight:900;font-size:30px}
-
-        .free{
-          font-weight:900;
-          font-size:22px;
-          line-height:1.12;
-          word-break:break-word;
-          padding:0 1mm;
-        }
-      </style></head><body>
-        <div id="t">${parts.join('')}</div>
-        <script>
-          // auto-print + cerrar (evita que quede abierta y cause reprints)
-          window.onload = () => {
-            setTimeout(() => window.print(), 120);
-          };
-          window.onafterprint = () => {
-            setTimeout(() => window.close(), 120);
-          };
-        <\/script>
-      </body></html>`;
-
-    const win = window.open('', '_blank', 'width=420,height=650');
-    if (!win) {
-      alert("No se pudo abrir la ventana de impresión. Activa ventanas emergentes (popups).");
-      return;
-    }
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-
-    // ✅ Multi-copias sin “estirar” el papel
-    let i = 0;
-    const doPrint = () => {
+      const win = window.open('', '_blank', 'width=420,height=650');
+      if (!win) {
+        alert("No se pudo abrir la ventana de impresión. Activa ventanas emergentes (popups).");
+        return;
+      }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
       win.focus();
-      win.print();
-      i++;
-      if (i < copias) setTimeout(doPrint, 500);
-    };
-    setTimeout(doPrint, 250);
 
-    vdcDraftSave();
-  }
+      let i = 0;
+      const doPrint = () => {
+        win.focus();
+        win.print();
+        i++;
+        if (i < copias) setTimeout(doPrint, 500);
+      };
+      setTimeout(doPrint, 250);
+
+      vdcDraftSave();
+    }
 
     function limpiarNotas(){
       document.getElementById('entregaNombre').value = '';
       document.getElementById('coloniaDestino').value = '';
-      document.getElementById('bolsasQty').value = 1;
+      document.getElementById('coloniaDestinoLibre').value = '';
+      toggleColoniaLibre();
+
       document.getElementById('mostradorTexto').value = '';
       document.getElementById('etqCopias').value = 1;
       scheduleDraft();
@@ -713,8 +586,6 @@
     }
 
     // ========= INIT =========
-    window.guardarViaje = guardarViaje;
-    window.generarDocumento = generarDocumento;
     window.imprimirSebo80mm = imprimirSebo80mm;
     window.imprimirNota80mm = imprimirNota80mm;
     window.limpiarNotas = limpiarNotas;
@@ -725,12 +596,21 @@
 
       llenarColonias();
 
+      document.getElementById('coloniaDestino')?.addEventListener('change', ()=>{
+        toggleColoniaLibre();
+        scheduleDraft();
+      });
+      document.getElementById('coloniaDestinoLibre')?.addEventListener('input', scheduleDraft);
+
       // default visible: envío
       document.getElementById('notaEnvioWrap').style.display = 'block';
       document.getElementById('notaMostradorWrap').style.display = 'none';
 
       vdcDraftLoad();
       vdcDraftSave();
+
+      // por si el borrador trae OTRA
+      toggleColoniaLibre();
     });
   </script>
 </body>
