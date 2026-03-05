@@ -571,125 +571,128 @@
       vdcDraftSave();
     }
 
-    // ✅ NOTA 80MM (ENVÍO / MOSTRADOR)
-    // ✅ Cambio: "BOLSAS" ahora se imprime ARRIBA, junto a la fecha (para que no se vaya a otra hoja)
-    function imprimirNota80mm() {
-      const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
-      const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
+     // ✅ NOTA 80MM (ENVÍO / MOSTRADOR) — versión anti “hoja extra”
+  function imprimirNota80mm() {
+    const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
+    const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
 
-      const STORE = "Carnes y Vísceras del Centro";
-      const fecha = fechaMX();
+    const STORE = "Carnes y Vísceras del Centro";
+    const fecha = fechaMX();
 
-      let lineas = [];
-     
+    // ====== arma contenido ======
+    let lineas = [];
 
-      if(tipo === "envio"){
-        const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
-        const colonia = (document.getElementById('coloniaDestino')?.value || '').trim();
-       
+    if (tipo === "envio") {
+      const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
+      const colonia = (document.getElementById('coloniaDestino')?.value || '').trim();
+      if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
+      if (!colonia) return alert("Selecciona la colonia destino.");
 
-        if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
-        if (!colonia) return alert("Selecciona la colonia destino.");
+      lineas = [
+        { type: 'line' },
+        { type: 'text', cls: 'who', text: escapeHtml(entrega) },
+        { type: 'line' },
+        { type: 'text', cls: 'col', text: escapeHtml(colonia.toUpperCase()) }
+        // ✅ sin línea final para evitar que se “estire”
+      ];
+    } else {
+      const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
+      if (!texto) return alert("Escribe el nombre del cliente (mostrador).");
 
-        // ✅ BOLSAS SUBE AL ENCABEZADO
-        
+      const safe = escapeHtml(texto).replaceAll('\n', '<br>');
+      lineas = [
+        { type: 'line' },
+        { type: 'html', cls: 'free', html: safe.toUpperCase() }
+      ];
+    }
 
-        // ✅ SIN "BOLSAS" abajo
-        lineas = [
-          {type:'line'},
-          {type:'text', cls:'who', text: escapeHtml(entrega)},
-          {type:'line'},
-          {type:'text', cls:'col', text: escapeHtml(colonia.toUpperCase())}
-        ];
-      }else{
-        const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
-        if(!texto) return alert("Escribe el nombre del cliente (mostrador).");
+    // ====== HTML impresión ======
+    const parts = [];
+    parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
+    lineas.forEach(item => {
+      if (item.type === 'line') parts.push(`<div class="line"></div>`);
+      else if (item.type === 'text') parts.push(`<div class="${item.cls}">${item.text}</div>`);
+      else if (item.type === 'html') parts.push(`<div class="${item.cls}">${item.html}</div>`);
+    });
 
-        const safe = escapeHtml(texto).replaceAll('\n','<br>');
-        lineas = [
-          {type:'line'},
-          {type:'html', cls:'free', html: safe.toUpperCase()},
-          {type:'line'}
-        ];
-      }
+    // ✅ AJUSTE CLAVE: tamaño fijo del “papel” (evita hoja extra)
+    // Cambia NOTE_H_MM si quieres más/menos alto.
+    const NOTE_W_MM = 80;
+    const NOTE_H_MM = 45; // 👈 prueba 45; si tu letra es grande y se corta, sube a 50 o 55
 
-      // construir HTML de impresión
-      const parts = [];
-      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
-
-      lineas.forEach(item=>{
-        if(item.type === 'line') parts.push(`<div class="line"></div>`);
-        else if(item.type === 'text') parts.push(`<div class="${item.cls}">${item.text}</div>`);
-        else if(item.type === 'html') parts.push(`<div class="${item.cls}">${item.html}</div>`);
-      });
-
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
         *{box-sizing:border-box}
         html,body{margin:0;padding:0;font-family:ui-monospace,Menlo,Consolas,monospace}
 
-        /* Fuerza impresión horizontal */
+        /* ✅ Papel fijo: 80mm x 45mm -> NO puede “crecer” -> NO imprime hoja extra */
         @media print{
-          @page{ size: landscape; margin:0; }
+          @page{ size: ${NOTE_W_MM}mm ${NOTE_H_MM}mm; margin:0; }
+          html,body{width:${NOTE_W_MM}mm;height:${NOTE_H_MM}mm;overflow:hidden}
         }
 
+        /* ✅ Sin 100vh, sin padding grande */
         #t{
-          width:100%;
-          min-height:100vh;
-          padding:10mm;
+          width:${NOTE_W_MM}mm;
+          height:${NOTE_H_MM}mm;
+          padding:2mm 2mm;
           display:flex;
           flex-direction:column;
           justify-content:center;
           align-items:center;
           text-align:center;
+          overflow:hidden;
         }
 
-        .c{font-size:12px;line-height:1.25}
-        .line{width:100%;border-top:1px dashed #000;margin:6px 0}
+        .c{font-size:11px;line-height:1.2}
+        .line{width:100%;border-top:1px dashed #000;margin:3mm 0}
 
-        .who{
-          font-weight:900;
-          font-size:38px !important;
-        }
-        .col{
-          font-weight:900;
-          font-size:30px !important;
-        }
+        .who{font-weight:900;font-size:30px}
+        .col{font-weight:900;font-size:30px}
+
         .free{
           font-weight:900;
-          font-size:24px;
-          line-height:1.15;
+          font-size:22px;
+          line-height:1.12;
           word-break:break-word;
-          padding:0 2mm;
+          padding:0 1mm;
         }
       </style></head><body>
-        <div id="t">
-          ${parts.join('\n')}
-        </div>
+        <div id="t">${parts.join('')}</div>
+        <script>
+          // auto-print + cerrar (evita que quede abierta y cause reprints)
+          window.onload = () => {
+            setTimeout(() => window.print(), 120);
+          };
+          window.onafterprint = () => {
+            setTimeout(() => window.close(), 120);
+          };
+        <\/script>
       </body></html>`;
 
-      const win = window.open('', '_blank', 'width=420,height=650');
-      if (!win) {
-        alert("No se pudo abrir la ventana de impresión. Activa ventanas emergentes (popups).");
-        return;
-      }
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-      win.focus();
-
-      let i = 0;
-      const doPrint = () => {
-        win.focus();
-        win.print();
-        i++;
-        if (i < copias) setTimeout(doPrint, 450);
-      };
-      setTimeout(doPrint, 300);
-
-      vdcDraftSave();
+    const win = window.open('', '_blank', 'width=420,height=650');
+    if (!win) {
+      alert("No se pudo abrir la ventana de impresión. Activa ventanas emergentes (popups).");
+      return;
     }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+
+    // ✅ Multi-copias sin “estirar” el papel
+    let i = 0;
+    const doPrint = () => {
+      win.focus();
+      win.print();
+      i++;
+      if (i < copias) setTimeout(doPrint, 500);
+    };
+    setTimeout(doPrint, 250);
+
+    vdcDraftSave();
+  }
 
     function limpiarNotas(){
       document.getElementById('entregaNombre').value = '';
