@@ -513,6 +513,7 @@
     }
 
     // ✅ NOTA 80MM (ENVÍO / MOSTRADOR)
+    // ✅ Cambio: "BOLSAS" ahora se imprime ARRIBA, junto a la fecha (para que no se vaya a otra hoja)
     function imprimirNota80mm() {
       const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
       const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
@@ -521,6 +522,7 @@
       const fecha = fechaMX();
 
       let lineas = [];
+      let headerExtra = ""; // aquí metemos BOLSAS si es envío
 
       if(tipo === "envio"){
         const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
@@ -530,14 +532,15 @@
         if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
         if (!colonia) return alert("Selecciona la colonia destino.");
 
-        // ✅ SIN última línea después de BOLSAS
+        // ✅ BOLSAS SUBE AL ENCABEZADO
+        headerExtra = `<br>BOLSAS: ${bolsas}`;
+
+        // ✅ SIN "BOLSAS" abajo
         lineas = [
           {type:'line'},
           {type:'text', cls:'who', text: escapeHtml(entrega)},
           {type:'line'},
-          {type:'text', cls:'col', text: escapeHtml(colonia.toUpperCase())},
-          {type:'line'},
-          {type:'text', cls:'bags', text: `BOLSAS: ${bolsas}`}
+          {type:'text', cls:'col', text: escapeHtml(colonia.toUpperCase())}
         ];
       }else{
         const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
@@ -553,7 +556,7 @@
 
       // construir HTML de impresión
       const parts = [];
-      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
+      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}${headerExtra}</div>`);
 
       lineas.forEach(item=>{
         if(item.type === 'line') parts.push(`<div class="line"></div>`);
@@ -593,11 +596,6 @@
         .col{
           font-weight:900;
           font-size:38px !important;
-        }
-        .bags{
-          font-weight:900;
-          font-size:10px !important;
-          margin-top:2mm;
         }
         .free{
           font-weight:900;
