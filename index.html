@@ -581,18 +581,18 @@
       const fecha = fechaMX();
 
       let lineas = [];
-      let headerExtra = ""; // aquí metemos BOLSAS si es envío
+     
 
       if(tipo === "envio"){
         const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
         const colonia = (document.getElementById('coloniaDestino')?.value || '').trim();
-        const bolsas = Math.max(1, parseInt(document.getElementById('bolsasQty')?.value || '1', 10));
+       
 
         if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
         if (!colonia) return alert("Selecciona la colonia destino.");
 
         // ✅ BOLSAS SUBE AL ENCABEZADO
-        headerExtra = `<br>BOLSAS: ${bolsas}`;
+        
 
         // ✅ SIN "BOLSAS" abajo
         lineas = [
@@ -615,7 +615,7 @@
 
       // construir HTML de impresión
       const parts = [];
-      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}${headerExtra}</div>`);
+      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
 
       lineas.forEach(item=>{
         if(item.type === 'line') parts.push(`<div class="line"></div>`);
