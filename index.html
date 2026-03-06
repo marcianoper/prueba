@@ -1,1052 +1,617 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Nómina — Click en Excel → Ticket térmico (V3 Claro)</title>
-
-  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>Hoja de pesos y sebo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
-    :root{
-      --bg:#eef3f8;
-      --bg2:#f8fbff;
-      --panel:#ffffff;
-      --panelSoft:#f7fafc;
-      --line:rgba(15,23,42,.10);
-
-      --ink:#0f172a;
-      --muted:#64748b;
-
-      --brand:#16a34a;
-      --brand2:#22c55e;
-      --bad:#dc2626;
-      --warn:#d97706;
-
-      --r:18px;
-      --shadow:0 16px 45px rgba(15,23,42,.08);
-
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-
-      --paperW:80mm;
+    body { font-family: sans-serif; background:#f2f2f2; padding:30px; }
+    .container { background:#fff; padding:40px; border-radius:12px; max-width:900px; margin:auto; }
+    h1 { margin:0 0 12px; font-size:32px; }
+    label { display:block; margin-top:18px; font-weight:700; }
+    input, textarea, select {
+      width:100%; padding:10px; font-size:16px; margin-top:6px;
+      border:1px solid #d1d5db; border-radius:10px;
     }
-
-    *{box-sizing:border-box}
-
-    body{
-      margin:0;
-      font-family:var(--sans);
-      color:var(--ink);
-      background:
-        radial-gradient(1200px 700px at 20% -10%, rgba(34,197,94,.10), transparent 65%),
-        radial-gradient(900px 600px at 85% 0%, rgba(59,130,246,.08), transparent 60%),
-        linear-gradient(180deg, var(--bg2), var(--bg));
+    textarea { min-height:120px; resize:vertical; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-top:14px; }
+    .row > div { flex:1 1 220px; }
+    button {
+      padding:12px 18px; border:none; border-radius:10px;
+      background:#198754; color:#fff; font-size:16px; cursor:pointer;
     }
+    button:hover { background:#146c43; }
+    .btn-gray{ background:#374151; }
+    .btn-gray:hover{ background:#111827; }
+    .btn-teal{ background:#0f766e; }
+    .btn-teal:hover{ background:#115e59; }
+    .btn-red{ background:#dc2626; }
+    .btn-red:hover{ background:#b91c1c; }
 
-    header{
-      padding:14px 18px;
-      border-bottom:1px solid var(--line);
-      background:rgba(255,255,255,.88);
-      backdrop-filter: blur(8px);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      position:sticky;
-      top:0;
-      z-index:30;
+    #resultado-totales{
+      margin-top:22px; white-space:pre-line; font-size:16px;
+      background:#f9fafb; border:1px solid #e5e7eb; padding:14px; border-radius:12px;
     }
+    .hr{ margin:26px 0; border-top:1px solid #e5e7eb; }
+    .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
 
-    header .left h1{
-      margin:0;
-      font-size:16px;
-      color:#0f172a;
-    }
-
-    header .left p{
-      margin:6px 0 0;
-      color:var(--muted);
-      font-size:12px;
-    }
-
-    header .pill{
-      padding:8px 12px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--muted);
-      font-size:12px;
-      white-space:nowrap;
-      box-shadow:0 8px 20px rgba(15,23,42,.05);
-    }
-
-    main{
-      max-width:1700px;
-      margin:0 auto;
-      padding:18px;
-      display:grid;
-      gap:16px;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns:320px 1.9fr 330px;
-      gap:16px;
-      align-items:start;
-    }
-
-    @media (max-width:1350px){
-      .grid{grid-template-columns:1fr}
-    }
-
-    .card{
-      background:rgba(255,255,255,.92);
-      border:1px solid var(--line);
-      border-radius:var(--r);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-
-    .hd{
-      padding:12px 14px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(248,250,252,.82));
-    }
-
-    .hd .t{
-      font-weight:900;
-      color:#0f172a;
-    }
-
-    .bd{
-      padding:14px;
-    }
-
-    label{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin:10px 0 6px;
-      font-weight:700;
-    }
-
-    input, select, button, textarea{
-      width:100%;
+    .draftbar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      margin: 8px 0 18px;
       padding:10px 12px;
+      border:1px solid #e5e7eb;
       border-radius:12px;
-      border:1px solid rgba(15,23,42,.12);
-      background:#fff;
-      color:var(--ink);
-      outline:none;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+      background:#f9fafb;
+    }
+    .draftbar .status{
+      font-size:12px; color:#6b7280; font-weight:700;
     }
 
-    input::file-selector-button{
-      border:1px solid rgba(15,23,42,.12);
-      background:#f8fafc;
-      color:var(--ink);
-      padding:8px 10px;
-      border-radius:10px;
-      margin-right:10px;
-      cursor:pointer;
-    }
-
-    .row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    }
-
-    .btn{
-      background:linear-gradient(180deg, var(--brand2), var(--brand));
-      color:#fff;
-      border:none;
-      cursor:pointer;
-      font-weight:900;
-      box-shadow:0 12px 24px rgba(34,197,94,.18);
-    }
-
-    .btn.secondary{
-      background:#fff;
-      color:#0f172a;
-      border:1px solid rgba(15,23,42,.12);
-      box-shadow:none;
-    }
-
-    .btn.bad{
-      background:#fff5f5;
-      color:#991b1b;
-      border:1px solid rgba(220,38,38,.18);
-      box-shadow:none;
-      font-weight:900;
-    }
-
-    .hint{
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.4;
+    .noteBox{
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:14px;
+      background:#f9fafb;
       margin-top:10px;
     }
+    .noteBox h3{ margin:0 0 8px; font-size:16px; }
+    #notaEnvioWrap{ display:none; }
+    #notaMostradorWrap{ display:none; }
 
-    .warn{color:#92400e}
-    .danger{color:#991b1b}
-    .ok{color:#15803d}
-
-    .kv{
-      display:grid;
-      grid-template-columns:1fr auto;
-      gap:8px;
+    .seg{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;
+      background:#f3f4f6; border:1px solid #e5e7eb; padding:10px; border-radius:12px;
       align-items:center;
     }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:6px 10px;
+    .seg .chip{
+      padding:10px 12px;
       border-radius:999px;
-      border:1px solid rgba(15,23,42,.10);
-      background:#fff;
-      color:var(--muted);
-      font-size:12px;
-      box-shadow:0 8px 20px rgba(15,23,42,.04);
-    }
-
-    .small{
-      font-size:12px;
-      color:var(--muted);
-    }
-
-    .list{
-      margin:10px 0 0;
-      padding:0;
-      list-style:none;
-      display:grid;
-      gap:8px;
-    }
-
-    .list li{
-      padding:10px;
-      border:1px solid rgba(15,23,42,.08);
-      border-radius:12px;
-      background:#fbfdff;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:center;
-    }
-
-    .list li b{
-      color:#0f172a;
-    }
-
-    .list li .v{
-      font-family:var(--mono);
-      color:#334155;
-    }
-
-    /* ===== Excel ===== */
-    .excelWrap{
-      overflow:auto;
-      max-height:86vh;
-      border-radius:14px;
-      border:1px solid rgba(15,23,42,.10);
-      background:#ffffff;
-    }
-
-    .excelZoom{
-      transform:scale(.78);
-      transform-origin: top left;
-      width:128%;
-    }
-
-    table.excel{
-      border-collapse:separate;
-      border-spacing:0;
-      width:max-content;
-      min-width:100%;
-      font-family:var(--mono);
-      font-size:10px;
-      color:#0f172a;
-      background:#fff;
-    }
-
-    .excel th, .excel td{
-      padding:3px 5px;
-      border-right:1px solid rgba(15,23,42,.08);
-      border-bottom:1px solid rgba(15,23,42,.08);
-      white-space:nowrap;
-      user-select:none;
-      line-height:1.08;
-    }
-
-    .excel th{
-      position:sticky;
-      top:0;
-      background:#f1f5f9;
-      color:#0f172a;
-      z-index:2;
-      font-weight:900;
-    }
-
-    .excel th.corner{
-      left:0;
-      z-index:3;
-      position:sticky;
-      background:#e2e8f0;
-    }
-
-    .excel td.rowhdr{
-      position:sticky;
-      left:0;
-      background:#f8fafc;
-      color:#475569;
-      z-index:1;
-      text-align:right;
-      min-width:34px;
-      font-size:10px;
-      font-weight:700;
-    }
-
-    .excel td.cell{
+      border:1px solid #d1d5db;
       cursor:pointer;
-      min-width:58px;
       background:#fff;
-    }
-
-    .excel td.cell:hover{
-      outline:2px solid rgba(34,197,94,.50);
-      outline-offset:-2px;
-      background:#f0fdf4;
-    }
-
-    .excel td.selected{
-      outline:2px solid rgba(34,197,94,.95);
-      outline-offset:-2px;
-      background:#dcfce7;
-    }
-
-    .excel td.nameCell{
-      outline:2px solid rgba(59,130,246,.85);
-      outline-offset:-2px;
-      background:#dbeafe;
-    }
-
-    /* ===== Ticket ===== */
-    .ticket{
-      width:min(420px, 100%);
-      margin:0 auto;
-      background:#fff;
-      color:#111;
-      border-radius:14px;
-      border:1px dashed rgba(0,0,0,.25);
-      padding:12px 12px 10px;
-      font-family:var(--mono);
-      font-weight:900;
-      box-shadow:0 8px 24px rgba(15,23,42,.05);
-    }
-
-    .ticket *{
-      font-weight:900 !important;
-    }
-
-    .ticket .center{text-align:center}
-    .ticket .muted{color:#444}
-    .ticket .line{border-top:1px dashed rgba(0,0,0,.55);margin:8px 0}
-    .ticket .r{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
+      user-select:none;
+      font-weight:800;
       font-size:13px;
     }
-    .ticket .r strong{font-weight:900}
-    .ticket h2{
-      margin:0;
-      font-size:14px;
-      letter-spacing:.4px;
-      font-weight:900;
-    }
-    .ticket .mini{font-size:11px}
-    .ticket .big{font-size:15px;font-weight:900}
-    .ticket .sig{margin-top:12px}
-    .ticket .sig .mini{margin-bottom:4px}
-    .ticket .sig .box{border-top:1px solid #000;padding-top:6px}
-
-    @media print{
-      body{background:#fff}
-      header, .noPrint, .hd{display:none !important}
-      main{padding:0 !important; margin:0 !important; max-width:none !important}
-      .grid{display:block !important}
-      .card{
-        background:#fff !important;
-        border:none !important;
-        box-shadow:none !important;
-        border-radius:0 !important;
-        overflow:visible !important;
-      }
-      .card > .bd{padding:0 !important}
-      .ticketOnly{display:block !important}
-      .ticket{
-        width:var(--paperW) !important;
-        border:none !important;
-        border-radius:0 !important;
-        margin:0 !important;
-        padding:0 !important;
-        box-shadow:none !important;
-      }
-      body *{visibility:hidden}
-      .ticketOnly, .ticketOnly *{visibility:visible}
-      .ticketOnly{
-        position:absolute;
-        left:0;
-        top:0;
-        width:var(--paperW);
-      }
+    .seg .chip.active{
+      background:#0f766e;
+      color:#fff;
+      border-color:#0f766e;
     }
 
-    @page{
-      size: var(--paperW) auto;
-      margin:0;
+    .msgbox{
+      margin-top:12px; white-space:pre-line; background:#0b1220; color:#e5e7eb;
+      padding:14px; border-radius:12px; border:1px solid #111827;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
     }
   </style>
 </head>
 
 <body>
-<header class="noPrint">
-  <div class="left">
-    <h1>Nómina — Click en Excel → Ticket térmico (V3 Claro)</h1>
-    <p>1) Carga Excel 2) Click en el <b>nombre</b> 3) Se captura el bloque 4) Si algo falla, click en el <b>número</b> para corregir 5) Imprimir.</p>
+  <div class="container">
+    <h1>Hoja de pesos y sebo</h1>
+
+    <div class="draftbar">
+      <button class="btn-gray" type="button" onclick="vdcDraftSave()">💾 Guardar borrador</button>
+      <button class="btn-red" type="button" onclick="vdcDraftClear()">🧹 Limpiar borrador</button>
+      <span id="draftStatus" class="status">Borrador: —</span>
+    </div>
+
+    <label for="fecha">Fecha:</label>
+    <input type="date" id="fecha" />
+
+    <div class="hr"></div>
+
+    <h2 style="margin:0;">Papel de sebo 80mm</h2>
+    <div class="row">
+      <div>
+        <label for="seboKg">Kilos de sebo (DIO SEBO):</label>
+        <input type="number" id="seboKg" step="0.01" min="0" placeholder="Ej. 15.00" />
+      </div>
+      <div style="flex:0 0 auto;">
+        <button onclick="imprimirSebo80mm()">Imprimir papel de sebo 80mm</button>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <h2 style="margin:0;">Notas 80mm (horizontal)</h2>
+    <div class="hint">Elige tipo de nota: Envios (reparto) o Mostrador (cliente pasa por pedido).</div>
+
+    <div class="seg" role="group" aria-label="Tipo de nota">
+      <div id="chipEnvio" class="chip active" onclick="setTipoNota('envio')">📦 Notas para envíos</div>
+      <div id="chipMostrador" class="chip" onclick="setTipoNota('mostrador')">🧾 Notas para mostrador</div>
+      <input type="hidden" id="tipoNota" value="envio" />
+    </div>
+
+    <!-- ENVÍO -->
+    <div id="notaEnvioWrap" class="noteBox">
+      <h3>📦 Nota de envío</h3>
+
+      <div class="row">
+        <div>
+          <label for="entregaNombre">Quién entrega:</label>
+          <select id="entregaNombre">
+            <option value="">— Selecciona —</option>
+            <option value="FER">FER</option>
+            <option value="NETO">NETO</option>
+            <option value="ALE">ALE</option>
+            <option value="PACO">PACO</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="coloniaDestino">Colonia destino:</label>
+          <select id="coloniaDestino">
+            <option value="">— Selecciona —</option>
+          </select>
+
+          <!-- ✅ aparece solo cuando eligen OTRA -->
+          <input
+            type="text"
+            id="coloniaDestinoLibre"
+            placeholder="Escribe la colonia…"
+            style="display:none; margin-top:8px;"
+          />
+          <div class="mini"></div>
+        </div>
+
+        <!-- ✅ QUITAMOS “BOLSAS” (ya no existe) -->
+      </div>
+    </div>
+
+    <!-- MOSTRADOR -->
+    <div id="notaMostradorWrap" class="noteBox">
+      <h3>🧾 Nota de mostrador</h3>
+      <div class="hint">Aquí sí es libre: normalmente el nombre del cliente que va a pasar por el pedido.</div>
+
+      <label for="mostradorTexto">Texto (cliente):</label>
+      <textarea id="mostradorTexto" placeholder="Ej. JUAN PÉREZ"></textarea>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="etqCopias">Copias:</label>
+        <input type="number" id="etqCopias" min="1" step="1" value="1" />
+      </div>
+
+      <div style="flex:0 0 auto;">
+        <button onclick="imprimirNota80mm()">Imprimir nota 80mm</button>
+      </div>
+
+      <div style="flex:0 0 auto;">
+        <button class="btn-gray" onclick="limpiarNotas()">Limpiar</button>
+      </div>
+    </div>
+
+    <div id="resultado-totales"></div>
+    <div id="debug" class="msgbox" style="display:none;"></div>
   </div>
-  <div class="pill" id="statusPill">Sin archivo</div>
-</header>
 
-<main>
-  <div class="grid">
-    <section class="card noPrint">
-      <div class="hd">
-        <div class="t">Control</div>
-        <div class="badge"><span class="ok">●</span> listo para imprimir</div>
-      </div>
-      <div class="bd">
-        <label>Excel (.xlsx)</label>
-        <input id="file" type="file" accept=".xlsx,.xls"/>
-
-        <div class="row">
-          <div>
-            <label>Hoja</label>
-            <select id="sheet" disabled><option>—</option></select>
-          </div>
-          <div>
-            <label>Impresora</label>
-            <select id="paper">
-              <option value="80mm" selected>80 mm</option>
-              <option value="58mm">58 mm</option>
-            </select>
-          </div>
-        </div>
-
-        <label>Empresa (sale en ticket)</label>
-        <input id="empresa" value="CARNES Y VÍSCERAS DEL CENTRO"/>
-
-        <div class="row">
-          <button id="btnAuto" class="btn secondary" disabled>🔎 Auto-capturar bloque</button>
-          <button id="btnClear" class="btn bad" disabled>🧹 Limpiar captura</button>
-        </div>
-
-        <div class="row">
-          <button id="btnPrint" class="btn" disabled>🧾 Imprimir ticket</button>
-          <button id="btnHelp" class="btn secondary">Cómo usar</button>
-        </div>
-
-        <div class="hint" id="helpBox" style="display:none">
-          <b>Uso rápido:</b><br>
-          1) Carga el Excel.<br>
-          2) Haz click en el <b>nombre</b> del trabajador.<br>
-          3) El sistema detecta SUELDO, EXT, TOTAL, IMSS, ISR, INFONAVIT, A CTA, FALTA, NETO y DEPOSITO.<br>
-          4) Si algo quedó mal, haz click en el <b>número</b> de esa fila para corregir.<br>
-          5) Imprime.
-        </div>
-
-        <div class="hint danger" id="warn" style="display:none"></div>
-
-        <div style="margin-top:12px" class="kv">
-          <div class="small">Trabajador actual</div>
-          <div class="badge" id="currentName">—</div>
-        </div>
-
-        <ul class="list" id="fieldsList"></ul>
-      </div>
-    </section>
-
-    <section class="card noPrint">
-      <div class="hd">
-        <div class="t">Vista del Excel (compacta)</div>
-        <div class="badge" id="cellInfo">Celda: —</div>
-      </div>
-      <div class="bd">
-        <div class="excelWrap" id="excelWrap">
-          <div class="hint">Carga un Excel para mostrarlo aquí.</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card ticketOnly">
-      <div class="hd noPrint">
-        <div class="t">Ticket</div>
-        <div class="badge">listo para imprimir</div>
-      </div>
-      <div class="bd">
-        <div class="ticket" id="ticket">
-          <div class="center">
-            <h2 id="tEmpresa">CARNES Y VÍSCERAS DEL CENTRO</h2>
-            <div class="mini muted">RECIBO DE SUELDO</div>
-          </div>
-
-          <div class="line"></div>
-          <div class="r"><span>Empleado</span><strong id="tNombre">—</strong></div>
-          <div class="r"><span>Fecha</span><span id="tFecha" class="muted">—</span></div>
-          <div class="line"></div>
-
-          <div id="tBody">
-            <div class="r"><span class="muted">Selecciona un trabajador…</span><span class="muted">—</span></div>
-          </div>
-
-          <div class="sig">
-            <div class="mini muted">Firma del trabajador</div>
-            <div class="box"></div>
-          </div>
-
-          <div class="center mini muted" style="margin-top:10px">Gracias</div>
-        </div>
-      </div>
-    </section>
-  </div>
-</main>
-
-<script>
-  const $ = s => document.querySelector(s);
-  const clean = s => (s ?? "").toString().replace(/\s+/g," ").trim();
-  const upper = s => clean(s).toUpperCase();
-  const isNum = v => typeof v === "number" && isFinite(v);
-
-  const money = n => {
-    const x = Number(n);
-    if(!isFinite(x)) return "0.00";
-    return x.toLocaleString("es-MX",{minimumFractionDigits:2, maximumFractionDigits:2});
-  };
-
-  const colLetter = (n)=>{
-    let s=""; n++;
-    while(n>0){
-      const m=(n-1)%26;
-      s=String.fromCharCode(65+m)+s;
-      n=Math.floor((n-1)/26);
-    }
-    return s;
-  };
-
-  function round2(n){
-    return Math.round((Number(n) + Number.EPSILON) * 100) / 100;
-  }
-
-  function setStatus(text, good=true){
-    const pill = $("#statusPill");
-    pill.textContent = text;
-    pill.style.borderColor = good ? "rgba(34,197,94,.25)" : "rgba(220,38,38,.25)";
-    pill.style.background   = good ? "#f0fdf4" : "#fef2f2";
-    pill.style.color        = good ? "#166534" : "#991b1b";
-  }
-
-  function showWarn(msg){
-    const w = $("#warn");
-    w.style.display="block";
-    w.textContent = msg;
-  }
-
-  function hideWarn(){
-    const w = $("#warn");
-    w.style.display="none";
-    w.textContent="";
-  }
-
-  const CONCEPTS = [
-    "SUELDO","EXT","TOTAL","IMSS","ISR","INFONAVIT","A CTA","FALTA","NETO","DEPOSITO"
-  ];
-
-  const CONCEPT_ALIASES = new Map([
-    ["DEPÓSITO","DEPOSITO"],
-    ["DEPOSITO ","DEPOSITO"],
-    ["A_CTA","A CTA"],
-    ["ACTA","A CTA"],
-    ["FALTA 1 DIA","FALTA"],
-    ["FALTA 2 DIAS","FALTA"],
-    ["FALTA 3 DIAS","FALTA"],
-    ["FALTA 1 DÍA","FALTA"],
-    ["FALTA 2 DÍAS","FALTA"],
-    ["FALTA 3 DÍAS","FALTA"],
-    ["FALTA DIA","FALTA"],
-    ["FALTADIA","FALTA"],
-    ["FALTA","FALTA"]
-  ]);
-
-  function normConcept(s){
-    const u = upper(s);
-    if(CONCEPT_ALIASES.has(u)) return CONCEPT_ALIASES.get(u);
-    if(/^FALTA\b/.test(u)) return "FALTA";
-    return u;
-  }
-
-  let wb = null, aoa = null, sheetName = null;
-  let selected = { r:null, c:null };
-  let currentWorker = null;
-  const workersByAnchor = new Map();
-
-  function renderFields(){
-    const ul = $("#fieldsList");
-    ul.innerHTML = "";
-
-    if(!currentWorker){
-      $("#currentName").textContent = "—";
-      ul.innerHTML = `<li><b>—</b><span class="v">Selecciona un nombre</span></li>`;
-      return;
-    }
-
-    $("#currentName").textContent = currentWorker.name;
-
-    for(const k of CONCEPTS){
-      const v = currentWorker.values?.[k];
-      const li = document.createElement("li");
-      li.innerHTML = `<b>${k}</b><span class="v">$${v==null ? "—" : money(v)}</span>`;
-      ul.appendChild(li);
-    }
-  }
-
-  function renderTicketBase(){
-    $("#tEmpresa").textContent = clean($("#empresa").value) || "—";
-    $("#tFecha").textContent = new Date().toISOString().slice(0,10);
-
-    if(!currentWorker){
-      $("#tNombre").textContent = "—";
-      $("#tBody").innerHTML = `<div class="r"><span class="muted">Selecciona un trabajador…</span><span class="muted">—</span></div>`;
-      $("#btnPrint").disabled = true;
-      return;
-    }
-
-    $("#tNombre").textContent = currentWorker.name;
-
-    const V = currentWorker.values || {};
-    const sueldo = isFinite(Number(V["SUELDO"])) ? Number(V["SUELDO"]) : 0;
-    const ext    = isFinite(Number(V["EXT"])) ? Number(V["EXT"]) : 0;
-    const total  = isFinite(Number(V["TOTAL"])) ? Number(V["TOTAL"]) : round2(sueldo + ext);
-    const imss   = isFinite(Number(V["IMSS"])) ? Number(V["IMSS"]) : 0;
-    const isr    = isFinite(Number(V["ISR"])) ? Number(V["ISR"]) : 0;
-    const info   = isFinite(Number(V["INFONAVIT"])) ? Number(V["INFONAVIT"]) : 0;
-    const acta   = isFinite(Number(V["A CTA"])) ? Number(V["A CTA"]) : 0;
-    const falta  = isFinite(Number(V["FALTA"])) ? Number(V["FALTA"]) : 0;
-
-    const netoCalculado = round2(total - imss - isr - info - acta - falta);
-    const neto = isFinite(Number(V["NETO"])) ? round2(Number(V["NETO"])) : netoCalculado;
-    const depo = isFinite(Number(V["DEPOSITO"])) ? round2(Number(V["DEPOSITO"])) : 0;
-    const efectivo = round2(neto - depo);
-
-    const rows = [];
-    rows.push(`<div class="r"><span>SUELDO</span><strong>$${money(sueldo)}</strong></div>`);
-    rows.push(`<div class="r"><span>EXT</span><strong>$${money(ext)}</strong></div>`);
-    rows.push(`<div class="r"><span>TOTAL</span><strong>$${money(total)}</strong></div>`);
-
-    rows.push(`<div class="line"></div>`);
-    rows.push(`<div class="r"><span>MENOS IMSS</span><span>$${money(imss)}</span></div>`);
-    rows.push(`<div class="r"><span>MENOS ISR</span><span>$${money(isr)}</span></div>`);
-    rows.push(`<div class="r"><span>MENOS INFONAVIT</span><span>$${money(info)}</span></div>`);
-    if(acta){
-      rows.push(`<div class="r"><span>A CTA</span><span>$${money(acta)}</span></div>`);
-    }
-    if(falta){
-      rows.push(`<div class="r"><span>FALTA</span><span>$${money(falta)}</span></div>`);
-    }
-
-    rows.push(`<div class="line"></div>`);
-    rows.push(`<div class="r"><span class="big">TOTAL A PAGAR</span><strong class="big">$${money(neto)}</strong></div>`);
-    rows.push(`<div class="r"><span>DEPÓSITO</span><span>$${money(depo)}</span></div>`);
-    rows.push(`<div class="r"><span>EFECTIVO</span><span>$${money(efectivo)}</span></div>`);
-
-    $("#tBody").innerHTML = rows.join("");
-    $("#btnPrint").disabled = false;
-  }
-
-  function renderTicket(){
-    renderTicketBase();
-  }
-
-  function buildExcelTable(aoa){
-    const rows = aoa.length;
-    let cols = 0;
-    for(let r=0; r<rows; r++) cols = Math.max(cols, (aoa[r] || []).length);
-
-    const wrap = $("#excelWrap");
-    wrap.innerHTML = "";
-
-    const zoomBox = document.createElement("div");
-    zoomBox.className = "excelZoom";
-
-    const table = document.createElement("table");
-    table.className = "excel";
-
-    const thead = document.createElement("thead");
-    const hr = document.createElement("tr");
-    const corner = document.createElement("th");
-    corner.className = "corner";
-    corner.textContent = "";
-    hr.appendChild(corner);
-
-    for(let c=0; c<cols; c++){
-      const th = document.createElement("th");
-      th.textContent = colLetter(c);
-      hr.appendChild(th);
-    }
-    thead.appendChild(hr);
-    table.appendChild(thead);
-
-    const tbody = document.createElement("tbody");
-    for(let r=0; r<rows; r++){
-      const tr = document.createElement("tr");
-
-      const rh = document.createElement("td");
-      rh.className = "rowhdr";
-      rh.textContent = String(r+1);
-      tr.appendChild(rh);
-
-      for(let c=0; c<cols; c++){
-        const td = document.createElement("td");
-        td.className = "cell";
-        td.dataset.r = r;
-        td.dataset.c = c;
-
-        const v = aoa[r]?.[c];
-        td.textContent = (v == null || v === "") ? "" : (isNum(v) ? v : v.toString());
-        tr.appendChild(td);
+  <script>
+    // ========= COMPAT: replaceAll =========
+    (function(){
+      if (!String.prototype.replaceAll) {
+        String.prototype.replaceAll = function(search, replacement){
+          const target = String(this);
+          if (search instanceof RegExp) return target.replace(search, replacement);
+          const escaped = String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return target.replace(new RegExp(escaped, 'g'), replacement);
+        };
       }
-      tbody.appendChild(tr);
+    })();
+
+    function showDebug(msg){
+      const box = document.getElementById('debug');
+      box.style.display = 'block';
+      box.textContent = String(msg);
     }
-
-    table.appendChild(tbody);
-    zoomBox.appendChild(table);
-    wrap.appendChild(zoomBox);
-
-    table.addEventListener("click", onCellClick);
-    paintSelections();
-  }
-
-  function paintSelections(){
-    const table = $("#excelWrap table");
-    if(!table) return;
-
-    table.querySelectorAll("td.cell").forEach(td=>{
-      td.classList.remove("selected","nameCell");
+    window.addEventListener('error', (e) => {
+      showDebug("❌ Error JS:\n" + (e && e.message ? e.message : e));
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      showDebug("❌ Promise rechazado:\n" + (e && e.reason ? (e.reason.message || e.reason) : e));
     });
 
-    if(selected.r != null){
-      const td = table.querySelector(`td.cell[data-r="${selected.r}"][data-c="${selected.c}"]`);
-      if(td) td.classList.add("selected");
+    function fechaMX() {
+      const v = document.getElementById('fecha').value;
+      if (v) return new Date(v + 'T00:00:00').toLocaleDateString('es-MX');
+      return new Date().toLocaleDateString('es-MX');
     }
 
-    for(const [key] of workersByAnchor){
-      const [r,c] = key.split(",").map(Number);
-      const td = table.querySelector(`td.cell[data-r="${r}"][data-c="${c}"]`);
-      if(td) td.classList.add("nameCell");
+    // ✅ EDITA AQUÍ LAS COLONIAS
+    const COLONIAS_DESTINO = [
+      "San Roque","San Cristóbal","Las Heras","Villas de Irapuato","Centro","La Moderna",
+      "Calzada de Guadalupe","naranjal1","naranjal2","almuerzos tere","pradera","rancho grande",
+      "soledad","san miguelito","abraham vallejo","rio nazas","hija de carmelita","arcos1 y 2",
+      "virgen","tellez","platan","tomelopez","purisima","fuentes","dique","pollo","juarez","coyoacan",
+      "cirilo","ucopi","division del norte","mario","pronasol","candelaria","rey sol","romeral","limon",
+      "gomez morin","playa azul","sauce","san agustin1","san agustin2","manuela acuña","san jose",
+      "san ramon","abasolo1","abasolo2","abasolo3","san irineo","leyes","arandas","plan","niños heroes",
+      "america","cobos","acambaro","zapotla","1 de mayo","resbalon","bola","san cayetano",
+      "avila camacho","nuevo leon","taquicardia","el encanto","cuecillo"
+    ];
+
+    const OPT_OTRA = "__OTRA__";
+
+    function llenarColonias(){
+      const sel = document.getElementById('coloniaDestino');
+      if(!sel) return;
+
+      sel.innerHTML = '<option value="">— Selecciona —</option>';
+
+      COLONIAS_DESTINO.forEach(c=>{
+        const op = document.createElement('option');
+        op.value = c;
+        op.textContent = c;
+        sel.appendChild(op);
+      });
+
+      // ✅ opción libre al final
+      const opOtra = document.createElement('option');
+      opOtra.value = OPT_OTRA;
+      opOtra.textContent = "OTRA (escribir)";
+      sel.appendChild(opOtra);
     }
-  }
 
-  function looksLikeNameCell(v){
-    if(v == null) return false;
-    if(isNum(v)) return false;
+    function toggleColoniaLibre(){
+      const sel = document.getElementById('coloniaDestino');
+      const libre = document.getElementById('coloniaDestinoLibre');
+      if(!sel || !libre) return;
 
-    const s = clean(v);
-    if(!s) return false;
+      const isOtra = sel.value === OPT_OTRA;
+      libre.style.display = isOtra ? 'block' : 'none';
 
-    const u = upper(s);
-    if(CONCEPTS.includes(normConcept(u))) return false;
-    if(u === "MENOS") return false;
-    if(/^FALTA\b/.test(u)) return false;
-
-    return u.length >= 3 && u.length <= 35;
-  }
-
-  function parseMexNumber(s){
-    const t = clean(s).replace(/\$/g,"");
-    if(!t) return null;
-
-    let x = t.replace(/\s/g,"");
-    if(x.includes(".") && x.includes(",") && x.lastIndexOf(",") > x.lastIndexOf(".")){
-      x = x.replace(/\./g,"").replace(",",".");
-    } else {
-      x = x.replace(/,/g,"");
+      if(!isOtra) libre.value = '';
     }
 
-    const n = Number(x);
-    return isFinite(n) ? n : null;
-  }
-
-  function findConceptAt(r,c){
-    for(let j=c; j>=Math.max(0,c-6); j--){
-      const v = aoa?.[r]?.[j];
-      const s = clean(v);
-      if(!s) continue;
-      const k = normConcept(s);
-      if(CONCEPTS.includes(k)) return { concept:k, conceptCol:j };
+    function getColoniaFinal(){
+      const sel = document.getElementById('coloniaDestino');
+      const libre = document.getElementById('coloniaDestinoLibre');
+      const v = (sel?.value || '').trim();
+      if(v === OPT_OTRA){
+        return (libre?.value || '').trim();
+      }
+      return v;
     }
-    return null;
-  }
 
-  function findNumberRightStrict(r, startCol){
-    for(let j=startCol+1; j<=startCol+3; j++){
-      const v = aoa?.[r]?.[j];
-      if(isNum(v)) return { value:v, valueCol:j };
+    // ========= TIPO DE NOTA =========
+    function setTipoNota(tipo){
+      document.getElementById('tipoNota').value = tipo;
 
-      const s = clean(v);
-      if(s){
-        const num = parseMexNumber(s);
-        if(num != null) return { value:num, valueCol:j };
+      const chipEnvio = document.getElementById('chipEnvio');
+      const chipMost = document.getElementById('chipMostrador');
+      chipEnvio.classList.toggle('active', tipo === 'envio');
+      chipMost.classList.toggle('active', tipo === 'mostrador');
+
+      document.getElementById('notaEnvioWrap').style.display = (tipo === 'envio') ? 'block' : 'none';
+      document.getElementById('notaMostradorWrap').style.display = (tipo === 'mostrador') ? 'block' : 'none';
+
+      scheduleDraft();
+    }
+    window.setTipoNota = setTipoNota;
+
+    // ========= BORRADOR =========
+    function todayISO(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    }
+    const DRAFT_KEY = () => `vdc360:draft:peso_sebo:${todayISO()}`;
+
+    function setDraftStatus(text){
+      const el = document.getElementById('draftStatus');
+      if(el) el.textContent = text;
+    }
+
+    function collectDraft(){
+      return {
+        ts: Date.now(),
+        fields: {
+          fecha: document.getElementById('fecha')?.value || '',
+          seboKg: document.getElementById('seboKg')?.value || '',
+
+          tipoNota: document.getElementById('tipoNota')?.value || 'envio',
+          entregaNombre: document.getElementById('entregaNombre')?.value || '',
+          coloniaDestino: document.getElementById('coloniaDestino')?.value || '',
+          coloniaDestinoLibre: document.getElementById('coloniaDestinoLibre')?.value || '',
+          mostradorTexto: document.getElementById('mostradorTexto')?.value || '',
+
+          etqCopias: document.getElementById('etqCopias')?.value || '1'
+        }
+      };
+    }
+
+    function applyDraft(d){
+      if(!d) return;
+      const f = d.fields || {};
+
+      const setVal = (id, v) => {
+        const el = document.getElementById(id);
+        if(el && v != null) el.value = v;
+      };
+
+      setVal('fecha', f.fecha);
+      setVal('seboKg', f.seboKg);
+
+      // notas
+      llenarColonias();
+      setVal('tipoNota', f.tipoNota || 'envio');
+      setTipoNota(f.tipoNota || 'envio');
+
+      setVal('entregaNombre', f.entregaNombre);
+      setVal('coloniaDestino', f.coloniaDestino);
+      setVal('coloniaDestinoLibre', f.coloniaDestinoLibre || '');
+      toggleColoniaLibre();
+
+      setVal('mostradorTexto', f.mostradorTexto);
+      setVal('etqCopias', f.etqCopias);
+    }
+
+    function vdcDraftSave(){
+      const d = collectDraft();
+      localStorage.setItem(DRAFT_KEY(), JSON.stringify(d));
+      const hh = new Date(d.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      setDraftStatus(`Borrador guardado ✅ (${hh})`);
+    }
+
+    function vdcDraftLoad(){
+      const raw = localStorage.getItem(DRAFT_KEY());
+      if(!raw){ setDraftStatus('Borrador: —'); return; }
+      try{
+        const d = JSON.parse(raw);
+        applyDraft(d);
+        const hh = new Date(d.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        setDraftStatus(`Borrador cargado ✅ (${hh})`);
+      }catch(e){
+        setDraftStatus('Borrador dañado ⚠️');
       }
     }
-    return null;
-  }
 
-  function autoCaptureFromAnchor(w){
-    if(!w?.anchor) return;
-    const ar = w.anchor.r, ac = w.anchor.c;
+    function vdcDraftClear(){
+      if(!confirm("¿Seguro que quieres borrar el borrador de HOY?")) return;
+      localStorage.removeItem(DRAFT_KEY());
 
-    w.values = w.values || {};
+      document.getElementById('fecha').value = '';
+      document.getElementById('seboKg').value = '';
 
-    for(let r=ar+1; r<Math.min(aoa.length, ar+120); r++){
-      const cellHere = aoa[r]?.[ac];
-      if(looksLikeNameCell(cellHere)) break;
+      document.getElementById('tipoNota').value = 'envio';
+      setTipoNota('envio');
 
-      const label = clean(cellHere);
-      if(!label) continue;
+      document.getElementById('entregaNombre').value = '';
+      document.getElementById('coloniaDestino').value = '';
+      document.getElementById('coloniaDestinoLibre').value = '';
+      toggleColoniaLibre();
 
-      const k = normConcept(label);
-      if(!CONCEPTS.includes(k)) continue;
+      document.getElementById('mostradorTexto').value = '';
+      document.getElementById('etqCopias').value = 1;
 
-      const num = findNumberRightStrict(r, ac);
-      if(num) w.values[k] = num.value;
+      document.getElementById('resultado-totales').textContent = '';
+      setDraftStatus('Borrador limpiado 🧹');
+      vdcDraftSave();
     }
 
-    const s = Number(w.values["SUELDO"] || 0);
-    const e = Number(w.values["EXT"] || 0);
-    if(!isFinite(Number(w.values["TOTAL"]))){
-      w.values["TOTAL"] = round2(s + e);
+    let tDraft=null;
+    function scheduleDraft(){
+      clearTimeout(tDraft);
+      tDraft=setTimeout(vdcDraftSave, 250);
     }
 
-    const total = Number(w.values["TOTAL"] || 0);
-    const imss = Number(w.values["IMSS"] || 0);
-    const isr = Number(w.values["ISR"] || 0);
-    const info = Number(w.values["INFONAVIT"] || 0);
-    const acta = Number(w.values["A CTA"] || 0);
-    const falta = Number(w.values["FALTA"] || 0);
+    document.addEventListener('input', (e)=>{
+      if(e.target && e.target.matches('input,textarea,select')) scheduleDraft();
+    });
+    document.addEventListener('change', (e)=>{
+      if(e.target && e.target.matches('input,textarea,select')) scheduleDraft();
+    });
 
-    if(!isFinite(Number(w.values["NETO"]))){
-      w.values["NETO"] = round2(total - imss - isr - info - acta - falta);
+    window.vdcDraftSave = vdcDraftSave;
+    window.vdcDraftLoad = vdcDraftLoad;
+    window.vdcDraftClear = vdcDraftClear;
+
+    // ========= IMPRESIÓN =========
+    function printHtmlWindow(html){
+      const win = window.open('', '_blank', 'width=420,height=650');
+      if (!win) {
+        alert("No se pudo abrir la ventana de impresión. Activa ventanas emergentes (popups) en tu navegador.");
+        return;
+      }
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 300);
     }
-  }
 
-  function onCellClick(e){
-    const td = e.target.closest("td.cell");
-    if(!td) return;
+    function imprimirSebo80mm() {
+      const kg = Number(document.getElementById('seboKg').value || 0);
+      if (!kg || kg <= 0) return alert("Ingresa los kilos de sebo.");
 
-    hideWarn();
+      const STORE = "Carnes y Vísceras del Centro";
+      const fecha = fechaMX();
 
-    const r = Number(td.dataset.r);
-    const c = Number(td.dataset.c);
-    selected = {r,c};
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <style>
+        body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+        #t{width:80mm;padding:2mm}
+        h3{margin:0;text-align:center;font-size:14px}
+        .c{text-align:center;font-size:11px;margin-top:4px}
+        .line{border-top:1px dashed #000;margin:6px 0}
+        .big{text-align:center;font-weight:800;font-size:16px}
+        .amt{text-align:center;font-weight:900;font-size:20px;margin-top:4px}
+        @media print{@page{size:80mm auto;margin:0}}
+      </style></head><body>
+        <div id="t">
+          <h3>${STORE}</h3>
+          <div class="c">PAPEL DE SEBO<br>FECHA: ${fecha}</div>
+          <div class="line"></div>
+          <div class="big">DIO SEBO</div>
+          <div class="amt">${kg.toFixed(2)} KG</div>
+          <div class="line"></div>
+          <div class="c">FIRMA: ____________________________</div>
+        </div>
+      </body></html>`;
 
-    const v = aoa?.[r]?.[c];
-    $("#cellInfo").textContent = `Celda: ${colLetter(c)}${r+1} = ${clean(v) || "—"}`;
+      printHtmlWindow(html);
+      vdcDraftSave();
+    }
 
-    if(looksLikeNameCell(v)){
-      const name = upper(v);
-      const key = `${r},${c}`;
+    // ✅ NOTA 80MM (ENVÍO / MOSTRADOR) — versión anti “hoja extra”
+    function imprimirNota80mm() {
+      const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
+      const copias = Math.max(1, parseInt(document.getElementById('etqCopias').value || '1', 10));
 
-      let w = workersByAnchor.get(key);
-      if(!w){
-        w = { name, anchor:{r,c}, values:{} };
-        workersByAnchor.set(key, w);
+      const STORE = "Carnes y Vísceras del Centro";
+      const fecha = fechaMX();
+
+      let lineas = [];
+
+      if (tipo === "envio") {
+        const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
+        const colonia = getColoniaFinal();
+
+        if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
+        if (!colonia) return alert("Selecciona la colonia destino (o elige OTRA y escríbela).");
+
+        lineas = [
+          { type: 'line' },
+          { type: 'text', cls: 'who', text: escapeHtml(entrega) },
+          { type: 'line' },
+          { type: 'text', cls: 'col', text: escapeHtml(colonia.toUpperCase()) }
+        ];
       } else {
-        w.name = name;
-        w.anchor = {r,c};
-        w.values = w.values || {};
+        const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
+        if (!texto) return alert("Escribe el nombre del cliente (mostrador).");
+
+        const safe = escapeHtml(texto).replaceAll('\n', '<br>');
+        lineas = [
+          { type: 'line' },
+          { type: 'html', cls: 'free', html: safe.toUpperCase() }
+        ];
       }
 
-      currentWorker = w;
-      autoCaptureFromAnchor(currentWorker);
+      const parts = [];
+      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
+      lineas.forEach(item => {
+        if (item.type === 'line') parts.push(`<div class="line"></div>`);
+        else if (item.type === 'text') parts.push(`<div class="${item.cls}">${item.text}</div>`);
+        else if (item.type === 'html') parts.push(`<div class="${item.cls}">${item.html}</div>`);
+      });
 
-      $("#btnAuto").disabled = false;
-      $("#btnClear").disabled = false;
+      const NOTE_W_MM = 80;
+      const NOTE_H_MM = 45;
 
-      renderFields();
-      renderTicket();
-      paintSelections();
-      return;
-    }
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          *{box-sizing:border-box}
+          html,body{margin:0;padding:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+          @media print{
+            @page{ size: ${NOTE_W_MM}mm ${NOTE_H_MM}mm; margin:0; }
+            html,body{width:${NOTE_W_MM}mm;height:${NOTE_H_MM}mm;overflow:hidden}
+          }
+          #t{
+            width:${NOTE_W_MM}mm;
+            height:${NOTE_H_MM}mm;
+            padding:2mm 2mm;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            text-align:center;
+            overflow:hidden;
+          }
+          .c{font-size:11px;line-height:1.2}
+          .line{width:100%;border-top:1px dashed #000;margin:3mm 0}
+          .who{font-weight:900;font-size:38px}
+          .col{font-weight:900;font-size:38px}
+          .free{
+            font-weight:900;
+            font-size:22px;
+            line-height:1.12;
+            word-break:break-word;
+            padding:0 1mm;
+          }
+        </style></head><body>
+          <div id="t">${parts.join('')}</div>
+          <script>
+            window.onload = () => { setTimeout(() => window.print(), 120); };
+            window.onafterprint = () => { setTimeout(() => window.close(), 120); };
+          <\/script>
+        </body></html>`;
 
-    if(!currentWorker){
-      showWarn("Primero haz click en el NOMBRE del trabajador.");
-      paintSelections();
-      return;
-    }
-
-    const found = findConceptAt(r,c);
-    if(!found){
-      showWarn("No encontré el concepto en esa fila. Haz click en el número correcto de esa fila.");
-      paintSelections();
-      return;
-    }
-
-    let val = null;
-    if(isNum(v)) val = v;
-    else {
-      const p = parseMexNumber(clean(v));
-      if(p != null) val = p;
-    }
-
-    if(val == null){
-      const right = findNumberRightStrict(r, found.conceptCol);
-      if(right) val = right.value;
-    }
-
-    if(val == null){
-      showWarn("No encontré un número en esa fila. Haz click directamente en la celda del número.");
-      paintSelections();
-      return;
-    }
-
-    currentWorker.values[found.concept] = val;
-
-    if(found.concept === "SUELDO" || found.concept === "EXT"){
-      const s = Number(currentWorker.values["SUELDO"] || 0);
-      const e2 = Number(currentWorker.values["EXT"] || 0);
-      currentWorker.values["TOTAL"] = round2(s + e2);
-    }
-
-    if(["TOTAL","IMSS","ISR","INFONAVIT","A CTA","FALTA","SUELDO","EXT"].includes(found.concept)){
-      const total = Number(currentWorker.values["TOTAL"] || 0);
-      const imss = Number(currentWorker.values["IMSS"] || 0);
-      const isr = Number(currentWorker.values["ISR"] || 0);
-      const info = Number(currentWorker.values["INFONAVIT"] || 0);
-      const acta = Number(currentWorker.values["A CTA"] || 0);
-      const falta = Number(currentWorker.values["FALTA"] || 0);
-      currentWorker.values["NETO"] = round2(total - imss - isr - info - acta - falta);
-    }
-
-    renderFields();
-    renderTicket();
-    paintSelections();
-  }
-
-  async function loadWorkbook(file){
-    const buf = await file.arrayBuffer();
-    wb = XLSX.read(buf, {type:"array"});
-    const names = wb.SheetNames || [];
-
-    $("#sheet").innerHTML = names.map(n=>`<option value="${n}">${n}</option>`).join("");
-    $("#sheet").disabled = names.length === 0;
-
-    sheetName = names[0] || null;
-    $("#sheet").value = sheetName || "";
-
-    await loadSheet(sheetName);
-    setStatus(`Excel cargado: ${names.length} hoja(s)`, true);
-
-    $("#btnPrint").disabled = true;
-    $("#btnAuto").disabled = true;
-    $("#btnClear").disabled = true;
-  }
-
-  async function loadSheet(name){
-    sheetName = name;
-    const ws = wb.Sheets[name];
-    aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
-
-    selected = {r:null,c:null};
-    currentWorker = null;
-    workersByAnchor.clear();
-
-    buildExcelTable(aoa);
-    renderFields();
-    renderTicket();
-  }
-
-  $("#paper").addEventListener("change", ()=>{
-    document.documentElement.style.setProperty("--paperW", $("#paper").value);
-  });
-
-  $("#empresa").addEventListener("input", ()=>{
-    renderTicket();
-  });
-
-  $("#btnHelp").addEventListener("click", ()=>{
-    const box = $("#helpBox");
-    box.style.display = (box.style.display === "none" ? "block" : "none");
-  });
-
-  $("#btnAuto").addEventListener("click", ()=>{
-    if(!currentWorker) return;
-    autoCaptureFromAnchor(currentWorker);
-    renderFields();
-    renderTicket();
-  });
-
-  $("#btnClear").addEventListener("click", ()=>{
-    if(!currentWorker) return;
-    currentWorker.values = {};
-    renderFields();
-    renderTicket();
-  });
-
-  $("#btnPrint").addEventListener("click", ()=>{
-    if(!currentWorker){
-      showWarn("Selecciona un trabajador primero.");
-      return;
-    }
-    window.print();
-  });
-
-  $("#file").addEventListener("change", async (e)=>{
-    const f = e.target.files?.[0];
-    if(!f) return;
-
-    hideWarn();
-    try{
-      if(typeof XLSX === "undefined"){
-        throw new Error("XLSX no cargó. Revisa conexión a internet o bloqueadores.");
+      const win = window.open('', '_blank', 'width=420,height=650');
+      if (!win) {
+        alert("No se pudo abrir la ventana de impresión. Activa ventanas emergentes (popups).");
+        return;
       }
-      setStatus("Leyendo Excel…", true);
-      await loadWorkbook(f);
-    }catch(err){
-      console.error(err);
-      setStatus("Error", false);
-      showWarn("Error cargando Excel: " + (err?.message || err));
-    }
-  });
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
 
-  $("#sheet").addEventListener("change", async ()=>{
-    if(!wb) return;
-    try{
-      await loadSheet($("#sheet").value);
-    }catch(err){
-      console.error(err);
-      showWarn("Error cambiando hoja: " + (err?.message || err));
-    }
-  });
+      let i = 0;
+      const doPrint = () => {
+        win.focus();
+        win.print();
+        i++;
+        if (i < copias) setTimeout(doPrint, 500);
+      };
+      setTimeout(doPrint, 250);
 
-  setStatus("Sin archivo", true);
-  renderFields();
-  renderTicket();
-</script>
+      vdcDraftSave();
+    }
+
+    function limpiarNotas(){
+      document.getElementById('entregaNombre').value = '';
+      document.getElementById('coloniaDestino').value = '';
+      document.getElementById('coloniaDestinoLibre').value = '';
+      toggleColoniaLibre();
+
+      document.getElementById('mostradorTexto').value = '';
+      document.getElementById('etqCopias').value = 1;
+      scheduleDraft();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    // ========= INIT =========
+    window.imprimirSebo80mm = imprimirSebo80mm;
+    window.imprimirNota80mm = imprimirNota80mm;
+    window.limpiarNotas = limpiarNotas;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const f = document.getElementById('fecha');
+      if(f && !f.value) f.value = todayISO();
+
+      llenarColonias();
+
+      document.getElementById('coloniaDestino')?.addEventListener('change', ()=>{
+        toggleColoniaLibre();
+        scheduleDraft();
+      });
+      document.getElementById('coloniaDestinoLibre')?.addEventListener('input', scheduleDraft);
+
+      // default visible: envío
+      document.getElementById('notaEnvioWrap').style.display = 'block';
+      document.getElementById('notaMostradorWrap').style.display = 'none';
+
+      vdcDraftLoad();
+      vdcDraftSave();
+
+      // por si el borrador trae OTRA
+      toggleColoniaLibre();
+    });
+  </script>
 </body>
 </html>
