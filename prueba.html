@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hoja de pesos y sebo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    body { font-family: sans-serif; background:#f2f2f2; padding:30px; }
+    .container { background:#fff; padding:40px; border-radius:12px; max-width:900px; margin:auto; }
+    h1 { margin:0 0 12px; font-size:32px; }
+    label { display:block; margin-top:18px; font-weight:700; }
+    input, textarea, select {
+      width:100%; padding:10px; font-size:16px; margin-top:6px;
+      border:1px solid #d1d5db; border-radius:10px;
+    }
+    textarea { min-height:120px; resize:vertical; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-top:14px; }
+    .row > div { flex:1 1 220px; }
+    button {
+      padding:12px 18px; border:none; border-radius:10px;
+      background:#198754; color:#fff; font-size:16px; cursor:pointer;
+    }
+    button:hover { background:#146c43; }
+    .btn-gray{ background:#374151; }
+    .btn-gray:hover{ background:#111827; }
+    .btn-teal{ background:#0f766e; }
+    .btn-teal:hover{ background:#115e59; }
+    .btn-red{ background:#dc2626; }
+    .btn-red:hover{ background:#b91c1c; }
+
+    #resultado-totales{
+      margin-top:22px; white-space:pre-line; font-size:16px;
+      background:#f9fafb; border:1px solid #e5e7eb; padding:14px; border-radius:12px;
+    }
+    .hr{ margin:26px 0; border-top:1px solid #e5e7eb; }
+    .hint{ color:#6b7280; font-size:13px; margin-top:6px; }
+
+    .draftbar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      margin: 8px 0 18px;
+      padding:10px 12px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      background:#f9fafb;
+    }
+    .draftbar .status{
+      font-size:12px; color:#6b7280; font-weight:700;
+    }
+
+    .noteBox{
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:14px;
+      background:#f9fafb;
+      margin-top:10px;
+    }
+    .noteBox h3{ margin:0 0 8px; font-size:16px; }
+    #notaEnvioWrap{ display:none; }
+    #notaMostradorWrap{ display:none; }
+
+    .seg{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;
+      background:#f3f4f6; border:1px solid #e5e7eb; padding:10px; border-radius:12px;
+      align-items:center;
+    }
+    .seg .chip{
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid #d1d5db;
+      cursor:pointer;
+      background:#fff;
+      user-select:none;
+      font-weight:800;
+      font-size:13px;
+    }
+    .seg .chip.active{
+      background:#0f766e;
+      color:#fff;
+      border-color:#0f766e;
+    }
+
+    .msgbox{
+      margin-top:12px; white-space:pre-line; background:#0b1220; color:#e5e7eb;
+      padding:14px; border-radius:12px; border:1px solid #111827;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Hoja de pesos y sebo</h1>
+
+    <div class="draftbar">
+      <button class="btn-gray" type="button" onclick="vdcDraftSave()">💾 Guardar borrador</button>
+      <button class="btn-red" type="button" onclick="vdcDraftClear()">🧹 Limpiar borrador</button>
+      <span id="draftStatus" class="status">Borrador: —</span>
+    </div>
+
+    <label for="fecha">Fecha:</label>
+    <input type="date" id="fecha" />
+
+    <div class="hr"></div>
+
+    <h2 style="margin:0;">Etiqueta de sebo 62mm</h2>
+    <div class="row">
+      <div>
+        <label for="seboKg">Kilos de sebo (DIO SEBO):</label>
+        <input type="number" id="seboKg" step="0.01" min="0" placeholder="Ej. 15.00" />
+      </div>
+      <div style="flex:0 0 auto;">
+        <button onclick="imprimirSebo80mm()">Imprimir etiqueta de sebo</button>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <h2 style="margin:0;">Etiquetas Brother 62mm</h2>
+    <div class="hint">Elige tipo de nota: Envios (reparto) o Mostrador (cliente pasa por pedido).</div>
+
+    <div class="seg" role="group" aria-label="Tipo de nota">
+      <div id="chipEnvio" class="chip active" onclick="setTipoNota('envio')">📦 Notas para envíos</div>
+      <div id="chipMostrador" class="chip" onclick="setTipoNota('mostrador')">🧾 Notas para mostrador</div>
+      <input type="hidden" id="tipoNota" value="envio" />
+    </div>
+
+    <!-- ENVÍO -->
+    <div id="notaEnvioWrap" class="noteBox">
+      <h3>📦 Nota de envío</h3>
+
+      <div class="row">
+        <div>
+          <label for="entregaNombre">Quién entrega:</label>
+          <select id="entregaNombre">
+            <option value="">— Selecciona —</option>
+            <option value="FER">FER</option>
+            <option value="NETO">NETO</option>
+            <option value="ALE">ALE</option>
+            <option value="PACO">PACO</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="coloniaDestino">Colonia destino:</label>
+          <select id="coloniaDestino">
+            <option value="">— Selecciona —</option>
+          </select>
+
+          <!-- ✅ aparece solo cuando eligen OTRA -->
+          <input
+            type="text"
+            id="coloniaDestinoLibre"
+            placeholder="Escribe la colonia…"
+            style="display:none; margin-top:8px;"
+          />
+          <div class="mini"></div>
+        </div>
+
+        <!-- ✅ QUITAMOS “BOLSAS” (ya no existe) -->
+      </div>
+    </div>
+
+    <!-- MOSTRADOR -->
+    <div id="notaMostradorWrap" class="noteBox">
+      <h3>🧾 Nota de mostrador</h3>
+      <div class="hint">Aquí sí es libre: normalmente el nombre del cliente que va a pasar por el pedido.</div>
+
+      <label for="mostradorTexto">Texto (cliente):</label>
+      <textarea id="mostradorTexto" placeholder="Ej. JUAN PÉREZ"></textarea>
+    </div>
+
+    <div class="row">
+      <div style="display:none">
+        <label for="etqCopias">Copias:</label>
+        <input type="number" id="etqCopias" min="1" step="1" value="1" />
+      </div>
+
+      <div style="flex:0 0 auto;">
+        <button onclick="imprimirNota80mm()">Imprimir etiqueta</button>
+      </div>
+
+      <div style="flex:0 0 auto;">
+        <button class="btn-gray" onclick="limpiarNotas()">Limpiar</button>
+      </div>
+    </div>
+
+    <div id="resultado-totales"></div>
+    <div id="debug" class="msgbox" style="display:none;"></div>
+  </div>
+
+  <script>
+    // ========= COMPAT: replaceAll =========
+    (function(){
+      if (!String.prototype.replaceAll) {
+        String.prototype.replaceAll = function(search, replacement){
+          const target = String(this);
+          if (search instanceof RegExp) return target.replace(search, replacement);
+          const escaped = String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return target.replace(new RegExp(escaped, 'g'), replacement);
+        };
+      }
+    })();
+
+    function showDebug(msg){
+      const box = document.getElementById('debug');
+      box.style.display = 'block';
+      box.textContent = String(msg);
+    }
+    window.addEventListener('error', (e) => {
+      showDebug("❌ Error JS:\n" + (e && e.message ? e.message : e));
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      showDebug("❌ Promise rechazado:\n" + (e && e.reason ? (e.reason.message || e.reason) : e));
+    });
+
+    function fechaMX() {
+      const v = document.getElementById('fecha').value;
+      if (v) return new Date(v + 'T00:00:00').toLocaleDateString('es-MX');
+      return new Date().toLocaleDateString('es-MX');
+    }
+
+    // ✅ EDITA AQUÍ LAS COLONIAS
+    const COLONIAS_DESTINO = [
+      "San Roque","San Cristóbal","Las Heras","Villas de Irapuato","Centro","La Moderna",
+      "Calzada de Guadalupe","naranjal1","naranjal2","almuerzos tere","pradera","rancho grande",
+      "soledad","san miguelito","abraham vallejo","rio nazas","hija de carmelita","arcos1 y 2",
+      "virgen","tellez","platan","tomelopez","purisima","fuentes","dique","pollo","juarez","coyoacan",
+      "cirilo","ucopi","division del norte","mario","pronasol","candelaria","rey sol","romeral","limon",
+      "gomez morin","playa azul","sauce","san agustin1","san agustin2","manuela acuña","san jose",
+      "san ramon","abasolo1","abasolo2","abasolo3","san irineo","leyes","arandas","plan","niños heroes",
+      "america","cobos","acambaro","zapotla","1 de mayo","resbalon","bola","san cayetano",
+      "avila camacho","nuevo leon","taquicardia","el encanto","cuecillo"
+    ];
+
+    const OPT_OTRA = "__OTRA__";
+
+    function llenarColonias(){
+      const sel = document.getElementById('coloniaDestino');
+      if(!sel) return;
+
+      sel.innerHTML = '<option value="">— Selecciona —</option>';
+
+      COLONIAS_DESTINO.forEach(c=>{
+        const op = document.createElement('option');
+        op.value = c;
+        op.textContent = c;
+        sel.appendChild(op);
+      });
+
+      // ✅ opción libre al final
+      const opOtra = document.createElement('option');
+      opOtra.value = OPT_OTRA;
+      opOtra.textContent = "OTRA (escribir)";
+      sel.appendChild(opOtra);
+    }
+
+    function toggleColoniaLibre(){
+      const sel = document.getElementById('coloniaDestino');
+      const libre = document.getElementById('coloniaDestinoLibre');
+      if(!sel || !libre) return;
+
+      const isOtra = sel.value === OPT_OTRA;
+      libre.style.display = isOtra ? 'block' : 'none';
+
+      if(!isOtra) libre.value = '';
+    }
+
+    function getColoniaFinal(){
+      const sel = document.getElementById('coloniaDestino');
+      const libre = document.getElementById('coloniaDestinoLibre');
+      const v = (sel?.value || '').trim();
+      if(v === OPT_OTRA){
+        return (libre?.value || '').trim();
+      }
+      return v;
+    }
+
+    // ========= TIPO DE NOTA =========
+    function setTipoNota(tipo){
+      document.getElementById('tipoNota').value = tipo;
+
+      const chipEnvio = document.getElementById('chipEnvio');
+      const chipMost = document.getElementById('chipMostrador');
+      chipEnvio.classList.toggle('active', tipo === 'envio');
+      chipMost.classList.toggle('active', tipo === 'mostrador');
+
+      document.getElementById('notaEnvioWrap').style.display = (tipo === 'envio') ? 'block' : 'none';
+      document.getElementById('notaMostradorWrap').style.display = (tipo === 'mostrador') ? 'block' : 'none';
+
+      scheduleDraft();
+    }
+    window.setTipoNota = setTipoNota;
+
+    // ========= BORRADOR =========
+    function todayISO(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    }
+    const DRAFT_KEY = () => `vdc360:draft:peso_sebo:${todayISO()}`;
+
+    function setDraftStatus(text){
+      const el = document.getElementById('draftStatus');
+      if(el) el.textContent = text;
+    }
+
+    function collectDraft(){
+      return {
+        ts: Date.now(),
+        fields: {
+          fecha: document.getElementById('fecha')?.value || '',
+          seboKg: document.getElementById('seboKg')?.value || '',
+
+          tipoNota: document.getElementById('tipoNota')?.value || 'envio',
+          entregaNombre: document.getElementById('entregaNombre')?.value || '',
+          coloniaDestino: document.getElementById('coloniaDestino')?.value || '',
+          coloniaDestinoLibre: document.getElementById('coloniaDestinoLibre')?.value || '',
+          mostradorTexto: document.getElementById('mostradorTexto')?.value || '',
+
+          etqCopias: document.getElementById('etqCopias')?.value || '1'
+        }
+      };
+    }
+
+    function applyDraft(d){
+      if(!d) return;
+      const f = d.fields || {};
+
+      const setVal = (id, v) => {
+        const el = document.getElementById(id);
+        if(el && v != null) el.value = v;
+      };
+
+      setVal('fecha', f.fecha);
+      setVal('seboKg', f.seboKg);
+
+      // notas
+      llenarColonias();
+      setVal('tipoNota', f.tipoNota || 'envio');
+      setTipoNota(f.tipoNota || 'envio');
+
+      setVal('entregaNombre', f.entregaNombre);
+      setVal('coloniaDestino', f.coloniaDestino);
+      setVal('coloniaDestinoLibre', f.coloniaDestinoLibre || '');
+      toggleColoniaLibre();
+
+      setVal('mostradorTexto', f.mostradorTexto);
+      setVal('etqCopias', f.etqCopias);
+    }
+
+    function vdcDraftSave(){
+      const d = collectDraft();
+      localStorage.setItem(DRAFT_KEY(), JSON.stringify(d));
+      const hh = new Date(d.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      setDraftStatus(`Borrador guardado ✅ (${hh})`);
+    }
+
+    function vdcDraftLoad(){
+      const raw = localStorage.getItem(DRAFT_KEY());
+      if(!raw){ setDraftStatus('Borrador: —'); return; }
+      try{
+        const d = JSON.parse(raw);
+        applyDraft(d);
+        const hh = new Date(d.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        setDraftStatus(`Borrador cargado ✅ (${hh})`);
+      }catch(e){
+        setDraftStatus('Borrador dañado ⚠️');
+      }
+    }
+
+    function vdcDraftClear(){
+      if(!confirm("¿Seguro que quieres borrar el borrador de HOY?")) return;
+      localStorage.removeItem(DRAFT_KEY());
+
+      document.getElementById('fecha').value = '';
+      document.getElementById('seboKg').value = '';
+
+      document.getElementById('tipoNota').value = 'envio';
+      setTipoNota('envio');
+
+      document.getElementById('entregaNombre').value = '';
+      document.getElementById('coloniaDestino').value = '';
+      document.getElementById('coloniaDestinoLibre').value = '';
+      toggleColoniaLibre();
+
+      document.getElementById('mostradorTexto').value = '';
+      document.getElementById('etqCopias').value = 1;
+
+      document.getElementById('resultado-totales').textContent = '';
+      setDraftStatus('Borrador limpiado 🧹');
+      vdcDraftSave();
+    }
+
+    let tDraft=null;
+    function scheduleDraft(){
+      clearTimeout(tDraft);
+      tDraft=setTimeout(vdcDraftSave, 250);
+    }
+
+    document.addEventListener('input', (e)=>{
+      if(e.target && e.target.matches('input,textarea,select')) scheduleDraft();
+    });
+    document.addEventListener('change', (e)=>{
+      if(e.target && e.target.matches('input,textarea,select')) scheduleDraft();
+    });
+
+    window.vdcDraftSave = vdcDraftSave;
+    window.vdcDraftLoad = vdcDraftLoad;
+    window.vdcDraftClear = vdcDraftClear;
+
+
+    // ========= VDC 360 · COLA REMOTA DE IMPRESIÓN =========
+    // Completa estos 2 valores con el MISMO proyecto Supabase donde crearás vdc_print_jobs.
+    const VDC_PRINT_SUPABASE_URL = "PON_AQUI_TU_SUPABASE_URL";
+    const VDC_PRINT_SUPABASE_ANON_KEY = "PON_AQUI_TU_SUPABASE_ANON_KEY";
+    const VDC_PRINT_QUEUE_TABLE = "vdc_print_jobs";
+
+    function vdcPrintConfigReady(){
+      return /^https:\/\/.+\.supabase\.co$/i.test(VDC_PRINT_SUPABASE_URL)
+        && VDC_PRINT_SUPABASE_ANON_KEY
+        && !VDC_PRINT_SUPABASE_ANON_KEY.startsWith("PON_AQUI");
+    }
+
+    function vdcPrintJobKey(tipo, meta){
+      const raw = [
+        tipo,
+        meta?.folio || "",
+        meta?.source || "",
+        Date.now(),
+        Math.random().toString(36).slice(2)
+      ].join("|");
+      return "vdc-" + btoa(unescape(encodeURIComponent(raw)))
+        .replace(/[^a-zA-Z0-9]/g,"").slice(0,80);
+    }
+
+    async function vdcEncolarImpresion(tipo, html, meta = {}) {
+      if(!vdcPrintConfigReady()){
+        throw new Error(
+          "Falta configurar VDC_PRINT_SUPABASE_URL y VDC_PRINT_SUPABASE_ANON_KEY."
+        );
+      }
+
+      const job = {
+        tipo,
+        html,
+        meta,
+        estado: "pendiente",
+        intentos: 0,
+        max_intentos: 5,
+        job_key: vdcPrintJobKey(tipo, meta)
+      };
+
+      const res = await fetch(
+        `${VDC_PRINT_SUPABASE_URL}/rest/v1/${VDC_PRINT_QUEUE_TABLE}`,
+        {
+          method: "POST",
+          headers: {
+            "apikey": VDC_PRINT_SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${VDC_PRINT_SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify(job)
+        }
+      );
+
+      const data = await res.json().catch(() => null);
+      if(!res.ok){
+        throw new Error(
+          (data && (data.message || data.error || data.hint))
+            ? (data.message || data.error || data.hint)
+            : `No se pudo encolar la impresión (${res.status}).`
+        );
+      }
+
+      return Array.isArray(data) ? data[0] : data;
+    }
+
+    // ========= IMPRESIÓN =========
+    async function printHtmlWindow(html){
+      try{
+        await vdcEncolarImpresion("etiqueta", html, {
+          source:"etiquetas",
+          width_mm:62,
+          copies:1
+        });
+        alert("Etiqueta enviada al punto de impresión ✅");
+      }catch(err){
+        alert("No se pudo enviar la etiqueta a impresión.
+
+" + err.message);
+      }
+    }
+
+    function imprimirSebo80mm() {
+      const kg = Number(document.getElementById('seboKg').value || 0);
+      if (!kg || kg <= 0) return alert("Ingresa los kilos de sebo.");
+
+      const STORE = "Carnes y Vísceras del Centro";
+      const fecha = fechaMX();
+
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <style>
+        body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+        #t{width:62mm;padding:2mm}
+        h3{margin:0;text-align:center;font-size:14px}
+        .c{text-align:center;font-size:11px;margin-top:4px}
+        .line{border-top:1px dashed #000;margin:6px 0}
+        .big{text-align:center;font-weight:800;font-size:16px}
+        .amt{text-align:center;font-weight:900;font-size:20px;margin-top:4px}
+        @media print{@page{size:62mm 45mm;margin:0}html,body{width:62mm;height:45mm;overflow:hidden}}
+      </style></head><body>
+        <div id="t">
+          <h3>${STORE}</h3>
+          <div class="c">PAPEL DE SEBO<br>FECHA: ${fecha}</div>
+          <div class="line"></div>
+          <div class="big">DIO SEBO</div>
+          <div class="amt">${kg.toFixed(2)} KG</div>
+          <div class="line"></div>
+          <div class="c">FIRMA: ____________________________</div>
+        </div>
+      </body></html>`;
+
+      printHtmlWindow(html);
+      vdcDraftSave();
+    }
+
+    // ✅ NOTA 80MM (ENVÍO / MOSTRADOR) — versión anti “hoja extra”
+    function imprimirNota80mm() {
+      const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
+      const copias = 1;
+
+      const STORE = "Carnes y Vísceras del Centro";
+      const fecha = fechaMX();
+
+      let lineas = [];
+
+      if (tipo === "envio") {
+        const entrega = (document.getElementById('entregaNombre')?.value || '').trim();
+        const colonia = getColoniaFinal();
+
+        if (!entrega) return alert("Selecciona quién entrega (FER / NETO / ALE / PACO).");
+        if (!colonia) return alert("Selecciona la colonia destino (o elige OTRA y escríbela).");
+
+        lineas = [
+          { type: 'line' },
+          { type: 'text', cls: 'who', text: escapeHtml(entrega) },
+          { type: 'line' },
+          { type: 'text', cls: 'col', text: escapeHtml(colonia.toUpperCase()) }
+        ];
+      } else {
+        const texto = (document.getElementById('mostradorTexto')?.value || '').trim();
+        if (!texto) return alert("Escribe el nombre del cliente (mostrador).");
+
+        const safe = escapeHtml(texto).replaceAll('\n', '<br>');
+        lineas = [
+          { type: 'line' },
+          { type: 'html', cls: 'free', html: safe.toUpperCase() }
+        ];
+      }
+
+      const parts = [];
+      parts.push(`<div class="c"><b>${STORE}</b><br>FECHA: ${fecha}</div>`);
+      lineas.forEach(item => {
+        if (item.type === 'line') parts.push(`<div class="line"></div>`);
+        else if (item.type === 'text') parts.push(`<div class="${item.cls}">${item.text}</div>`);
+        else if (item.type === 'html') parts.push(`<div class="${item.cls}">${item.html}</div>`);
+      });
+
+      const NOTE_W_MM = 62;
+      const NOTE_H_MM = 45;
+
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          *{box-sizing:border-box}
+          html,body{margin:0;padding:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+          @media print{
+            @page{ size: ${NOTE_W_MM}mm ${NOTE_H_MM}mm; margin:0; }
+            html,body{width:${NOTE_W_MM}mm;height:${NOTE_H_MM}mm;overflow:hidden}
+          }
+          #t{
+            width:${NOTE_W_MM}mm;
+            height:${NOTE_H_MM}mm;
+            padding:2mm 2mm;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            text-align:center;
+            overflow:hidden;
+          }
+          .c{font-size:11px;line-height:1.2}
+          .line{width:100%;border-top:1px dashed #000;margin:3mm 0}
+          .who{font-weight:900;font-size:38px}
+          .col{font-weight:900;font-size:38px}
+          .free{
+            font-weight:900;
+            font-size:22px;
+            line-height:1.12;
+            word-break:break-word;
+            padding:0 1mm;
+          }
+        </style></head><body>
+          <div id="t">${parts.join('')}</div>
+        </body></html>`;
+
+      vdcEncolarImpresion("etiqueta", html, {
+        source: "etiquetas",
+        type: tipo,
+        width_mm: NOTE_W_MM,
+        height_mm: NOTE_H_MM,
+        copies: 1
+      }).then(() => {
+        alert("Etiqueta enviada al punto de impresión ✅");
+      }).catch(err => {
+        alert("No se pudo enviar la etiqueta a impresión.\n\n" + err.message);
+      });
+
+      vdcDraftSave();
+    }
+
+    function limpiarNotas(){
+      document.getElementById('entregaNombre').value = '';
+      document.getElementById('coloniaDestino').value = '';
+      document.getElementById('coloniaDestinoLibre').value = '';
+      toggleColoniaLibre();
+
+      document.getElementById('mostradorTexto').value = '';
+      document.getElementById('etqCopias').value = 1;
+      scheduleDraft();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    // ========= INIT =========
+    window.imprimirSebo80mm = imprimirSebo80mm;
+    window.imprimirNota80mm = imprimirNota80mm;
+    window.limpiarNotas = limpiarNotas;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const f = document.getElementById('fecha');
+      if(f && !f.value) f.value = todayISO();
+
+      llenarColonias();
+
+      document.getElementById('coloniaDestino')?.addEventListener('change', ()=>{
+        toggleColoniaLibre();
+        scheduleDraft();
+      });
+      document.getElementById('coloniaDestinoLibre')?.addEventListener('input', scheduleDraft);
+
+      // default visible: envío
+      document.getElementById('notaEnvioWrap').style.display = 'block';
+      document.getElementById('notaMostradorWrap').style.display = 'none';
+
+      vdcDraftLoad();
+      vdcDraftSave();
+
+      // por si el borrador trae OTRA
+      toggleColoniaLibre();
+    });
+  </script>
+</body>
+</html>
