@@ -103,14 +103,21 @@
 
     <div class="hr"></div>
 
-    <h2 style="margin:0;">Etiqueta de sebo 62mm</h2>
+    <h2 style="margin:0;">Papel / etiqueta de sebo</h2>
     <div class="row">
       <div>
         <label for="seboKg">Kilos de sebo (DIO SEBO):</label>
         <input type="number" id="seboKg" step="0.01" min="0" placeholder="Ej. 15.00" />
       </div>
+      <div>
+        <label for="seboPrinter">Imprimir en:</label>
+        <select id="seboPrinter">
+          <option value="brother">Brother QL-800 — etiqueta 62 mm</option>
+          <option value="pos80">POS-80 — papel 80 mm</option>
+        </select>
+      </div>
       <div style="flex:0 0 auto;">
-        <button onclick="imprimirSebo80mm()">Imprimir etiqueta de sebo</button>
+        <button onclick="imprimirSebo80mm()">Imprimir sebo</button>
       </div>
     </div>
 
@@ -313,6 +320,7 @@
         fields: {
           fecha: document.getElementById('fecha')?.value || '',
           seboKg: document.getElementById('seboKg')?.value || '',
+          seboPrinter: document.getElementById('seboPrinter')?.value || 'brother',
 
           tipoNota: document.getElementById('tipoNota')?.value || 'envio',
           entregaNombre: document.getElementById('entregaNombre')?.value || '',
@@ -336,6 +344,7 @@
 
       setVal('fecha', f.fecha);
       setVal('seboKg', f.seboKg);
+      setVal('seboPrinter', f.seboPrinter || 'brother');
 
       // notas
       llenarColonias();
@@ -377,6 +386,7 @@
 
       document.getElementById('fecha').value = '';
       document.getElementById('seboKg').value = '';
+      document.getElementById('seboPrinter').value = 'brother';
 
       document.getElementById('tipoNota').value = 'envio';
       setTipoNota('envio');
@@ -493,24 +503,42 @@
       }
     }
 
-    function imprimirSebo80mm() {
+    async function imprimirSebo80mm() {
       const kg = Number(document.getElementById('seboKg').value || 0);
       if (!kg || kg <= 0) return alert("Ingresa los kilos de sebo.");
 
+      const destino = document.getElementById('seboPrinter')?.value || 'brother';
       const STORE = "Carnes y Vísceras del Centro";
       const fecha = fechaMX();
+
+      const isPos80 = destino === "pos80";
+      const W = isPos80 ? 80 : 62;
+      const H = isPos80 ? 70 : 45;
 
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
-        body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
-        #t{width:62mm;padding:2mm}
-        h3{margin:0;text-align:center;font-size:14px}
-        .c{text-align:center;font-size:11px;margin-top:4px}
-        .line{border-top:1px dashed #000;margin:6px 0}
-        .big{text-align:center;font-weight:800;font-size:16px}
-        .amt{text-align:center;font-weight:900;font-size:20px;margin-top:4px}
-        @media print{@page{size:62mm 45mm;margin:0}html,body{width:62mm;height:45mm;overflow:hidden}}
+        *{box-sizing:border-box}
+        html,body{
+          margin:0;padding:0;
+          width:${W}mm;height:${H}mm;
+          overflow:hidden;
+          color:#000;
+          font-family:"Courier New",ui-monospace,Menlo,Consolas,monospace
+        }
+        @page{size:${W}mm ${H}mm;margin:0}
+        #t{
+          width:${W}mm;height:${H}mm;
+          padding:${isPos80 ? '4mm' : '2mm'};
+          display:flex;
+          flex-direction:column;
+          justify-content:center;
+        }
+        h3{margin:0;text-align:center;font-size:${isPos80 ? '18px' : '14px'};font-weight:900}
+        .c{text-align:center;font-size:${isPos80 ? '14px' : '11px'};font-weight:900;margin-top:4px}
+        .line{border-top:2px dashed #000;margin:${isPos80 ? '8px' : '6px'} 0}
+        .big{text-align:center;font-weight:900;font-size:${isPos80 ? '22px' : '16px'}}
+        .amt{text-align:center;font-weight:900;font-size:${isPos80 ? '30px' : '20px'};margin-top:6px}
       </style></head><body>
         <div id="t">
           <h3>${STORE}</h3>
@@ -523,7 +551,24 @@
         </div>
       </body></html>`;
 
-      printHtmlWindow(html);
+      try{
+        await vdcEncolarImpresion("etiqueta", html, {
+          source:"sebo",
+          destino_impresora: destino,
+          width_mm: W,
+          height_mm: H,
+          copies:1
+        });
+
+        alert(
+          destino === "pos80"
+            ? "Sebo enviado a POS-80 ✅"
+            : "Sebo enviado a Brother QL-800 ✅"
+        );
+      }catch(err){
+        alert("No se pudo enviar el sebo a impresión.\n\n" + err.message);
+      }
+
       vdcDraftSave();
     }
 
