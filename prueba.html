@@ -461,7 +461,7 @@
             "apikey": VDC_PRINT_SUPABASE_ANON_KEY,
             "Authorization": `Bearer ${VDC_PRINT_SUPABASE_ANON_KEY}`,
             "Content-Type": "application/json",
-            "Prefer": "return=representation"
+            "Prefer": "return=minimal"
           },
           body: JSON.stringify(job)
         }
@@ -476,7 +476,7 @@
         );
       }
 
-      return Array.isArray(data) ? data[0] : data;
+      return { ok:true };
     }
 
     // ========= IMPRESIÓN =========
