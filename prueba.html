@@ -103,7 +103,7 @@
 
     <div class="hr"></div>
 
-    <h2 style="margin:0;">Papel / etiqueta de sebo</h2>
+    <h2 style="margin:0;">Papel de sebo 80mm</h2>
     <div class="row">
       <div>
         <label for="seboKg">Kilos de sebo (DIO SEBO):</label>
@@ -112,18 +112,18 @@
       <div>
         <label for="seboPrinter">Imprimir en:</label>
         <select id="seboPrinter">
-          <option value="brother">Brother QL-800 — etiqueta 62 mm</option>
-          <option value="pos80">POS-80 — papel 80 mm</option>
+          <option value="brother">Brother QL-800</option>
+          <option value="pos80">POS-80</option>
         </select>
       </div>
       <div style="flex:0 0 auto;">
-        <button onclick="imprimirSebo80mm()">Imprimir sebo</button>
+        <button onclick="imprimirSebo80mm()">Imprimir papel de sebo 80mm</button>
       </div>
     </div>
 
     <div class="hr"></div>
 
-    <h2 style="margin:0;">Etiquetas Brother 62mm</h2>
+    <h2 style="margin:0;">Notas 80mm (horizontal)</h2>
     <div class="hint">Elige tipo de nota: Envios (reparto) o Mostrador (cliente pasa por pedido).</div>
 
     <div class="seg" role="group" aria-label="Tipo de nota">
@@ -163,8 +163,6 @@
           />
           <div class="mini"></div>
         </div>
-
-        <!-- ✅ QUITAMOS “BOLSAS” (ya no existe) -->
       </div>
     </div>
 
@@ -178,13 +176,13 @@
     </div>
 
     <div class="row">
-      <div style="display:none">
+      <div>
         <label for="etqCopias">Copias:</label>
         <input type="number" id="etqCopias" min="1" step="1" value="1" />
       </div>
 
       <div style="flex:0 0 auto;">
-        <button onclick="imprimirNota80mm()">Imprimir etiqueta</button>
+        <button onclick="imprimirNota80mm()">Imprimir nota 80mm</button>
       </div>
 
       <div style="flex:0 0 auto;">
@@ -255,7 +253,6 @@
         sel.appendChild(op);
       });
 
-      // ✅ opción libre al final
       const opOtra = document.createElement('option');
       opOtra.value = OPT_OTRA;
       opOtra.textContent = "OTRA (escribir)";
@@ -346,7 +343,6 @@
       setVal('seboKg', f.seboKg);
       setVal('seboPrinter', f.seboPrinter || 'brother');
 
-      // notas
       llenarColonias();
       setVal('tipoNota', f.tipoNota || 'envio');
       setTipoNota(f.tipoNota || 'envio');
@@ -422,8 +418,7 @@
     window.vdcDraftClear = vdcDraftClear;
 
 
-    // ========= VDC 360 · COLA REMOTA DE IMPRESIÓN =========
-    // Completa estos 2 valores con el MISMO proyecto Supabase donde crearás vdc_print_jobs.
+    // ========= VDC 360 · COLA REMOTA DE IMPRESIÓN (SE MANTIENE IGUAL) =========
     const VDC_PRINT_SUPABASE_URL = "https://rcegikeiaxptolrduguc.supabase.co";
     const VDC_PRINT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZWdpa2VpYXhwdG9scmR1Z3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2NTMyMDcsImV4cCI6MjA3MTIyOTIwN30.jbPM9F977zeITEmFA_xvVU6SCxlWWVCi3Dx7ZhFfTp8";
     const VDC_PRINT_QUEUE_TABLE = "vdc_print_jobs";
@@ -489,20 +484,11 @@
       return { ok:true };
     }
 
-    // ========= IMPRESIÓN =========
-    async function printHtmlWindow(html){
-      try{
-        await vdcEncolarImpresion("etiqueta", html, {
-          source:"etiquetas",
-          width_mm:62,
-          copies:1
-        });
-        alert("Etiqueta enviada al punto de impresión ✅");
-      }catch(err){
-        alert("No se pudo enviar la etiqueta a impresión.\n\n" + err.message);
-      }
+    function getCopias(){
+      return Math.max(1, parseInt(document.getElementById('etqCopias')?.value || '1', 10));
     }
 
+    // ========= SEBO — MISMO FORMATO QUE INDEX (80mm) =========
     async function imprimirSebo80mm() {
       const kg = Number(document.getElementById('seboKg').value || 0);
       if (!kg || kg <= 0) return alert("Ingresa los kilos de sebo.");
@@ -511,34 +497,17 @@
       const STORE = "Carnes y Vísceras del Centro";
       const fecha = fechaMX();
 
-      const isPos80 = destino === "pos80";
-      const W = isPos80 ? 80 : 62;
-      const H = isPos80 ? 70 : 45;
-
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
-        *{box-sizing:border-box}
-        html,body{
-          margin:0;padding:0;
-          width:${W}mm;height:${H}mm;
-          overflow:hidden;
-          color:#000;
-          font-family:"Courier New",ui-monospace,Menlo,Consolas,monospace
-        }
-        @page{size:${W}mm ${H}mm;margin:0}
-        #t{
-          width:${W}mm;height:${H}mm;
-          padding:${isPos80 ? '4mm' : '2mm'};
-          display:flex;
-          flex-direction:column;
-          justify-content:center;
-        }
-        h3{margin:0;text-align:center;font-size:${isPos80 ? '18px' : '14px'};font-weight:900}
-        .c{text-align:center;font-size:${isPos80 ? '14px' : '11px'};font-weight:900;margin-top:4px}
-        .line{border-top:2px dashed #000;margin:${isPos80 ? '8px' : '6px'} 0}
-        .big{text-align:center;font-weight:900;font-size:${isPos80 ? '22px' : '16px'}}
-        .amt{text-align:center;font-weight:900;font-size:${isPos80 ? '30px' : '20px'};margin-top:6px}
+        body{margin:0;font-family:ui-monospace,Menlo,Consolas,monospace}
+        #t{width:80mm;padding:2mm}
+        h3{margin:0;text-align:center;font-size:14px}
+        .c{text-align:center;font-size:11px;margin-top:4px}
+        .line{border-top:1px dashed #000;margin:6px 0}
+        .big{text-align:center;font-weight:800;font-size:16px}
+        .amt{text-align:center;font-weight:900;font-size:20px;margin-top:4px}
+        @media print{@page{size:80mm auto;margin:0}}
       </style></head><body>
         <div id="t">
           <h3>${STORE}</h3>
@@ -555,9 +524,8 @@
         await vdcEncolarImpresion("etiqueta", html, {
           source:"sebo",
           destino_impresora: destino,
-          width_mm: W,
-          height_mm: H,
-          copies:1
+          width_mm: 80,
+          copies: 1
         });
 
         alert(
@@ -572,10 +540,10 @@
       vdcDraftSave();
     }
 
-    // ✅ NOTA 80MM (ENVÍO / MOSTRADOR) — versión anti “hoja extra”
-    function imprimirNota80mm() {
+    // ========= NOTA (ENVÍO / MOSTRADOR) — MISMO FORMATO QUE INDEX (80 x 45 mm) =========
+    async function imprimirNota80mm() {
       const tipo = (document.getElementById('tipoNota').value || 'envio').trim();
-      const copias = 1;
+      const copias = getCopias();
 
       const STORE = "Carnes y Vísceras del Centro";
       const fecha = fechaMX();
@@ -614,7 +582,7 @@
         else if (item.type === 'html') parts.push(`<div class="${item.cls}">${item.html}</div>`);
       });
 
-      const NOTE_W_MM = 62;
+      const NOTE_W_MM = 80;
       const NOTE_H_MM = 45;
 
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -652,17 +620,24 @@
           <div id="t">${parts.join('')}</div>
         </body></html>`;
 
-      vdcEncolarImpresion("etiqueta", html, {
-        source: "etiquetas",
-        type: tipo,
-        width_mm: NOTE_W_MM,
-        height_mm: NOTE_H_MM,
-        copies: 1
-      }).then(() => {
-        alert("Etiqueta enviada al punto de impresión ✅");
-      }).catch(err => {
-        alert("No se pudo enviar la etiqueta a impresión.\n\n" + err.message);
-      });
+      try{
+        for(let i = 0; i < copias; i++){
+          await vdcEncolarImpresion("etiqueta", html, {
+            source: "etiquetas",
+            type: tipo,
+            width_mm: NOTE_W_MM,
+            height_mm: NOTE_H_MM,
+            copies: 1,
+            copia: i + 1,
+            total_copias: copias
+          });
+        }
+        alert(copias > 1
+          ? `Nota enviada al punto de impresión ✅ (${copias} copias)`
+          : "Nota enviada al punto de impresión ✅");
+      }catch(err){
+        alert("No se pudo enviar la nota a impresión.\n\n" + err.message);
+      }
 
       vdcDraftSave();
     }
@@ -704,14 +679,12 @@
       });
       document.getElementById('coloniaDestinoLibre')?.addEventListener('input', scheduleDraft);
 
-      // default visible: envío
       document.getElementById('notaEnvioWrap').style.display = 'block';
       document.getElementById('notaMostradorWrap').style.display = 'none';
 
       vdcDraftLoad();
       vdcDraftSave();
 
-      // por si el borrador trae OTRA
       toggleColoniaLibre();
     });
   </script>
